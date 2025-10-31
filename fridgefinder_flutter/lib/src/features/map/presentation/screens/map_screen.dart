@@ -1,0 +1,298 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:latlong2/latlong.dart';
+import '../../domain/models/fridge_domain.dart';
+import '../controllers/fridge_list_controller.dart';
+import '../widgets/fridge_marker.dart';
+import '../widgets/user_location_indicator.dart';
+import '../widgets/map_filter_panel.dart';
+import '../widgets/filter_status_indicator.dart';
+import '../../../profile/presentation/fridge_profile_sheet.dart';
+import '../../../../common_widgets/index.dart' as common_widgets;
+import '../../../../core/providers/location_provider.dart';
+
+/// Map screen showing all community fridges on a map
+class MapScreen extends ConsumerStatefulWidget {
+  const MapScreen({super.key});
+
+  @override
+  ConsumerState<MapScreen> createState() => _MapScreenState();
+}
+
+class _MapScreenState extends ConsumerState<MapScreen> {
+  late MapController _mapController;
+  late TextEditingController _searchController;
+  late FocusNode _searchFocusNode;
+  bool _isFilterPanelExpanded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _mapController = MapController();
+    _searchController = TextEditingController();
+    _searchFocusNode = FocusNode();
+  }
+
+  @override
+  void dispose() {
+    _mapController.dispose();
+    _searchController.dispose();
+    _searchFocusNode.dispose();
+    super.dispose();
+  }
+
+  void _showFridgeProfile(FridgeDomain fridge) {
+    ref.read(selectedFridgeIdProvider.notifier).setSelectedFridgeId(fridge.id);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => FridgeProfileSheet(fridge: fridge),
+    );
+  }
+
+  void _toggleFilterPanel() {
+    setState(() {
+      _isFilterPanelExpanded = !_isFilterPanelExpanded;
+      if (_isFilterPanelExpanded) {
+        // Auto-focus search bar when expanding
+        Future.delayed(const Duration(milliseconds: 300), () {
+          if (mounted) {
+            _searchFocusNode.requestFocus();
+          }
+        });
+      } else {
+        // Unfocus search bar when collapsing
+        _searchFocusNode.unfocus();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final fridgesAsync = ref.watch(fridgeListProvider);
+    final userLocationAsync = ref.watch(userLocationProvider);
+    final userLocationStream = ref.watch(userLocationStreamProvider);
+    final locationAccessEnabled = ref.watch(locationAccessProvider);
+    final filteredFridges = ref.watch(mapFilteredFridgesProvider);
+
+    return Scaffold(
+      body: fridgesAsync.when(
+        loading: () => const common_widgets.LoadingIndicator(
+          message: 'Loading fridges...',
+        ),
+        error: (error, stackTrace) => common_widgets.ErrorView(
+          message: error.toString(),
+          onRetry: () => ref.refresh(fridgeListProvider),
+        ),
+        data: (fridges) {
+          if (fridges.isEmpty) {
+            return common_widgets.EmptyStateView(
+              title: 'No Fridges Found',
+              message: 'There are no community fridges in your area yet.',
+              icon: Icons.location_off,
+            );
+          }
+
+          // Determine initial map center: user location or first fridge
+          LatLng initialCenter = LatLng(
+            fridges[0].location.geoLat,
+            fridges[0].location.geoLng,
+          );
+
+          if (userLocationAsync.value != null) {
+            initialCenter = userLocationAsync.value!.position;
+          }
+
+          return Stack(
+            children: [
+              FlutterMap(
+                mapController: _mapController,
+                options: MapOptions(
+                  initialCenter: initialCenter,
+                  initialZoom: 13.0,
+                  maxZoom: 18.0,
+                  minZoom: 10.0,
+                ),
+                children: [
+                  TileLayer(
+                    urlTemplate:
+                        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    userAgentPackageName: 'com.example.fridgefinder',
+                  ),
+                  // User location marker with pulsating circle
+                  userLocationStream.when(
+                    data: (userLocation) {
+                      if (userLocation != null) {
+                        return MarkerLayer(
+                          markers: [
+                            Marker(
+                              point: userLocation.position,
+                              child: UserLocationIndicator(),
+                            ),
+                          ],
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    },
+                    loading: () => const SizedBox.shrink(),
+                    error: (_, _) => const SizedBox.shrink(),
+                  ),
+                  // Fridge markers - use filtered fridges
+                  MarkerLayer(
+                    markers: filteredFridges
+                        .map(
+                          (fridge) => Marker(
+                            point: LatLng(
+                              fridge.location.geoLat,
+                              fridge.location.geoLng,
+                            ),
+                            child: GestureDetector(
+                              onTap: () => _showFridgeProfile(fridge),
+                              child: FridgeMarker(fridge: fridge),
+                            ),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ],
+              ),
+              // Invisible overlay to close panel when tapping outside
+              if (_isFilterPanelExpanded)
+                GestureDetector(
+                  onTap: () {
+                    _toggleFilterPanel();
+                  },
+                  child: Container(color: Colors.transparent),
+                ),
+              // Filter panel - overlays above map
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: MapFilterPanel(
+                  searchController: _searchController,
+                  searchFocusNode: _searchFocusNode,
+                  isExpanded: _isFilterPanelExpanded,
+                  onToggleExpanded: _toggleFilterPanel,
+                ),
+              ),
+              // Center to user location button (above search button)
+              Positioned(
+                bottom: 80,
+                right: 16,
+                child: FloatingActionButton(
+                  foregroundColor: Colors.white,
+                  onPressed: () async {
+                    // If location access is disabled, request permission first
+                    if (!locationAccessEnabled) {
+                      final permissionGranted = await ref
+                          .read(locationAccessProvider.notifier)
+                          .setAccessWithPermission(true);
+
+                      if (!permissionGranted) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Location permission denied. Enable in settings to use this feature.',
+                              ),
+                              duration: Duration(seconds: 3),
+                            ),
+                          );
+                        }
+                        return;
+                      }
+                      // Permission granted and toggle turned on
+                      // Wait for location data to be fetched
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Getting your location...'),
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                      }
+
+                      // Give the location provider time to fetch the location
+                      // Check periodically for up to 5 seconds
+                      int attempts = 0;
+                      while (attempts < 10) {
+                        await Future.delayed(const Duration(milliseconds: 500));
+
+                        // Re-read the latest location state
+                        final updatedLocation = ref
+                            .read(userLocationProvider)
+                            .whenOrNull(data: (location) => location);
+
+                        if (updatedLocation != null) {
+                          if (context.mounted) {
+                            _mapController.move(updatedLocation.position, 15.0);
+                          }
+                          return;
+                        }
+                        attempts++;
+                      }
+
+                      // Location still not available after 5 seconds
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Unable to get location. Please try again.',
+                            ),
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                      }
+                      return;
+                    }
+
+                    // Location access already enabled - center map to user location if available
+                    if (userLocationAsync.value != null) {
+                      _mapController.move(
+                        userLocationAsync.value!.position,
+                        15.0,
+                      );
+                    } else {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Getting your location...'),
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                      }
+                    }
+                  },
+                  child: const Icon(Icons.my_location),
+                ),
+              ),
+              // Filter status indicator at bottom left
+              const FilterStatusIndicator(),
+              // Search/Filter button in bottom right
+              Positioned(
+                bottom: 16,
+                right: 16,
+                child: FloatingActionButton(
+                  foregroundColor: Colors.white,
+                  onPressed: _toggleFilterPanel,
+                  child: AnimatedRotation(
+                    turns: _isFilterPanelExpanded ? 0.5 : 0,
+                    duration: const Duration(milliseconds: 300),
+                    child: Icon(
+                      _isFilterPanelExpanded
+                          ? Icons.arrow_upward
+                          : Icons.search,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
