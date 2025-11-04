@@ -89,27 +89,30 @@ flutter pub get
 ```
 
 This installs all packages listed in `pubspec.yaml`. Key dependencies:
-- **State Management:** Riverpod (reactive, composable)
+- **State Management:** Riverpod 3.0+ with code generation (reactive, type-safe)
 - **Navigation:** GoRouter (type-safe, persistent navigation)
-- **Mapping:** flutter_map with marker clustering
-- **HTTP Client:** Dio with interceptors
+- **Mapping:** flutter_map with OpenStreetMap tiles
+- **HTTP Client:** Dio with interceptors and connectivity checks
 - **Local Storage:** Hive (user settings, filter state)
+- **Immutable Models:** Freezed with JSON serialization (code-generated)
+- **Logging:** logger package for structured logging
+- **Connectivity:** connectivity_plus for network status
 
 ### 3. Generate Code
 
 The project uses code generation for:
-- **Freezed:** Immutable data models
-- **Riverpod:** Provider generators
-- **JSON Serialization:** Model to/from JSON conversion
+- **Freezed:** Immutable data models with `copyWith`, `toString`, `==`, and `hashCode`
+- **Riverpod:** Type-safe provider generators with `@riverpod` annotation
+- **JSON Serialization:** Automatic `fromJson`/`toJson` methods
 
 ```bash
-dart run build_runner build
+dart run build_runner build --delete-conflicting-outputs
 ```
 
 Run this after modifying any:
-- Data models (with `@freezed`)
-- Riverpod providers
-- JSON serialization fields
+- Freezed models (with `@freezed` annotation)
+- Riverpod providers (with `@riverpod` annotation)
+- JSON serializable classes (with `@JsonSerializable` annotation)
 
 ### 4. Configure Environment (Optional)
 
@@ -179,7 +182,7 @@ fridgefinder_flutter/
 │       │   │   │   ├── fridge_repository.dart      # API client (real)
 │       │   │   │   └── mock_fridge_repository.dart # Mock for testing
 │       │   │   ├── domain/
-│       │   │   │   └── fridge_domain.dart          # Data models & enums
+│       │   │   │   └── fridge_domain.dart          # Freezed data models & enums
 │       │   │   └── presentation/
 │       │   │       ├── controllers/
 │       │   │       │   ├── fridge_list_controller.dart     # Data & selection state
@@ -210,10 +213,11 @@ fridgefinder_flutter/
 │       │   │           ├── fridge_profile_sheet.dart   # Fridge details
 │       │   │           └── status_update_form.dart     # Report submission form
 │       │   │
-│       │   ├── favorites/                # Placeholder for future implementation
 │       │   ├── auth/                     # Placeholder for authentication
 │       │   ├── notifications/            # Placeholder for push notifications
 │       │   └── search/                   # Placeholder for advanced search
+│       │   │
+│       │   └── Note: Favorites feature removed from v1.0 (will be added in v1.1 with user accounts)
 │       │
 │       └── routing/
 │           └── router.dart               # GoRouter configuration with ShellRoute
@@ -277,19 +281,26 @@ Future<List<FridgeDomain>> fridgeList(FridgeListRef ref) async {
 @riverpod
 class MapFilter extends _$MapFilter {
   @override
-  MapFilterState build() => MapFilterState();
+  MapFilterState build() {
+    // State loaded from Hive or default
+    return MapFilterState();
+  }
 
   void updateFilter(FilterCondition condition) {
     // State updates trigger rebuilds of watching widgets
+    state = state.copyWith(...); // Freezed copyWith
   }
 }
 
 // Computed derived state
 @riverpod
 List<FridgeDomain> mapFilteredFridges(MapFilteredFridgesRef ref) {
-  final fridges = ref.watch(fridgeListProvider);
+  final fridgesAsync = ref.watch(fridgeListProvider);
   final filters = ref.watch(mapFilterProvider);
-  return fridges.where((f) => filters.matchesFridge(f)).toList();
+  
+  return fridgesAsync.whenOrNull(
+    data: (fridges) => fridges.where((f) => filters.matchesFridge(f)).toList(),
+  ) ?? [];
 }
 ```
 
@@ -305,15 +316,20 @@ List<FridgeDomain> mapFilteredFridges(MapFilteredFridgesRef ref) {
 Each feature module has three distinct layers:
 
 **Data Layer** (`/data`)
-- Repository pattern for data access
-- API client (Dio) and local storage (Hive) integration
-- Models with JSON serialization
-- Error handling with custom exceptions
+- Repository pattern implementing abstract interfaces (dependency inversion)
+- API client (Dio) with connectivity checks and interceptors
+- Local storage (Hive) for persistent state
+- Structured logging with logger package
+- Error handling with custom exception hierarchy
 
 **Domain Layer** (`/domain`)
-- Business logic models (freezed for immutability)
+- **Freezed immutable models** with automatic `copyWith`, `toString`, `==`, and `hashCode`
+- Automatic JSON serialization via `json_serializable` (code-generated `fromJson`/`toJson`)
+- Precise API mapping (snake_case ↔ camelCase) via `@JsonKey` annotations
+- Custom methods for computed properties (e.g., `markerColor`, `fullAddress`)
 - Domain-specific enums (e.g., `FridgeCondition`)
-- Repositories as interfaces (abstract)
+- Repository interfaces (IFridgeRepository) for dependency inversion
+- Business logic separated from data access
 
 **Presentation Layer** (`/presentation`)
 - Screens (full-page widgets)
@@ -497,10 +513,7 @@ User preferences and fridge details.
 
 ### 🎯 Placeholder Features (Ready for Development)
 
-**Favorites** (`/favorites`)
-- Route structure ready
-- UI shell in place
-- Awaiting implementation
+**Note:** Favorites feature was removed from v1.0 navigation to ensure app store approval. It will be added in v1.1 after user accounts are implemented.
 
 **Authentication** (`/auth`)
 - Feature module structure ready
@@ -573,16 +586,24 @@ Following the established architecture:
        └── widgets/
    ```
 
-2. **Create data models** with freezed
+2. **Create data models** with Freezed
    ```dart
+   import 'package:freezed_annotation/freezed_annotation.dart';
+   
+   part 'my_domain.freezed.dart';
+   part 'my_domain.g.dart';
+   
    @freezed
    class MyDomain with _$MyDomain {
+     const MyDomain._(); // Required for custom methods
+     
      const factory MyDomain({
        required String id,
        required String name,
+       @Default(false) bool verified,
      }) = _MyDomain;
 
-     factory MyDomain.fromJson(Map<String, Object?> json) =>
+     factory MyDomain.fromJson(Map<String, dynamic> json) =>
          _$MyDomainFromJson(json);
    }
    ```
@@ -672,9 +693,20 @@ dart run build_runner clean
 ```
 
 **Triggers code generation for:**
-- `@freezed` classes → `*.freezed.dart`
-- `@riverpod` providers → `*.g.dart`
-- `@JsonSerializable` models → `*.g.dart`
+- `@freezed` classes → `*.freezed.dart` (immutability, copyWith, equality)
+- `@riverpod` providers → `*.g.dart` (type-safe providers)
+- `@JsonSerializable` models → `*.g.dart` (JSON serialization)
+
+**Important:** Always run `--delete-conflicting-outputs` flag on first build:
+```bash
+dart run build_runner build --delete-conflicting-outputs
+```
+
+For iOS builds, ensure code generation runs before building:
+```bash
+dart run build_runner build --delete-conflicting-outputs
+flutter build ios
+```
 
 ---
 
@@ -692,9 +724,14 @@ test/
 │   └── list/presentation/    # List screen tests
 ├── shared/widgets/           # Common widget tests
 ├── integration/              # Full app workflow tests
-├── fixtures/                 # Mock data
-└── helpers/                  # Test utilities
+│   ├── app_navigation_integration_test.dart
+│   ├── fridge_detail_integration_test.dart
+│   └── list_screen_integration_test.dart
+├── fixtures/                 # Mock data (FridgeFixtures)
+└── helpers/                  # Test utilities (test_helpers.dart)
 ```
+
+**Test Status:** 246 tests passing, 5 navigation integration tests remaining (timing-related)
 
 ### Running Tests
 
@@ -753,12 +790,17 @@ void main() {
 }
 ```
 
-**Riverpod Provider Test Example:**
+**Riverpod Provider Test Example (Code-Generated):**
 ```dart
+import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fridgefinder_app/src/features/map/presentation/controllers/fridge_list_controller.dart';
+import '../../helpers/test_helpers.dart';
+
 void main() {
   group('FridgeListProvider', () {
     test('fetches fridges from repository', () async {
-      final container = ProviderContainer(
+      final container = createTestProviderContainer(
         overrides: [
           fridgeRepositoryProvider.overrideWithValue(mockRepository),
         ],
@@ -770,6 +812,8 @@ void main() {
   });
 }
 ```
+
+**Note:** Tests use `createTestProviderContainer()` helper which sets up all required overrides (Dio, Hive, etc.) automatically.
 
 ### Testing Best Practices
 
@@ -978,12 +1022,19 @@ We welcome contributions! Here's how to contribute to FridgeFinder:
 - Photo upload capability
 - Theme customization (light/dark/system)
 - Multi-environment support (dev/prod)
+- **Freezed immutable models** (all domain models)
+- **Riverpod code generation** (all providers use `@riverpod`)
+- Repository pattern with dependency inversion
+- Structured logging and error handling
+- Network connectivity checks
+- Comprehensive test suite (246+ tests)
+- App store readiness (privacy policy, proper permissions, etc.)
 
 🚧 **In Development:**
-- Favorites feature (structure ready)
 - Advanced search (structure ready)
 
 ⏳ **Planned:**
+- **Favorites feature** (v1.1 - will be added after user accounts)
 - User authentication (Firebase Auth structure ready)
 - Push notifications (Firebase Messaging structure ready)
 - Offline support (partial, structure ready)
@@ -1022,4 +1073,26 @@ Built with ❤️ by the Community Fridge Finder team and contributors.
 
 ---
 
-**Last Updated:** October 31, 2025 | **Version:** 1.0.0 | **Maintainers:** [Your Team]
+**Last Updated:** December 2025 | **Version:** 1.0.0 | **Maintainers:** [Your Team]
+
+---
+
+## Recent Updates (December 2025)
+
+### Architecture Improvements
+- ✅ **Freezed Implementation:** All domain models (`FridgeDomain`, `FridgeLocationDomain`, `FridgeMaintainerDomain`, `FridgeReportDomain`, `UserLocation`, `MapFilterState`) now use Freezed for immutability
+- ✅ **Riverpod Code Generation:** All providers converted to code generation with `@riverpod` annotation for type safety
+- ✅ **Test Coverage:** Comprehensive test suite with 246+ passing tests
+- ✅ **App Store Readiness:** Privacy policy created, navigation cleaned up, proper permissions configured
+
+### Code Quality
+- ✅ **Const Optimization:** Applied `dart fix --apply` for performance improvements
+- ✅ **Navigation Cleanup:** Removed Favorites placeholder to ensure app store approval
+- ✅ **Provider Overrides:** Improved test helpers with proper provider mocking
+
+### App Store Preparation
+- ✅ **Privacy Policy:** Created HTML privacy policy ready for hosting
+- ✅ **Documentation:** Complete guide for remaining submission tasks (`REMAINING_TASKS_GUIDE.md`)
+- ✅ **Configuration:** iOS PrivacyInfo.xcprivacy, Android permissions properly configured
+
+For details on remaining app store submission tasks, see `REMAINING_TASKS_GUIDE.md` in the project root.

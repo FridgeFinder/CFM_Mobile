@@ -20,7 +20,8 @@ class FridgeFixtures {
       instagram: 'https://www.instagram.com/the_living_gallery',
       website: 'http://linktr.ee/Thelivinggallery',
     ),
-    photoUrl: 'https://community-fridge-map-images-prod.s3.amazonaws.com/96c3a513-17b3-4760-983b-3ae7525d5deb.webp',
+    photoUrl:
+        'https://community-fridge-map-images-prod.s3.amazonaws.com/96c3a513-17b3-4760-983b-3ae7525d5deb.webp',
     lastEdited: '1667513900',
     latestFridgeReport: FridgeReportDomain(
       fridgeId: 'livinggallery',
@@ -48,7 +49,8 @@ class FridgeFixtures {
     maintainer: FridgeMaintainerDomain(
       instagram: 'https://www.instagram.com/onelovecommunityfridge/',
     ),
-    photoUrl: 'https://community-fridge-map-images-prod.s3.amazonaws.com/61dac313-d8d9-413c-ba93-e543dd9c3a82.webp',
+    photoUrl:
+        'https://community-fridge-map-images-prod.s3.amazonaws.com/61dac313-d8d9-413c-ba93-e543dd9c3a82.webp',
     lastEdited: '1734389815',
     latestFridgeReport: FridgeReportDomain(
       fridgeId: 'bshertnycfridge',

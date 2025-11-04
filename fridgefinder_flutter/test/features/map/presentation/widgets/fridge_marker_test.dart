@@ -20,7 +20,9 @@ void main() {
       expect(find.byType(SvgPicture), findsOneWidget);
     });
 
-    testWidgets('displays marker with correct size', (WidgetTester tester) async {
+    testWidgets('displays marker with correct size', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -36,14 +38,14 @@ void main() {
       expect(widget.height, FridgeMarker.markerSize);
     });
 
-    testWidgets('shows green color for fridge with full food level', (WidgetTester tester) async {
+    testWidgets('shows green color for fridge with full food level', (
+      WidgetTester tester,
+    ) async {
       final fridge = FridgeFixtures.verifiedFridgeWithFood;
 
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: FridgeMarker(fridge: fridge),
-          ),
+          home: Scaffold(body: FridgeMarker(fridge: fridge)),
         ),
       );
 
@@ -51,28 +53,28 @@ void main() {
       expect(find.byType(SvgPicture), findsOneWidget);
     });
 
-    testWidgets('shows yellow color for dirty fridge', (WidgetTester tester) async {
+    testWidgets('shows yellow color for dirty fridge', (
+      WidgetTester tester,
+    ) async {
       final fridge = FridgeFixtures.fridgeDirty;
 
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: FridgeMarker(fridge: fridge),
-          ),
+          home: Scaffold(body: FridgeMarker(fridge: fridge)),
         ),
       );
 
       expect(find.byType(SvgPicture), findsOneWidget);
     });
 
-    testWidgets('shows ghost icon for ghost fridge', (WidgetTester tester) async {
+    testWidgets('shows ghost icon for ghost fridge', (
+      WidgetTester tester,
+    ) async {
       final fridge = FridgeFixtures.ghostFridge;
 
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: FridgeMarker(fridge: fridge),
-          ),
+          home: Scaffold(body: FridgeMarker(fridge: fridge)),
         ),
       );
 
@@ -81,7 +83,9 @@ void main() {
       expect(find.byType(SvgPicture), findsOneWidget);
     });
 
-    testWidgets('shows dashed pin for fridge with no report', (WidgetTester tester) async {
+    testWidgets('shows dashed pin for fridge with no report', (
+      WidgetTester tester,
+    ) async {
       final fridgeNoReport = FridgeDomain(
         id: 'no_report_001',
         name: 'No Report Fridge',
@@ -99,83 +103,55 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: FridgeMarker(fridge: fridgeNoReport),
-          ),
+          home: Scaffold(body: FridgeMarker(fridge: fridgeNoReport)),
         ),
       );
 
       expect(find.byType(SvgPicture), findsOneWidget);
     });
 
-    testWidgets('shows gray dashed pin for unverified fridge', (WidgetTester tester) async {
-      final fridge = FridgeFixtures.notAtLocationFridge.copyWith(verified: false);
+    testWidgets('shows gray dashed pin for unverified fridge', (
+      WidgetTester tester,
+    ) async {
+      final fridge = FridgeFixtures.notAtLocationFridge.copyWith(
+        verified: false,
+      );
 
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: FridgeMarker(fridge: fridge),
-          ),
+          home: Scaffold(body: FridgeMarker(fridge: fridge)),
         ),
       );
 
       expect(find.byType(SvgPicture), findsOneWidget);
     });
 
-    testWidgets('shows X face for not at location fridge', (WidgetTester tester) async {
+    testWidgets('shows X face for not at location fridge', (
+      WidgetTester tester,
+    ) async {
       final fridge = FridgeFixtures.notAtLocationFridge;
 
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: FridgeMarker(fridge: fridge),
-          ),
+          home: Scaffold(body: FridgeMarker(fridge: fridge)),
         ),
       );
 
       expect(find.byType(SvgPicture), findsOneWidget);
     });
 
-    testWidgets('shows out of order decoration for broken fridge', (WidgetTester tester) async {
+    testWidgets('shows out of order decoration for broken fridge', (
+      WidgetTester tester,
+    ) async {
       final fridge = FridgeFixtures.fridgeOutOfOrder;
 
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: FridgeMarker(fridge: fridge),
-          ),
+          home: Scaffold(body: FridgeMarker(fridge: fridge)),
         ),
       );
 
       expect(find.byType(SvgPicture), findsOneWidget);
     });
   });
-
-  // Add extension to copy Fridge for tests
-}
-
-extension _FridgeDomainCopy on FridgeDomain {
-  FridgeDomain copyWith({
-    String? id,
-    String? name,
-    bool? verified,
-    FridgeLocationDomain? location,
-    FridgeMaintainerDomain? maintainer,
-    String? notes,
-    String? photoUrl,
-    String? lastEdited,
-    FridgeReportDomain? latestFridgeReport,
-  }) {
-    return FridgeDomain(
-      id: id ?? this.id,
-      name: name ?? this.name,
-      verified: verified ?? this.verified,
-      location: location ?? this.location,
-      maintainer: maintainer ?? this.maintainer,
-      notes: notes ?? this.notes,
-      photoUrl: photoUrl ?? this.photoUrl,
-      lastEdited: lastEdited ?? this.lastEdited,
-      latestFridgeReport: latestFridgeReport ?? this.latestFridgeReport,
-    );
-  }
 }

@@ -1,12 +1,15 @@
 import 'package:dio/dio.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../map/domain/models/fridge_domain.dart';
+import '../../../map/domain/repositories/i_fridge_repository.dart';
 import '../../../../core/exceptions/app_exception.dart';
 import '../../../../core/providers/dio_provider.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+part 'fridge_repository.g.dart';
 
 /// Repository for fetching fridge data from real FridgeFinder API
 /// Handles API communication and error handling
-class FridgeRepository {
+class FridgeRepository implements IFridgeRepository {
   final Dio _dio;
 
   FridgeRepository(this._dio);
@@ -15,6 +18,7 @@ class FridgeRepository {
   /// Throws [NetworkException] on network errors
   /// Throws [ServerException] on server errors
   /// Based on real API: GET /v1/fridges
+  @override
   Future<List<FridgeDomain>> getFridges() async {
     try {
       final response = await _dio.get('/fridges');
@@ -43,6 +47,7 @@ class FridgeRepository {
   /// Throws [NotFoundException] if fridge not found
   /// Throws [NetworkException] on network errors
   /// Based on real API: GET /v1/fridges/{fridgeId}
+  @override
   Future<FridgeDomain> getFridge(String fridgeId) async {
     try {
       final response = await _dio.get('/fridges/$fridgeId');
@@ -70,6 +75,7 @@ class FridgeRepository {
   /// Submit a condition report for a fridge
   /// Throws [NetworkException] on network errors
   /// Based on real API: POST /v1/fridges/{fridgeId}/reports
+  @override
   Future<void> submitFridgeReport(
     String fridgeId,
     FridgeCondition condition,
@@ -102,6 +108,7 @@ class FridgeRepository {
   /// Upload a fridge photo
   /// Throws [NetworkException] on network errors
   /// Based on real API: POST /v1/photo
+  @override
   Future<String> uploadPhoto(List<int> imageBytes, String mimeType) async {
     try {
       final response = await _dio.post(
@@ -180,6 +187,7 @@ class FridgeRepository {
 }
 
 /// Riverpod provider for FridgeRepository
-final fridgeRepositoryProvider = Provider<FridgeRepository>((ref) {
+@riverpod
+FridgeRepository fridgeRepository(Ref ref) {
   return FridgeRepository(ref.watch(dioProvider));
-});
+}

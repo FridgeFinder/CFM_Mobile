@@ -7,35 +7,32 @@ void main() {
     testWidgets('displays error icon', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: ErrorView(message: 'Test error'),
-          ),
+          home: Scaffold(body: ErrorView(message: 'Test error')),
         ),
       );
 
       expect(find.byIcon(Icons.error_outline), findsOneWidget);
     });
 
-    testWidgets('displays default title when not provided', (WidgetTester tester) async {
+    testWidgets('displays default title when not provided', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: ErrorView(message: 'Test error'),
-          ),
+          home: Scaffold(body: ErrorView(message: 'Test error')),
         ),
       );
 
       expect(find.text('Something went wrong'), findsOneWidget);
     });
 
-    testWidgets('displays custom title when provided', (WidgetTester tester) async {
+    testWidgets('displays custom title when provided', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: ErrorView(
-              title: 'Custom Error',
-              message: 'Test message',
-            ),
+            body: ErrorView(title: 'Custom Error', message: 'Test message'),
           ),
         ),
       );
@@ -48,23 +45,20 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: ErrorView(message: errorMessage),
-          ),
+          home: Scaffold(body: ErrorView(message: errorMessage)),
         ),
       );
 
       expect(find.text(errorMessage), findsOneWidget);
     });
 
-    testWidgets('displays retry button when onRetry provided', (WidgetTester tester) async {
+    testWidgets('displays retry button when onRetry provided', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: ErrorView(
-              message: 'Test error',
-              onRetry: () {},
-            ),
+            body: ErrorView(message: 'Test error', onRetry: () {}),
           ),
         ),
       );
@@ -73,19 +67,21 @@ void main() {
       expect(find.text('Try Again'), findsOneWidget);
     });
 
-    testWidgets('does not display retry button when onRetry not provided', (WidgetTester tester) async {
+    testWidgets('does not display retry button when onRetry not provided', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: ErrorView(message: 'Test error'),
-          ),
+          home: Scaffold(body: ErrorView(message: 'Test error')),
         ),
       );
 
       expect(find.byType(ElevatedButton), findsNothing);
     });
 
-    testWidgets('calls retry callback when retry button tapped', (WidgetTester tester) async {
+    testWidgets('calls retry callback when retry button tapped', (
+      WidgetTester tester,
+    ) async {
       bool retryPressed = false;
 
       await tester.pumpWidget(
@@ -105,7 +101,9 @@ void main() {
       expect(retryPressed, isTrue);
     });
 
-    testWidgets('uses custom retry label when provided', (WidgetTester tester) async {
+    testWidgets('uses custom retry label when provided', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(

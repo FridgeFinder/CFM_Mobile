@@ -4,13 +4,11 @@ import 'package:fridgefinder_app/src/common_widgets/loading_indicator.dart';
 
 void main() {
   group('LoadingIndicator Widget Tests', () {
-    testWidgets('displays circular progress indicator', (WidgetTester tester) async {
+    testWidgets('displays circular progress indicator', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: LoadingIndicator(),
-          ),
-        ),
+        const MaterialApp(home: Scaffold(body: LoadingIndicator())),
       );
 
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
@@ -21,22 +19,18 @@ void main() {
 
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: LoadingIndicator(message: testMessage),
-          ),
+          home: Scaffold(body: LoadingIndicator(message: testMessage)),
         ),
       );
 
       expect(find.text(testMessage), findsOneWidget);
     });
 
-    testWidgets('does not display message when not provided', (WidgetTester tester) async {
+    testWidgets('does not display message when not provided', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: LoadingIndicator(),
-          ),
-        ),
+        const MaterialApp(home: Scaffold(body: LoadingIndicator())),
       );
 
       expect(find.byType(Text), findsNothing);
@@ -45,9 +39,7 @@ void main() {
     testWidgets('centers content properly', (WidgetTester tester) async {
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: LoadingIndicator(message: 'Loading'),
-          ),
+          home: Scaffold(body: LoadingIndicator(message: 'Loading')),
         ),
       );
 
@@ -59,12 +51,12 @@ void main() {
       expect(column.mainAxisAlignment, MainAxisAlignment.center);
     });
 
-    testWidgets('message has proper spacing from indicator', (WidgetTester tester) async {
+    testWidgets('message has proper spacing from indicator', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: LoadingIndicator(message: 'Test'),
-          ),
+          home: Scaffold(body: LoadingIndicator(message: 'Test')),
         ),
       );
 

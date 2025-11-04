@@ -1,37 +1,36 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'location_provider.freezed.dart';
+part 'location_provider.g.dart';
 
 /// A model to represent the user's location
-class UserLocation {
-  final LatLng position;
-  final double accuracy;
-  final DateTime timestamp;
+@freezed
+abstract class UserLocation with _$UserLocation {
+  const UserLocation._();
 
-  UserLocation({
-    required this.position,
-    required this.accuracy,
-    required this.timestamp,
-  });
-
-  @override
-  String toString() =>
-      'UserLocation(lat: ${position.latitude}, lng: ${position.longitude}, accuracy: $accuracy)';
+  const factory UserLocation({
+    required LatLng position,
+    required double accuracy,
+    required DateTime timestamp,
+  }) = _UserLocation;
 }
 
 /// Provider to check and request location permissions
-final locationPermissionProvider = FutureProvider<LocationPermission>((
-  ref,
-) async {
+@riverpod
+Future<LocationPermission> locationPermission(Ref ref) async {
   LocationPermission permission = await Geolocator.checkPermission();
   if (permission == LocationPermission.denied) {
     permission = await Geolocator.requestPermission();
   }
   return permission;
-});
+}
 
 /// Provider to get the user's current location (single fetch)
-final userLocationProvider = FutureProvider<UserLocation?>((ref) async {
+@riverpod
+Future<UserLocation?> userLocation(Ref ref) async {
   // Check if user has enabled location access in settings
   final locationAccessEnabled = ref.watch(locationAccessProvider);
   if (!locationAccessEnabled) {
@@ -62,10 +61,11 @@ final userLocationProvider = FutureProvider<UserLocation?>((ref) async {
     // Silently fail if location access is denied or unavailable
     return null;
   }
-});
+}
 
 /// Provider to stream the user's location in real-time
-final userLocationStreamProvider = StreamProvider<UserLocation?>((ref) async* {
+@riverpod
+Stream<UserLocation?> userLocationStream(Ref ref) async* {
   // Check if user has enabled location access in settings
   final locationAccessEnabled = ref.watch(locationAccessProvider);
   if (!locationAccessEnabled) {
@@ -101,10 +101,11 @@ final userLocationStreamProvider = StreamProvider<UserLocation?>((ref) async* {
     // Silently fail if location streaming is unavailable
     yield null;
   }
-});
+}
 
 /// Notifier for managing location access permission toggle
-class LocationAccessNotifier extends Notifier<bool> {
+@riverpod
+class LocationAccess extends _$LocationAccess {
   @override
   bool build() => true; // Default to enabled
 
@@ -141,9 +142,3 @@ class LocationAccessNotifier extends Notifier<bool> {
     state = value;
   }
 }
-
-/// Provider to toggle user's location data access on/off
-/// User can deny location data through settings even if permission is granted
-final locationAccessProvider = NotifierProvider<LocationAccessNotifier, bool>(
-  () => LocationAccessNotifier(),
-);

@@ -12,12 +12,18 @@ void main() {
         );
 
         expect(state.selectedConditions.length, equals(6));
-        expect(state.selectedConditions, contains(FilterCondition.goodWithFood));
+        expect(
+          state.selectedConditions,
+          contains(FilterCondition.goodWithFood),
+        );
         expect(state.selectedConditions, contains(FilterCondition.goodEmpty));
         expect(state.selectedConditions, contains(FilterCondition.dirty));
         expect(state.selectedConditions, contains(FilterCondition.outOfOrder));
         expect(state.selectedConditions, contains(FilterCondition.ghost));
-        expect(state.selectedConditions, contains(FilterCondition.notAtLocation));
+        expect(
+          state.selectedConditions,
+          contains(FilterCondition.notAtLocation),
+        );
         expect(state.searchQuery, equals(''));
         expect(state.isDefault, isTrue);
       });
@@ -47,7 +53,10 @@ void main() {
         final newState = state.copyWith(searchQuery: 'new query');
 
         expect(newState.searchQuery, equals('new query'));
-        expect(newState.selectedConditions, equals({FilterCondition.goodWithFood})); // Unchanged
+        expect(
+          newState.selectedConditions,
+          equals({FilterCondition.goodWithFood}),
+        ); // Unchanged
       });
     });
 
@@ -94,7 +103,10 @@ void main() {
         expect(state.deselectedConditions.length, equals(3));
         expect(state.deselectedConditions, contains(FilterCondition.dirty));
         expect(state.deselectedConditions, contains(FilterCondition.ghost));
-        expect(state.deselectedConditions, contains(FilterCondition.notAtLocation));
+        expect(
+          state.deselectedConditions,
+          contains(FilterCondition.notAtLocation),
+        );
       });
     });
 

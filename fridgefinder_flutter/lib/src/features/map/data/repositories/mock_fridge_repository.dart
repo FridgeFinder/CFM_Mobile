@@ -1,10 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../map/domain/models/fridge_domain.dart';
+import '../../../map/domain/repositories/i_fridge_repository.dart';
 import '../../../../core/exceptions/app_exception.dart';
 
 /// Mock repository for development and testing
 /// Simulates API responses using in-memory data
-class MockFridgeRepository {
+class MockFridgeRepository implements IFridgeRepository {
   // Simulated data store
   final Map<String, FridgeDomain> _fridges = {};
   bool _shouldFail = false;
@@ -151,6 +152,7 @@ class MockFridgeRepository {
   }
 
   /// Get all fridges
+  @override
   Future<List<FridgeDomain>> getFridges() async {
     _checkShouldFail();
     await _simulateNetworkDelay();
@@ -158,6 +160,7 @@ class MockFridgeRepository {
   }
 
   /// Get single fridge by ID
+  @override
   Future<FridgeDomain> getFridge(String id) async {
     _checkShouldFail();
     await _simulateNetworkDelay();
@@ -170,6 +173,7 @@ class MockFridgeRepository {
   }
 
   /// Submit fridge report (update status)
+  @override
   Future<void> submitFridgeReport(
     String fridgeId,
     FridgeCondition condition,
@@ -209,6 +213,16 @@ class MockFridgeRepository {
     );
 
     _fridges[fridgeId] = updatedFridge;
+  }
+
+  /// Upload a photo (mock implementation)
+  @override
+  Future<String> uploadPhoto(List<int> imageBytes, String mimeType) async {
+    _checkShouldFail();
+    await _simulateNetworkDelay();
+
+    // Return a mock photo URL
+    return 'https://mock.fridgefinder.com/photos/mock_${DateTime.now().millisecondsSinceEpoch}.jpg';
   }
 
   /// Search fridges (simple name/city matching)

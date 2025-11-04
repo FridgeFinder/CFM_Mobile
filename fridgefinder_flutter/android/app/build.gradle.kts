@@ -5,36 +5,73 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// Load keystore properties for release signing
+// Create android/key.properties file with your keystore details
+def keystorePropertiesFile = rootProject.file("key.properties")
+def keystoreProperties = new Properties()
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
 android {
     namespace = "com.fridgefinder.fridgefinder_flutter"
-    compileSdk = flutter.compileSdkVersion
+
+    // Explicit SDK versions (CRITICAL for Play Store submission)
+    compileSdk = 34  // Android 14 (required for 2025)
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        // Updated to Java 17 (required for AGP 8.0+)
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11.toString()
+        jvmTarget = "17"  // Match compileOptions
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.fridgefinder.fridgefinder_flutter"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+
+        // Explicit SDK versions for Play Store compliance
+        minSdk = 24      // Android 7.0 (Flutter 3.35+ requirement)
+        targetSdk = 34   // Android 14 (REQUIRED for Play Store 2024+)
+
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        // Enable multidex for apps with >64k methods
+        multiDexEnabled = true
+    }
+
+    // Signing configurations
+    signingConfigs {
+        if (keystorePropertiesFile.exists()) {
+            release {
+                keyAlias = keystoreProperties['keyAlias']
+                keyPassword = keystoreProperties['keyPassword']
+                storeFile = file(keystoreProperties['storeFile'])
+                storePassword = keystoreProperties['storePassword']
+            }
+        }
     }
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // Use release signing if keystore exists, otherwise use debug
+            if (keystorePropertiesFile.exists()) {
+                signingConfig = signingConfigs.release
+            } else {
+                signingConfig = signingConfigs.debug
+            }
+
+            // Enable code shrinking and obfuscation for smaller APK
+            minifyEnabled = true
+            shrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
 }

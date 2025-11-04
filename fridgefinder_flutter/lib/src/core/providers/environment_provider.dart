@@ -1,5 +1,7 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+
+part 'environment_provider.g.dart';
 
 enum ApiEnvironment {
   dev('https://api-dev.communityfridgefinder.com/v1'),
@@ -10,7 +12,8 @@ enum ApiEnvironment {
 }
 
 /// Notifier to manage API environment selection with persistence
-class EnvironmentNotifier extends Notifier<ApiEnvironment> {
+@riverpod
+class Environment extends _$Environment {
   static const String _boxName = 'app_settings';
   static const String _environmentKey = 'api_environment';
 
@@ -47,14 +50,9 @@ class EnvironmentNotifier extends Notifier<ApiEnvironment> {
   }
 }
 
-/// Riverpod provider for API environment
-final environmentProvider =
-    NotifierProvider<EnvironmentNotifier, ApiEnvironment>(() {
-      return EnvironmentNotifier();
-    });
-
 /// Provider that returns the current API base URL
-final apiBaseUrlProvider = Provider<String>((ref) {
+@riverpod
+String apiBaseUrl(Ref ref) {
   final environment = ref.watch(environmentProvider);
   return environment.baseUrl;
-});
+}

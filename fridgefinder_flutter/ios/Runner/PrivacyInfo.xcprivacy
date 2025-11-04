@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Privacy Manifest for FridgeFinder -->
+    <!-- Required as of iOS 17 / May 2024 -->
+
+    <!-- API Types Accessed -->
+    <key>NSPrivacyAccessedAPITypes</key>
+    <array>
+        <!-- Location Services -->
+        <dict>
+            <key>NSPrivacyAccessedAPIType</key>
+            <string>NSPrivacyAccessedAPICategoryLocation</string>
+            <key>NSPrivacyAccessedAPITypeReasons</key>
+            <array>
+                <!-- C617.1: App features that require location -->
+                <string>C617.1</string>
+            </array>
+        </dict>
+
+        <!-- User Defaults (for local settings storage via Hive) -->
+        <dict>
+            <key>NSPrivacyAccessedAPIType</key>
+            <string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+            <key>NSPrivacyAccessedAPITypeReasons</key>
+            <array>
+                <!-- CA92.1: Access info from same app -->
+                <string>CA92.1</string>
+            </array>
+        </dict>
+
+        <!-- File Timestamp (for Hive database) -->
+        <dict>
+            <key>NSPrivacyAccessedAPIType</key>
+            <string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
+            <key>NSPrivacyAccessedAPITypeReasons</key>
+            <array>
+                <!-- C617.1: Timestamps from files created by app -->
+                <string>C617.1</string>
+            </array>
+        </dict>
+    </array>
+
+    <!-- Data Types Collected -->
+    <key>NSPrivacyCollectedDataTypes</key>
+    <array>
+        <!-- Precise Location Data -->
+        <dict>
+            <key>NSPrivacyCollectedDataType</key>
+            <string>NSPrivacyCollectedDataTypePreciseLocation</string>
+
+            <!-- Not linked to user identity -->
+            <key>NSPrivacyCollectedDataTypeLinked</key>
+            <false/>
+
+            <!-- Not used for tracking -->
+            <key>NSPrivacyCollectedDataTypeTracking</key>
+            <false/>
+
+            <!-- Purpose: App Functionality -->
+            <key>NSPrivacyCollectedDataTypePurposes</key>
+            <array>
+                <string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+            </array>
+        </dict>
+
+        <!-- Photos (when user uploads status report) -->
+        <dict>
+            <key>NSPrivacyCollectedDataType</key>
+            <string>NSPrivacyCollectedDataTypePhotos</string>
+
+            <!-- Not linked to user (no accounts in v1.0) -->
+            <key>NSPrivacyCollectedDataTypeLinked</key>
+            <false/>
+
+            <!-- Not used for tracking -->
+            <key>NSPrivacyCollectedDataTypeTracking</key>
+            <false/>
+
+            <!-- Purpose: App Functionality (community reporting) -->
+            <key>NSPrivacyCollectedDataTypePurposes</key>
+            <array>
+                <string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+            </array>
+        </dict>
+    </array>
+
+    <!-- Tracking Domains (none currently) -->
+    <key>NSPrivacyTrackingDomains</key>
+    <array>
+        <!-- No tracking domains -->
+    </array>
+
+    <!-- Tracking (not used) -->
+    <key>NSPrivacyTracking</key>
+    <false/>
+</dict>
+</plist>

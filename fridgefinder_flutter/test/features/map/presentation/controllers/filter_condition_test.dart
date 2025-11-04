@@ -34,10 +34,7 @@ void main() {
     group('Matching Good Condition', () {
       test('goodWithFood matches fridge with good condition and food > 0', () {
         final fridge = FridgeFixtures.verifiedFridgeWithFood;
-        expect(
-          FilterCondition.goodWithFood.matches(fridge),
-          isTrue,
-        );
+        expect(FilterCondition.goodWithFood.matches(fridge), isTrue);
       });
 
       test('goodEmpty matches fridge with good condition and food == 0', () {
@@ -94,7 +91,9 @@ void main() {
 
       test('goodEmpty does not match good fridge with food', () {
         expect(
-          FilterCondition.goodEmpty.matches(FridgeFixtures.verifiedFridgeWithFood),
+          FilterCondition.goodEmpty.matches(
+            FridgeFixtures.verifiedFridgeWithFood,
+          ),
           isFalse,
         );
       });
@@ -126,7 +125,9 @@ void main() {
 
       test('outOfOrder does not match good condition', () {
         expect(
-          FilterCondition.outOfOrder.matches(FridgeFixtures.verifiedFridgeWithFood),
+          FilterCondition.outOfOrder.matches(
+            FridgeFixtures.verifiedFridgeWithFood,
+          ),
           isFalse,
         );
       });
@@ -151,14 +152,18 @@ void main() {
     group('Matching Not at Location Condition', () {
       test('notAtLocation matches fridge with not at location condition', () {
         expect(
-          FilterCondition.notAtLocation.matches(FridgeFixtures.notAtLocationFridge),
+          FilterCondition.notAtLocation.matches(
+            FridgeFixtures.notAtLocationFridge,
+          ),
           isTrue,
         );
       });
 
       test('notAtLocation does not match good condition', () {
         expect(
-          FilterCondition.notAtLocation.matches(FridgeFixtures.verifiedFridgeWithFood),
+          FilterCondition.notAtLocation.matches(
+            FridgeFixtures.verifiedFridgeWithFood,
+          ),
           isFalse,
         );
       });

@@ -28,7 +28,7 @@ void main() {
 
       expect(find.text('Map'), findsOneWidget);
       expect(find.text('List'), findsOneWidget);
-      expect(find.text('Favorites'), findsOneWidget);
+      // Favorites was removed - will be added in v1.1
       expect(find.text('Profile'), findsOneWidget);
     });
 
@@ -46,11 +46,13 @@ void main() {
 
       expect(find.byIcon(Icons.map), findsOneWidget);
       expect(find.byIcon(Icons.list), findsOneWidget);
-      expect(find.byIcon(Icons.favorite), findsOneWidget);
+      // Favorites icon was removed - will be added in v1.1
       expect(find.byIcon(Icons.person), findsOneWidget);
     });
 
-    testWidgets('highlights correct item for / route', (WidgetTester tester) async {
+    testWidgets('highlights correct item for / route', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         const ProviderScope(
           child: MaterialApp(
@@ -65,11 +67,14 @@ void main() {
       final navBar = find.byType(BottomNavigationBar);
       expect(navBar, findsOneWidget);
 
-      final bottomNavBar = navBar.evaluate().single.widget as BottomNavigationBar;
+      final bottomNavBar =
+          navBar.evaluate().single.widget as BottomNavigationBar;
       expect(bottomNavBar.currentIndex, 0);
     });
 
-    testWidgets('highlights correct item for /list route', (WidgetTester tester) async {
+    testWidgets('highlights correct item for /list route', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         const ProviderScope(
           child: MaterialApp(
@@ -82,11 +87,14 @@ void main() {
       );
 
       final navBar = find.byType(BottomNavigationBar);
-      final bottomNavBar = navBar.evaluate().single.widget as BottomNavigationBar;
+      final bottomNavBar =
+          navBar.evaluate().single.widget as BottomNavigationBar;
       expect(bottomNavBar.currentIndex, 1);
     });
 
-    testWidgets('highlights correct item for /favorites route', (WidgetTester tester) async {
+    testWidgets('highlights correct item for /favorites route', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         const ProviderScope(
           child: MaterialApp(
@@ -99,11 +107,15 @@ void main() {
       );
 
       final navBar = find.byType(BottomNavigationBar);
-      final bottomNavBar = navBar.evaluate().single.widget as BottomNavigationBar;
-      expect(bottomNavBar.currentIndex, 2);
+      final bottomNavBar =
+          navBar.evaluate().single.widget as BottomNavigationBar;
+      // Favorites route no longer exists - should default to index 0 (Map)
+      expect(bottomNavBar.currentIndex, 0);
     });
 
-    testWidgets('highlights correct item for /profile route', (WidgetTester tester) async {
+    testWidgets('highlights correct item for /profile route', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         const ProviderScope(
           child: MaterialApp(
@@ -116,11 +128,15 @@ void main() {
       );
 
       final navBar = find.byType(BottomNavigationBar);
-      final bottomNavBar = navBar.evaluate().single.widget as BottomNavigationBar;
-      expect(bottomNavBar.currentIndex, 3);
+      final bottomNavBar =
+          navBar.evaluate().single.widget as BottomNavigationBar;
+      // Profile is now index 2 (Map=0, List=1, Profile=2) since Favorites was removed
+      expect(bottomNavBar.currentIndex, 2);
     });
 
-    testWidgets('defaults to Map (index 0) for unknown route', (WidgetTester tester) async {
+    testWidgets('defaults to Map (index 0) for unknown route', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         const ProviderScope(
           child: MaterialApp(
@@ -133,7 +149,8 @@ void main() {
       );
 
       final navBar = find.byType(BottomNavigationBar);
-      final bottomNavBar = navBar.evaluate().single.widget as BottomNavigationBar;
+      final bottomNavBar =
+          navBar.evaluate().single.widget as BottomNavigationBar;
       expect(bottomNavBar.currentIndex, 0);
     });
 

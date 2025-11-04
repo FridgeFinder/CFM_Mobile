@@ -187,11 +187,9 @@ void main() {
       });
     });
 
-
     group('Performance', () {
       test('handles long strings', () {
-        final longString =
-            'The quick brown fox jumps over the lazy dog. ' * 10;
+        final longString = 'The quick brown fox jumps over the lazy dog. ' * 10;
         final result = FuzzySearch.isFuzzyMatch('quick', longString);
 
         expect(result, isTrue);

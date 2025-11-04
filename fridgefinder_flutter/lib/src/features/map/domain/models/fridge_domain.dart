@@ -1,54 +1,175 @@
 import 'package:flutter/material.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'fridge_domain.freezed.dart';
+part 'fridge_domain.g.dart';
+
+/// Enum for fridge condition status
+/// Based on real FridgeFinder API condition values
+enum FridgeCondition {
+  good('good'),
+  dirty('dirty'),
+  outOfOrder('out of order'),
+  ghost('ghost'),
+  notAtLocation('not at location');
+
+  const FridgeCondition(this.value);
+  final String value;
+}
+
+/// Fridge location information
+@freezed
+abstract class FridgeLocationDomain with _$FridgeLocationDomain {
+  const FridgeLocationDomain._();
+
+  const factory FridgeLocationDomain({
+    String? name,
+    @Default('') String street,
+    @Default('') String city,
+    @Default('') String state,
+    @Default('') String zip,
+    @Default(0.0) double geoLat,
+    @Default(0.0) double geoLng,
+  }) = _FridgeLocationDomain;
+
+  factory FridgeLocationDomain.fromJson(Map<String, dynamic> json) =>
+      _$FridgeLocationDomainFromJson(_normalizeLocationJson(json));
+
+  /// Full address string
+  String get fullAddress => '$street, $city, $state $zip';
+
+  /// Short address for lists
+  String get shortAddress => '$city, $state';
+}
+
+/// Helper function to normalize location JSON (handles both camelCase and snake_case)
+Map<String, dynamic> _normalizeLocationJson(Map<String, dynamic> json) {
+  final normalized = Map<String, dynamic>.from(json);
+  if (normalized.containsKey('geo_lat') && !normalized.containsKey('geoLat')) {
+    normalized['geoLat'] = normalized['geo_lat'];
+  }
+  if (normalized.containsKey('geo_lng') && !normalized.containsKey('geoLng')) {
+    normalized['geoLng'] = normalized['geo_lng'];
+  }
+  return normalized;
+}
+
+/// Fridge maintainer information
+@freezed
+abstract class FridgeMaintainerDomain with _$FridgeMaintainerDomain {
+  const FridgeMaintainerDomain._();
+
+  const factory FridgeMaintainerDomain({
+    String? name,
+    String? organization,
+    String? phone,
+    String? email,
+    String? instagram,
+    String? website,
+  }) = _FridgeMaintainerDomain;
+
+  factory FridgeMaintainerDomain.fromJson(Map<String, dynamic> json) =>
+      _$FridgeMaintainerDomainFromJson(json);
+}
+
+/// Converter for FridgeCondition enum
+class _FridgeConditionConverter
+    implements JsonConverter<FridgeCondition, String> {
+  const _FridgeConditionConverter();
+
+  @override
+  FridgeCondition fromJson(String json) {
+    return _parseCondition(json);
+  }
+
+  @override
+  String toJson(FridgeCondition object) {
+    return object.value;
+  }
+
+  static FridgeCondition _parseCondition(String? value) {
+    switch (value) {
+      case 'good':
+        return FridgeCondition.good;
+      case 'dirty':
+        return FridgeCondition.dirty;
+      case 'out of order':
+        return FridgeCondition.outOfOrder;
+      case 'ghost':
+        return FridgeCondition.ghost;
+      case 'not at location':
+        return FridgeCondition.notAtLocation;
+      default:
+        return FridgeCondition.good;
+    }
+  }
+}
+
+/// Status report for a fridge
+/// Matches the real FridgeFinder API report structure
+@freezed
+abstract class FridgeReportDomain with _$FridgeReportDomain {
+  const FridgeReportDomain._();
+
+  const factory FridgeReportDomain({
+    @Default('') String fridgeId,
+    @_FridgeConditionConverter() required FridgeCondition condition,
+    @Default(0.0) double foodPercentage, // 0-1 range
+    String? notes,
+    String? epochTimestamp, // Unix epoch as string
+    String? timestamp, // ISO8601 format
+  }) = _FridgeReportDomain;
+
+  factory FridgeReportDomain.fromJson(Map<String, dynamic> json) =>
+      _$FridgeReportDomainFromJson(json);
+
+  /// Convenience getter for report date
+  DateTime? get reportDate {
+    if (timestamp != null) {
+      try {
+        return DateTime.parse(timestamp!);
+      } catch (e) {
+        // Fall through to epoch timestamp
+      }
+    }
+
+    if (epochTimestamp != null) {
+      try {
+        final epoch = int.parse(epochTimestamp!);
+        return DateTime.fromMillisecondsSinceEpoch(epoch * 1000);
+      } catch (e) {
+        return null;
+      }
+    }
+
+    return null;
+  }
+
+  /// Food percentage as integer (0-100)
+  int get foodPercentageInt => (foodPercentage * 100).round();
+}
 
 /// Domain model for a community fridge
-class FridgeDomain {
-  final String id;
-  final String name;
-  final bool verified;
-  final FridgeLocationDomain location;
-  final FridgeMaintainerDomain? maintainer;
-  final String? notes;
-  final String? photoUrl;
-  final String? lastEdited; // Unix epoch timestamp as string
-  final FridgeReportDomain? latestFridgeReport;
+@freezed
+abstract class FridgeDomain with _$FridgeDomain {
+  const FridgeDomain._(); // Required for custom methods
 
-  const FridgeDomain({
-    required this.id,
-    required this.name,
-    required this.verified,
-    required this.location,
-    this.maintainer,
-    this.notes,
-    this.photoUrl,
-    this.lastEdited,
-    this.latestFridgeReport,
-  });
+  const factory FridgeDomain({
+    required String id,
+    required String name,
+    @Default(false) bool verified,
+    required FridgeLocationDomain location,
+    FridgeMaintainerDomain? maintainer,
+    String? notes,
+    String? photoUrl,
+    // ignore: invalid_annotation_target
+    @JsonKey(name: 'last_edited')
+    String? lastEdited, // Unix epoch timestamp as string
+    FridgeReportDomain? latestFridgeReport,
+  }) = _FridgeDomain;
 
-  /// Factory constructor for JSON deserialization
-  /// Handles real API response format from FridgeFinder API
-  factory FridgeDomain.fromJson(Map<String, dynamic> json) {
-    return FridgeDomain(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      verified: json['verified'] as bool? ?? false,
-      location: FridgeLocationDomain.fromJson(
-        json['location'] as Map<String, dynamic>,
-      ),
-      maintainer: json['maintainer'] != null
-          ? FridgeMaintainerDomain.fromJson(
-              json['maintainer'] as Map<String, dynamic>,
-            )
-          : null,
-      notes: json['notes'] as String?,
-      photoUrl: json['photoUrl'] as String?,
-      lastEdited: json['last_edited'] as String?,
-      latestFridgeReport: json['latestFridgeReport'] != null
-          ? FridgeReportDomain.fromJson(
-              json['latestFridgeReport'] as Map<String, dynamic>,
-            )
-          : null,
-    );
-  }
+  factory FridgeDomain.fromJson(Map<String, dynamic> json) =>
+      _$FridgeDomainFromJson(json);
 
   /// Get marker color based on latest report condition and food level
   /// If no report is available, uses verified status to determine color
@@ -107,178 +228,4 @@ class FridgeDomain {
     if (percentage > 25) return 'Low ($percentage%)';
     return 'Very Low ($percentage%)';
   }
-
-  @override
-  String toString() => 'FridgeDomain(id: $id, name: $name)';
-}
-
-/// Fridge location information
-class FridgeLocationDomain {
-  final String? name;
-  final String street;
-  final String city;
-  final String state;
-  final String zip;
-  final double geoLat;
-  final double geoLng;
-
-  const FridgeLocationDomain({
-    this.name,
-    required this.street,
-    required this.city,
-    required this.state,
-    required this.zip,
-    required this.geoLat,
-    required this.geoLng,
-  });
-
-  /// Factory constructor for JSON deserialization
-  factory FridgeLocationDomain.fromJson(Map<String, dynamic> json) {
-    return FridgeLocationDomain(
-      name: json['name'] as String?,
-      street: json['street'] as String? ?? '',
-      city: json['city'] as String? ?? '',
-      state: json['state'] as String? ?? '',
-      zip: json['zip'] as String? ?? '',
-      geoLat: (json['geoLat'] as num? ?? json['geo_lat'] as num? ?? 0)
-          .toDouble(),
-      geoLng: (json['geoLng'] as num? ?? json['geo_lng'] as num? ?? 0)
-          .toDouble(),
-    );
-  }
-
-  /// Full address string
-  String get fullAddress => '$street, $city, $state $zip';
-
-  /// Short address for lists
-  String get shortAddress => '$city, $state';
-
-  @override
-  String toString() => 'FridgeLocation(city: $city)';
-}
-
-/// Fridge maintainer information
-class FridgeMaintainerDomain {
-  final String? name;
-  final String? organization;
-  final String? phone;
-  final String? email;
-  final String? instagram;
-  final String? website;
-
-  const FridgeMaintainerDomain({
-    this.name,
-    this.organization,
-    this.phone,
-    this.email,
-    this.instagram,
-    this.website,
-  });
-
-  /// Factory constructor for JSON deserialization
-  factory FridgeMaintainerDomain.fromJson(Map<String, dynamic> json) {
-    return FridgeMaintainerDomain(
-      name: json['name'] as String?,
-      organization: json['organization'] as String?,
-      phone: json['phone'] as String?,
-      email: json['email'] as String?,
-      instagram: json['instagram'] as String?,
-      website: json['website'] as String?,
-    );
-  }
-
-  @override
-  String toString() => 'FridgeMaintainer(name: $name)';
-}
-
-/// Status report for a fridge
-/// Matches the real FridgeFinder API report structure
-class FridgeReportDomain {
-  final String fridgeId;
-  final FridgeCondition condition;
-  final double foodPercentage; // 0-1 range
-  final String? notes;
-  final String? epochTimestamp; // Unix epoch as string
-  final String? timestamp; // ISO8601 format
-
-  const FridgeReportDomain({
-    required this.fridgeId,
-    required this.condition,
-    required this.foodPercentage,
-    this.notes,
-    this.epochTimestamp,
-    this.timestamp,
-  });
-
-  /// Factory constructor for JSON deserialization
-  /// Handles real API response format
-  factory FridgeReportDomain.fromJson(Map<String, dynamic> json) {
-    return FridgeReportDomain(
-      fridgeId: json['fridgeId'] as String? ?? '',
-      condition: _parseCondition(json['condition'] as String?),
-      foodPercentage: (json['foodPercentage'] as num? ?? 0).toDouble(),
-      notes: json['notes'] as String?,
-      epochTimestamp: json['epochTimestamp'] as String?,
-      timestamp: json['timestamp'] as String?,
-    );
-  }
-
-  static FridgeCondition _parseCondition(String? value) {
-    switch (value) {
-      case 'good':
-        return FridgeCondition.good;
-      case 'dirty':
-        return FridgeCondition.dirty;
-      case 'out of order':
-        return FridgeCondition.outOfOrder;
-      case 'ghost':
-        return FridgeCondition.ghost;
-      case 'not at location':
-        return FridgeCondition.notAtLocation;
-      default:
-        return FridgeCondition.good;
-    }
-  }
-
-  /// Convenience getter for report date
-  DateTime? get reportDate {
-    if (timestamp != null) {
-      try {
-        return DateTime.parse(timestamp!);
-      } catch (e) {
-        // Fall through to epoch timestamp
-      }
-    }
-
-    if (epochTimestamp != null) {
-      try {
-        final epoch = int.parse(epochTimestamp!);
-        return DateTime.fromMillisecondsSinceEpoch(epoch * 1000);
-      } catch (e) {
-        return null;
-      }
-    }
-
-    return null;
-  }
-
-  /// Food percentage as integer (0-100)
-  int get foodPercentageInt => (foodPercentage * 100).round();
-
-  @override
-  String toString() =>
-      'FridgeReport(fridgeId: $fridgeId, condition: $condition)';
-}
-
-/// Enum for fridge condition status
-/// Based on real FridgeFinder API condition values
-enum FridgeCondition {
-  good('good'),
-  dirty('dirty'),
-  outOfOrder('out of order'),
-  ghost('ghost'),
-  notAtLocation('not at location');
-
-  const FridgeCondition(this.value);
-  final String value;
 }

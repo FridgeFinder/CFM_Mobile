@@ -16,18 +16,17 @@ void main() {
   });
 
   group('ListScreen Widget Tests', () {
-    testWidgets('ListScreen is ConsumerStatefulWidget for efficiency',
-        (WidgetTester tester) async {
+    testWidgets('ListScreen is ConsumerStatefulWidget for efficiency', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            fridgeListProvider.overrideWith((ref) async => FridgeFixtures.allFridges),
-          ],
-          child: MaterialApp(
-            home: Scaffold(
-              body: ListScreen(),
+            fridgeListProvider.overrideWith(
+              (ref) async => FridgeFixtures.allFridges,
             ),
-          ),
+          ],
+          child: MaterialApp(home: Scaffold(body: ListScreen())),
         ),
       );
 
@@ -39,18 +38,17 @@ void main() {
       expect(find.byType(ListScreen), findsOneWidget);
     });
 
-    testWidgets('ListScreen displays proper scaffold structure',
-        (WidgetTester tester) async {
+    testWidgets('ListScreen displays proper scaffold structure', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            fridgeListProvider.overrideWith((ref) async => FridgeFixtures.allFridges),
-          ],
-          child: MaterialApp(
-            home: Scaffold(
-              body: ListScreen(),
+            fridgeListProvider.overrideWith(
+              (ref) async => FridgeFixtures.allFridges,
             ),
-          ),
+          ],
+          child: MaterialApp(home: Scaffold(body: ListScreen())),
         ),
       );
 
@@ -63,18 +61,17 @@ void main() {
       expect(find.byType(ListScreen), findsOneWidget);
     });
 
-    testWidgets('ListScreen renders without crashing on init',
-        (WidgetTester tester) async {
+    testWidgets('ListScreen renders without crashing on init', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            fridgeListProvider.overrideWith((ref) async => FridgeFixtures.allFridges),
-          ],
-          child: MaterialApp(
-            home: Scaffold(
-              body: ListScreen(),
+            fridgeListProvider.overrideWith(
+              (ref) async => FridgeFixtures.allFridges,
             ),
-          ),
+          ],
+          child: MaterialApp(home: Scaffold(body: ListScreen())),
         ),
       );
 

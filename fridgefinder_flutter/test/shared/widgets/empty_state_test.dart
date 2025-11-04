@@ -20,14 +20,13 @@ void main() {
       expect(find.byIcon(Icons.search_off), findsOneWidget);
     });
 
-    testWidgets('displays default icon when not provided', (WidgetTester tester) async {
+    testWidgets('displays default icon when not provided', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: EmptyStateView(
-              title: 'Empty',
-              message: 'Nothing here',
-            ),
+            body: EmptyStateView(title: 'Empty', message: 'Nothing here'),
           ),
         ),
       );
@@ -41,10 +40,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: EmptyStateView(
-              title: title,
-              message: 'Test message',
-            ),
+            body: EmptyStateView(title: title, message: 'Test message'),
           ),
         ),
       );
@@ -58,10 +54,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: EmptyStateView(
-              title: 'Empty',
-              message: message,
-            ),
+            body: EmptyStateView(title: 'Empty', message: message),
           ),
         ),
       );
@@ -69,7 +62,9 @@ void main() {
       expect(find.text(message), findsOneWidget);
     });
 
-    testWidgets('displays action widget when provided', (WidgetTester tester) async {
+    testWidgets('displays action widget when provided', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -89,14 +84,13 @@ void main() {
       expect(find.text('Retry'), findsOneWidget);
     });
 
-    testWidgets('does not display action when not provided', (WidgetTester tester) async {
+    testWidgets('does not display action when not provided', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: EmptyStateView(
-              title: 'Empty',
-              message: 'Test message',
-            ),
+            body: EmptyStateView(title: 'Empty', message: 'Test message'),
           ),
         ),
       );
@@ -108,10 +102,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: EmptyStateView(
-              title: 'Empty',
-              message: 'Test message',
-            ),
+            body: EmptyStateView(title: 'Empty', message: 'Test message'),
           ),
         ),
       );

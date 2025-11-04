@@ -1,4 +1,4 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:latlong2/latlong.dart';
 import '../../data/repositories/fridge_repository.dart';
 import '../../domain/models/fridge_domain.dart';
@@ -7,15 +7,19 @@ import '../../../../core/utils/distance_calculator.dart' as distance_utils;
 import '../../../../core/utils/fuzzy_search.dart';
 import 'map_filter_controller.dart'; // Provides mapFilterProvider
 
+part 'fridge_list_controller.g.dart';
+
 /// Controller for managing the list of all fridges
 /// Uses real FridgeFinder API to fetch data
-final fridgeListProvider = FutureProvider<List<FridgeDomain>>((ref) async {
+@riverpod
+Future<List<FridgeDomain>> fridgeList(Ref ref) async {
   final repository = ref.watch(fridgeRepositoryProvider);
   return repository.getFridges();
-});
+}
 
 /// Notifier for managing a single selected fridge ID
-class SelectedFridgeIdNotifier extends Notifier<String?> {
+@riverpod
+class SelectedFridgeId extends _$SelectedFridgeId {
   @override
   String? build() => null;
 
@@ -28,14 +32,9 @@ class SelectedFridgeIdNotifier extends Notifier<String?> {
   }
 }
 
-/// Controller for managing a single selected fridge ID
-final selectedFridgeIdProvider =
-    NotifierProvider<SelectedFridgeIdNotifier, String?>(
-      () => SelectedFridgeIdNotifier(),
-    );
-
 /// Controller for getting the currently selected fridge data
-final selectedFridgeProvider = Provider<FridgeDomain?>((ref) {
+@riverpod
+FridgeDomain? selectedFridge(Ref ref) {
   final selectedId = ref.watch(selectedFridgeIdProvider);
   if (selectedId == null) return null;
 
@@ -49,10 +48,11 @@ final selectedFridgeProvider = Provider<FridgeDomain?>((ref) {
       }
     },
   );
-});
+}
 
 /// Notifier for managing search query
-class SearchQueryNotifier extends Notifier<String> {
+@riverpod
+class SearchQuery extends _$SearchQuery {
   @override
   String build() => '';
 
@@ -65,13 +65,9 @@ class SearchQueryNotifier extends Notifier<String> {
   }
 }
 
-/// Controller for managing search query
-final searchQueryProvider = NotifierProvider<SearchQueryNotifier, String>(
-  () => SearchQueryNotifier(),
-);
-
 /// Controller for filtered fridges based on search
-final filteredFridgesProvider = Provider<List<FridgeDomain>>((ref) {
+@riverpod
+List<FridgeDomain> filteredFridges(Ref ref) {
   final fridgesAsync = ref.watch(fridgeListProvider);
   final query = ref.watch(searchQueryProvider);
 
@@ -91,17 +87,15 @@ final filteredFridgesProvider = Provider<List<FridgeDomain>>((ref) {
         },
       ) ??
       [];
-});
+}
 
 /// Provider for getting a specific fridge
 /// Uses real FridgeFinder API to fetch specific fridge data
-final singleFridgeProvider = FutureProvider.family<FridgeDomain, String>((
-  ref,
-  fridgeId,
-) async {
+@riverpod
+Future<FridgeDomain> singleFridge(Ref ref, String fridgeId) async {
   final repository = ref.watch(fridgeRepositoryProvider);
   return repository.getFridge(fridgeId);
-});
+}
 
 /// Helper model to hold a fridge and its distance from user
 class FridgeWithDistance {
@@ -115,15 +109,13 @@ class FridgeWithDistance {
 /// Returns fridges sorted by distance (closest first) if location is available
 /// Otherwise returns fridges in original order
 /// Uses memoization to avoid recalculating distances on every rebuild
-final fridgesSortedByDistanceProvider = Provider<List<FridgeWithDistance>>((
-  ref,
-) {
+@riverpod
+List<FridgeWithDistance> fridgesSortedByDistance(Ref ref) {
   final fridgesAsync = ref.watch(fridgeListProvider);
   // Only watch the user location value, not the entire AsyncValue
-  final userLocation = ref.watch(
-    userLocationProvider.select(
-      (asyncLocation) => asyncLocation.whenOrNull(data: (loc) => loc?.position),
-    ),
+  final userLocationAsync = ref.watch(userLocationProvider);
+  final userLocation = userLocationAsync.whenOrNull(
+    data: (loc) => loc?.position,
   );
 
   return fridgesAsync.whenOrNull(
@@ -161,11 +153,12 @@ final fridgesSortedByDistanceProvider = Provider<List<FridgeWithDistance>>((
         },
       ) ??
       [];
-});
+}
 
 /// Provider for filtered fridges based on map filter state (pill filters + fuzzy search)
 /// Applies pill condition filters first, then fuzzy search on remaining fridges
-final mapFilteredFridgesProvider = Provider<List<FridgeDomain>>((ref) {
+@riverpod
+List<FridgeDomain> mapFilteredFridges(Ref ref) {
   final fridgesAsync = ref.watch(fridgeListProvider);
   final filterStateAsync = ref.watch(mapFilterProvider);
 
@@ -206,4 +199,4 @@ final mapFilteredFridgesProvider = Provider<List<FridgeDomain>>((ref) {
         },
       ) ??
       [];
-});
+}

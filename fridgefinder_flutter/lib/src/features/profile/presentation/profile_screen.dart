@@ -9,7 +9,7 @@ class ProfileScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final themeMode = ref.watch(themeModeProvider);
+    final themeMode = ref.watch(appThemeModeProvider);
     final environment = ref.watch(environmentProvider);
     final locationAccessEnabled = ref.watch(locationAccessProvider);
 
@@ -251,7 +251,7 @@ class ProfileScreen extends ConsumerWidget {
   }) {
     return InkWell(
       onTap: () {
-        ref.read(themeModeProvider.notifier).setThemeMode(mode);
+        ref.read(appThemeModeProvider.notifier).setThemeMode(mode);
       },
       borderRadius: BorderRadius.circular(8),
       child: Container(

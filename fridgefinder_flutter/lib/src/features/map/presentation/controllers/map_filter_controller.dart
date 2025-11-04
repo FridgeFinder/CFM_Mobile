@@ -1,28 +1,22 @@
 import 'dart:async';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'filter_condition.dart';
+
+part 'map_filter_controller.freezed.dart';
+part 'map_filter_controller.g.dart';
 
 /// Filter state for map view
 /// Tracks which filter conditions are selected to filter the display
-class MapFilterState {
-  final Set<FilterCondition> selectedConditions;
-  final String searchQuery;
+@freezed
+abstract class MapFilterState with _$MapFilterState {
+  const MapFilterState._();
 
-  const MapFilterState({
-    required this.selectedConditions,
-    required this.searchQuery,
-  });
-
-  MapFilterState copyWith({
-    Set<FilterCondition>? selectedConditions,
-    String? searchQuery,
-  }) {
-    return MapFilterState(
-      selectedConditions: selectedConditions ?? this.selectedConditions,
-      searchQuery: searchQuery ?? this.searchQuery,
-    );
-  }
+  const factory MapFilterState({
+    required Set<FilterCondition> selectedConditions,
+    @Default('') String searchQuery,
+  }) = _MapFilterState;
 
   /// Check if filter state is at default (all conditions selected, no search)
   bool get isDefault {
@@ -36,21 +30,11 @@ class MapFilterState {
         .where((c) => !selectedConditions.contains(c))
         .toList();
   }
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is MapFilterState &&
-          runtimeType == other.runtimeType &&
-          selectedConditions == other.selectedConditions &&
-          searchQuery == other.searchQuery;
-
-  @override
-  int get hashCode => selectedConditions.hashCode ^ searchQuery.hashCode;
 }
 
 /// Notifier for managing map filter state with persistence using Hive
-class MapFilterNotifier extends AsyncNotifier<MapFilterState> {
+@riverpod
+class MapFilter extends _$MapFilter {
   static const String _boxName = 'map_filter_state';
   static const String _conditionsKey = 'selected_conditions';
   static const String _searchKey = 'search_query';
@@ -187,9 +171,3 @@ class MapFilterNotifier extends AsyncNotifier<MapFilterState> {
     await _saveToStorage(newState);
   }
 }
-
-/// Provider for map filter state
-final mapFilterProvider =
-    AsyncNotifierProvider<MapFilterNotifier, MapFilterState>(
-      () => MapFilterNotifier(),
-    );

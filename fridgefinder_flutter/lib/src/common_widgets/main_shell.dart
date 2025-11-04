@@ -85,10 +85,9 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
         return 0;
       case '/list':
         return 1;
-      case '/favorites':
-        return 2;
+      // Removed '/favorites' route - will be added in v1.1
       case '/profile':
-        return 3;
+        return 2;
       default:
         return 0;
     }
@@ -100,8 +99,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
         return 'Fridge Map';
       case '/list':
         return 'Fridge List';
-      case '/favorites':
-        return 'Favorites';
+      // Removed '/favorites' route - will be added in v1.1
       case '/profile':
         return 'Profile';
       default:
@@ -262,18 +260,19 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                                 GoRouter.of(context).go('/list');
                               },
                             ),
-                            _buildMenuTile(
-                              context: context,
-                              icon: Icons.favorite,
-                              title: 'Favorites',
-                              subtitle: 'Your saved fridges',
-                              isSelected: widget.currentRoute == '/favorites',
-                              route: '/favorites',
-                              onTap: () {
-                                _toggleDrawer();
-                                GoRouter.of(context).go('/favorites');
-                              },
-                            ),
+                            // TODO: Re-enable Favorites menu item in v1.1 after implementing user accounts
+                            // _buildMenuTile(
+                            //   context: context,
+                            //   icon: Icons.favorite,
+                            //   title: 'Favorites',
+                            //   subtitle: 'Your saved fridges',
+                            //   isSelected: widget.currentRoute == '/favorites',
+                            //   route: '/favorites',
+                            //   onTap: () {
+                            //     _toggleDrawer();
+                            //     GoRouter.of(context).go('/favorites');
+                            //   },
+                            // ),
                             _buildMenuTile(
                               context: context,
                               icon: Icons.person,

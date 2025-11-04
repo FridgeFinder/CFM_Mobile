@@ -11,7 +11,9 @@ void main() {
         ProviderScope(
           child: MaterialApp(
             home: Scaffold(
-              body: StatusUpdateForm(fridge: FridgeFixtures.verifiedFridgeWithFood),
+              body: StatusUpdateForm(
+                fridge: FridgeFixtures.verifiedFridgeWithFood,
+              ),
             ),
           ),
         ),
@@ -25,7 +27,9 @@ void main() {
         ProviderScope(
           child: MaterialApp(
             home: Scaffold(
-              body: StatusUpdateForm(fridge: FridgeFixtures.verifiedFridgeWithFood),
+              body: StatusUpdateForm(
+                fridge: FridgeFixtures.verifiedFridgeWithFood,
+              ),
             ),
           ),
         ),
@@ -39,7 +43,9 @@ void main() {
         ProviderScope(
           child: MaterialApp(
             home: Scaffold(
-              body: StatusUpdateForm(fridge: FridgeFixtures.verifiedFridgeWithFood),
+              body: StatusUpdateForm(
+                fridge: FridgeFixtures.verifiedFridgeWithFood,
+              ),
             ),
           ),
         ),
@@ -53,7 +59,9 @@ void main() {
         ProviderScope(
           child: MaterialApp(
             home: Scaffold(
-              body: StatusUpdateForm(fridge: FridgeFixtures.verifiedFridgeWithFood),
+              body: StatusUpdateForm(
+                fridge: FridgeFixtures.verifiedFridgeWithFood,
+              ),
             ),
           ),
         ),
@@ -68,7 +76,9 @@ void main() {
         ProviderScope(
           child: MaterialApp(
             home: Scaffold(
-              body: StatusUpdateForm(fridge: FridgeFixtures.verifiedFridgeWithFood),
+              body: StatusUpdateForm(
+                fridge: FridgeFixtures.verifiedFridgeWithFood,
+              ),
             ),
           ),
         ),
@@ -78,37 +88,43 @@ void main() {
       expect(find.byType(ElevatedButton), findsOneWidget);
     });
 
-    testWidgets('initializes with fridge latest condition', (WidgetTester tester) async {
+    testWidgets('initializes with fridge latest condition', (
+      WidgetTester tester,
+    ) async {
       final fridge = FridgeFixtures.verifiedFridgeWithFood;
 
       await tester.pumpWidget(
         ProviderScope(
           child: MaterialApp(
-            home: Scaffold(
-              body: StatusUpdateForm(fridge: fridge),
-            ),
+            home: Scaffold(body: StatusUpdateForm(fridge: fridge)),
           ),
         ),
       );
 
       // Verify the form is displayed with condition options
       expect(find.text('Fridge Condition'), findsOneWidget);
-      expect(find.text('Working - Fully Functional'), findsOneWidget);
+      // The condition label is "Good - Operational" not "Working - Fully Functional"
+      expect(find.text('Good - Operational'), findsOneWidget);
     });
 
-    testWidgets('has segmented button for condition selection', (WidgetTester tester) async {
+    testWidgets('has segmented button for condition selection', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         ProviderScope(
           child: MaterialApp(
             home: Scaffold(
-              body: StatusUpdateForm(fridge: FridgeFixtures.verifiedFridgeWithFood),
+              body: StatusUpdateForm(
+                fridge: FridgeFixtures.verifiedFridgeWithFood,
+              ),
             ),
           ),
         ),
       );
 
       // Check for condition selection widgets
-      expect(find.text('Working - Fully Functional'), findsOneWidget);
+      // The condition label is "Good - Operational" not "Working - Fully Functional"
+      expect(find.text('Good - Operational'), findsOneWidget);
     });
 
     testWidgets('slider has correct min and max', (WidgetTester tester) async {
@@ -116,7 +132,9 @@ void main() {
         ProviderScope(
           child: MaterialApp(
             home: Scaffold(
-              body: StatusUpdateForm(fridge: FridgeFixtures.verifiedFridgeWithFood),
+              body: StatusUpdateForm(
+                fridge: FridgeFixtures.verifiedFridgeWithFood,
+              ),
             ),
           ),
         ),
@@ -134,7 +152,9 @@ void main() {
         ProviderScope(
           child: MaterialApp(
             home: Scaffold(
-              body: StatusUpdateForm(fridge: FridgeFixtures.verifiedFridgeWithFood),
+              body: StatusUpdateForm(
+                fridge: FridgeFixtures.verifiedFridgeWithFood,
+              ),
             ),
           ),
         ),
@@ -151,17 +171,20 @@ void main() {
         ProviderScope(
           child: MaterialApp(
             home: Scaffold(
-              body: StatusUpdateForm(fridge: FridgeFixtures.verifiedFridgeWithFood),
+              body: StatusUpdateForm(
+                fridge: FridgeFixtures.verifiedFridgeWithFood,
+              ),
             ),
           ),
         ),
       );
 
-      expect(find.text('Working - Fully Functional'), findsOneWidget);
-      expect(find.text('Needs Cleaning'), findsOneWidget);
-      expect(find.text('Needs Servicing'), findsOneWidget);
-      expect(find.text('Temporarily Unavailable'), findsOneWidget);
-      expect(find.text('Permanently Unavailable'), findsOneWidget);
+      // Check for actual condition labels used in the form
+      expect(find.text('Good - Operational'), findsOneWidget);
+      expect(find.text('Dirty - Needs Cleaning'), findsOneWidget);
+      expect(find.text('Out of Order'), findsOneWidget);
+      expect(find.text('Ghost - No Longer There'), findsOneWidget);
+      expect(find.text('Not at Location'), findsOneWidget);
     });
 
     testWidgets('can interact with form elements', (WidgetTester tester) async {
@@ -169,7 +192,9 @@ void main() {
         ProviderScope(
           child: MaterialApp(
             home: Scaffold(
-              body: StatusUpdateForm(fridge: FridgeFixtures.verifiedFridgeWithFood),
+              body: StatusUpdateForm(
+                fridge: FridgeFixtures.verifiedFridgeWithFood,
+              ),
             ),
           ),
         ),
@@ -182,12 +207,16 @@ void main() {
       expect(find.text('Test notes'), findsOneWidget);
     });
 
-    testWidgets('displays form in scrollable view', (WidgetTester tester) async {
+    testWidgets('displays form in scrollable view', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         ProviderScope(
           child: MaterialApp(
             home: Scaffold(
-              body: StatusUpdateForm(fridge: FridgeFixtures.verifiedFridgeWithFood),
+              body: StatusUpdateForm(
+                fridge: FridgeFixtures.verifiedFridgeWithFood,
+              ),
             ),
           ),
         ),
@@ -201,7 +230,9 @@ void main() {
         ProviderScope(
           child: MaterialApp(
             home: Scaffold(
-              body: StatusUpdateForm(fridge: FridgeFixtures.verifiedFridgeWithFood),
+              body: StatusUpdateForm(
+                fridge: FridgeFixtures.verifiedFridgeWithFood,
+              ),
             ),
           ),
         ),

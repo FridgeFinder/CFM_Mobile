@@ -33,7 +33,9 @@ void main() {
       expect(find.text('Good (w/ Food)'), findsOneWidget);
     });
 
-    testWidgets('shows green checkmark when selected', (WidgetTester tester) async {
+    testWidgets('shows green checkmark when selected', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         ProviderScope(
           child: MaterialApp(
@@ -51,8 +53,9 @@ void main() {
       expect(find.byIcon(Icons.check), findsOneWidget);
     });
 
-    testWidgets('does not show checkmark when not selected',
-        (WidgetTester tester) async {
+    testWidgets('does not show checkmark when not selected', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         ProviderScope(
           child: MaterialApp(
@@ -114,8 +117,9 @@ void main() {
       expect(tapped, isTrue);
     });
 
-    testWidgets('different conditions display different labels',
-        (WidgetTester tester) async {
+    testWidgets('different conditions display different labels', (
+      WidgetTester tester,
+    ) async {
       final conditions = [
         FilterCondition.goodWithFood,
         FilterCondition.goodEmpty,
@@ -144,7 +148,9 @@ void main() {
       }
     });
 
-    testWidgets('selected state changes appearance', (WidgetTester tester) async {
+    testWidgets('selected state changes appearance', (
+      WidgetTester tester,
+    ) async {
       final key = GlobalKey();
 
       await tester.pumpWidget(

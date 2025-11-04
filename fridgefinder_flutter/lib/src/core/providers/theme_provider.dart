@@ -1,10 +1,13 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+
+part 'theme_provider.g.dart';
 
 enum AppThemeMode { light, dark, system }
 
 /// Notifier to manage theme mode state with persistence
-class ThemeModeNotifier extends Notifier<AppThemeMode> {
+@riverpod
+class AppThemeModeNotifier extends _$AppThemeModeNotifier {
   static const String _boxName = 'app_settings';
   static const String _themeKey = 'theme_mode';
 
@@ -40,8 +43,3 @@ class ThemeModeNotifier extends Notifier<AppThemeMode> {
     }
   }
 }
-
-/// Riverpod provider for theme mode
-final themeModeProvider = NotifierProvider<ThemeModeNotifier, AppThemeMode>(() {
-  return ThemeModeNotifier();
-});

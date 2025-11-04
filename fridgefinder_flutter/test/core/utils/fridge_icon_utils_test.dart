@@ -99,18 +99,21 @@ void main() {
         expect(svg, contains('stroke-dasharray'));
       });
 
-      test('generatePinSvg uses correct dashed pattern "4,2" to match frontend', () {
-        final svg = FridgeIconUtils.generatePinSvg(
-          pinColor: Colors.white,
-          isSmileFace: true,
-          hasDecoration: false,
-          decorationSvg: '',
-          dashed: true,
-        );
+      test(
+        'generatePinSvg uses correct dashed pattern "4,2" to match frontend',
+        () {
+          final svg = FridgeIconUtils.generatePinSvg(
+            pinColor: Colors.white,
+            isSmileFace: true,
+            hasDecoration: false,
+            decorationSvg: '',
+            dashed: true,
+          );
 
-        // Verify the exact pattern used in CFM_Frontend svgUrlPinNoReport
-        expect(svg, contains('stroke-dasharray="4,2"'));
-      });
+          // Verify the exact pattern used in CFM_Frontend svgUrlPinNoReport
+          expect(svg, contains('stroke-dasharray="4,2"'));
+        },
+      );
 
       test('generatePinSvg with smile face includes smile face SVG', () {
         final svg = FridgeIconUtils.generatePinSvg(
@@ -140,7 +143,8 @@ void main() {
     group('Ghost Icon SVG', () {
       test('ghost SVG uses correct wavy ghost path from CFM_Frontend', () {
         // Verify the ghost icon uses the correct path with wavy outline
-        final ghostSvg = '''<svg fill="#e3f2fd99" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        final ghostSvg =
+            '''<svg fill="#e3f2fd99" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
       <path stroke="#22222299" stroke-width="1.358" d="M4.979 3.152C3.117 4.735 2.07 6.882 2.07 9.12c0 9.136.447 9.545 0 12.194-.45 2.674 4.063 2.674 4.063 0 0-2.523 3.611-2.523 3.611 0 0 2.292 4.514 2.292 4.514 0 0-2.523 3.611-2.523 3.611 0 0 2.292 4.514 2.292 4.063 0-.452-2.293 0-4.204 0-12.194 0-2.239-1.047-4.386-2.91-5.97-1.86-1.58-4.386-2.47-7.02-2.47-2.634 0-5.16.89-7.022 2.473z" />
       <circle cx="13.444" cy="9.389" r=".794" fill="#222" />
       <circle cx="10.303" cy="9.389" r=".794" fill="#222" />
@@ -161,7 +165,10 @@ void main() {
         final ghostFridge = FridgeFixtures.ghostFridge;
 
         // Verify it's a ghost condition
-        expect(ghostFridge.latestFridgeReport?.condition, FridgeCondition.ghost);
+        expect(
+          ghostFridge.latestFridgeReport?.condition,
+          FridgeCondition.ghost,
+        );
 
         // Get the icon widget
         final widget = FridgeIconUtils.getFridgeIcon(
@@ -245,7 +252,9 @@ void main() {
       });
 
       test('not at location condition returns location_off icon', () {
-        final icon = FridgeIconUtils.getStatusIcon(FridgeCondition.notAtLocation);
+        final icon = FridgeIconUtils.getStatusIcon(
+          FridgeCondition.notAtLocation,
+        );
         expect(icon, Icons.location_off);
       });
     });
@@ -262,7 +271,9 @@ void main() {
       });
 
       test('out of order condition returns red color', () {
-        final color = FridgeIconUtils.getStatusColor(FridgeCondition.outOfOrder);
+        final color = FridgeIconUtils.getStatusColor(
+          FridgeCondition.outOfOrder,
+        );
         expect(color, Colors.red);
       });
 
@@ -272,7 +283,9 @@ void main() {
       });
 
       test('not at location condition returns black color', () {
-        final color = FridgeIconUtils.getStatusColor(FridgeCondition.notAtLocation);
+        final color = FridgeIconUtils.getStatusColor(
+          FridgeCondition.notAtLocation,
+        );
         expect(color, Colors.black);
       });
     });
@@ -280,101 +293,92 @@ void main() {
     group('Fridge Icon Widget Generation', () {
       test('getFridgeIcon returns widget for verified fridge with food', () {
         final fridge = FridgeFixtures.verifiedFridgeWithFood;
-        final widget = FridgeIconUtils.getFridgeIcon(
-          fridge: fridge,
-          size: 40,
-        );
+        final widget = FridgeIconUtils.getFridgeIcon(fridge: fridge, size: 40);
 
         expect(widget, isNotNull);
       });
 
       test('getFridgeIcon returns widget for dirty fridge', () {
         final fridge = FridgeFixtures.fridgeDirty;
-        final widget = FridgeIconUtils.getFridgeIcon(
-          fridge: fridge,
-          size: 40,
-        );
+        final widget = FridgeIconUtils.getFridgeIcon(fridge: fridge, size: 40);
 
         expect(widget, isNotNull);
       });
 
       test('getFridgeIcon returns widget for out of order fridge', () {
         final fridge = FridgeFixtures.fridgeOutOfOrder;
-        final widget = FridgeIconUtils.getFridgeIcon(
-          fridge: fridge,
-          size: 40,
-        );
+        final widget = FridgeIconUtils.getFridgeIcon(fridge: fridge, size: 40);
 
         expect(widget, isNotNull);
       });
 
       test('getFridgeIcon returns widget for ghost fridge', () {
         final fridge = FridgeFixtures.ghostFridge;
-        final widget = FridgeIconUtils.getFridgeIcon(
-          fridge: fridge,
-          size: 40,
-        );
+        final widget = FridgeIconUtils.getFridgeIcon(fridge: fridge, size: 40);
 
         expect(widget, isNotNull);
       });
 
       test('getFridgeIcon returns widget for not at location fridge', () {
         final fridge = FridgeFixtures.notAtLocationFridge;
-        final widget = FridgeIconUtils.getFridgeIcon(
-          fridge: fridge,
-          size: 40,
-        );
+        final widget = FridgeIconUtils.getFridgeIcon(fridge: fridge, size: 40);
 
         expect(widget, isNotNull);
       });
 
-      test('getFridgeIcon returns widget for unverified fridge without report', () {
-        final fridge = FridgeDomain(
-          id: 'test_001',
-          name: 'Test Fridge',
-          verified: false,
-          location: FridgeLocationDomain(
-            street: '123 Main St',
-            city: 'Brooklyn',
-            state: 'NY',
-            zip: '11215',
-            geoLat: 40.6501,
-            geoLng: -73.9496,
-          ),
-          latestFridgeReport: null,
-        );
+      test(
+        'getFridgeIcon returns widget for unverified fridge without report',
+        () {
+          final fridge = FridgeDomain(
+            id: 'test_001',
+            name: 'Test Fridge',
+            verified: false,
+            location: FridgeLocationDomain(
+              street: '123 Main St',
+              city: 'Brooklyn',
+              state: 'NY',
+              zip: '11215',
+              geoLat: 40.6501,
+              geoLng: -73.9496,
+            ),
+            latestFridgeReport: null,
+          );
 
-        final widget = FridgeIconUtils.getFridgeIcon(
-          fridge: fridge,
-          size: 40,
-        );
+          final widget = FridgeIconUtils.getFridgeIcon(
+            fridge: fridge,
+            size: 40,
+          );
 
-        expect(widget, isNotNull);
-      });
+          expect(widget, isNotNull);
+        },
+      );
 
-      test('getFridgeIcon returns widget for verified fridge without report', () {
-        final fridge = FridgeDomain(
-          id: 'test_002',
-          name: 'Test Fridge 2',
-          verified: true,
-          location: FridgeLocationDomain(
-            street: '456 Park Ave',
-            city: 'New York',
-            state: 'NY',
-            zip: '10022',
-            geoLat: 40.7614,
-            geoLng: -73.9776,
-          ),
-          latestFridgeReport: null,
-        );
+      test(
+        'getFridgeIcon returns widget for verified fridge without report',
+        () {
+          final fridge = FridgeDomain(
+            id: 'test_002',
+            name: 'Test Fridge 2',
+            verified: true,
+            location: FridgeLocationDomain(
+              street: '456 Park Ave',
+              city: 'New York',
+              state: 'NY',
+              zip: '10022',
+              geoLat: 40.7614,
+              geoLng: -73.9776,
+            ),
+            latestFridgeReport: null,
+          );
 
-        final widget = FridgeIconUtils.getFridgeIcon(
-          fridge: fridge,
-          size: 40,
-        );
+          final widget = FridgeIconUtils.getFridgeIcon(
+            fridge: fridge,
+            size: 40,
+          );
 
-        expect(widget, isNotNull);
-      });
+          expect(widget, isNotNull);
+        },
+      );
     });
 
     group('Color Hex String Conversion', () {
@@ -433,117 +437,123 @@ void main() {
         }
       });
 
-      test('Dirty condition always uses yellow color regardless of food level', () {
-        // Dirty fridges should ALWAYS be yellow (#FFE55C), not vary by food percentage
-        // Test multiple food levels to ensure color stays consistent
-        final dirtyFridgeEmptyFood = FridgeDomain(
-          id: 'test_dirty_empty',
-          name: 'Dirty Fridge (Empty)',
-          verified: true,
-          location: FridgeLocationDomain(
-            street: '123 Main St',
-            city: 'Brooklyn',
-            state: 'NY',
-            zip: '11215',
-            geoLat: 40.6501,
-            geoLng: -73.9496,
-          ),
-          latestFridgeReport: FridgeReportDomain(
-            fridgeId: 'test_dirty_empty',
-            condition: FridgeCondition.dirty,
-            foodPercentage: 0.0,
-          ),
-        );
+      test(
+        'Dirty condition always uses yellow color regardless of food level',
+        () {
+          // Dirty fridges should ALWAYS be yellow (#FFE55C), not vary by food percentage
+          // Test multiple food levels to ensure color stays consistent
+          final dirtyFridgeEmptyFood = FridgeDomain(
+            id: 'test_dirty_empty',
+            name: 'Dirty Fridge (Empty)',
+            verified: true,
+            location: FridgeLocationDomain(
+              street: '123 Main St',
+              city: 'Brooklyn',
+              state: 'NY',
+              zip: '11215',
+              geoLat: 40.6501,
+              geoLng: -73.9496,
+            ),
+            latestFridgeReport: FridgeReportDomain(
+              fridgeId: 'test_dirty_empty',
+              condition: FridgeCondition.dirty,
+              foodPercentage: 0.0,
+            ),
+          );
 
-        final dirtyFridgeFullFood = FridgeDomain(
-          id: 'test_dirty_full',
-          name: 'Dirty Fridge (Full)',
-          verified: true,
-          location: FridgeLocationDomain(
-            street: '123 Main St',
-            city: 'Brooklyn',
-            state: 'NY',
-            zip: '11215',
-            geoLat: 40.6501,
-            geoLng: -73.9496,
-          ),
-          latestFridgeReport: FridgeReportDomain(
-            fridgeId: 'test_dirty_full',
-            condition: FridgeCondition.dirty,
-            foodPercentage: 1.0,
-          ),
-        );
+          final dirtyFridgeFullFood = FridgeDomain(
+            id: 'test_dirty_full',
+            name: 'Dirty Fridge (Full)',
+            verified: true,
+            location: FridgeLocationDomain(
+              street: '123 Main St',
+              city: 'Brooklyn',
+              state: 'NY',
+              zip: '11215',
+              geoLat: 40.6501,
+              geoLng: -73.9496,
+            ),
+            latestFridgeReport: FridgeReportDomain(
+              fridgeId: 'test_dirty_full',
+              condition: FridgeCondition.dirty,
+              foodPercentage: 1.0,
+            ),
+          );
 
-        final emptyWidget = FridgeIconUtils.getFridgeIcon(
-          fridge: dirtyFridgeEmptyFood,
-          size: 40,
-        );
+          final emptyWidget = FridgeIconUtils.getFridgeIcon(
+            fridge: dirtyFridgeEmptyFood,
+            size: 40,
+          );
 
-        final fullWidget = FridgeIconUtils.getFridgeIcon(
-          fridge: dirtyFridgeFullFood,
-          size: 40,
-        );
+          final fullWidget = FridgeIconUtils.getFridgeIcon(
+            fridge: dirtyFridgeFullFood,
+            size: 40,
+          );
 
-        // Both should render widgets (color is embedded in SVG)
-        expect(emptyWidget, isNotNull);
-        expect(fullWidget, isNotNull);
-      });
+          // Both should render widgets (color is embedded in SVG)
+          expect(emptyWidget, isNotNull);
+          expect(fullWidget, isNotNull);
+        },
+      );
 
-      test('Out of order condition always uses pink color regardless of food level', () {
-        // Out of order fridges should ALWAYS be pink (#FFD4FF), not vary by food percentage
-        // Test multiple food levels to ensure color stays consistent
-        final oooFridgeEmptyFood = FridgeDomain(
-          id: 'test_ooo_empty',
-          name: 'Out of Order (Empty)',
-          verified: true,
-          location: FridgeLocationDomain(
-            street: '123 Main St',
-            city: 'Brooklyn',
-            state: 'NY',
-            zip: '11215',
-            geoLat: 40.6501,
-            geoLng: -73.9496,
-          ),
-          latestFridgeReport: FridgeReportDomain(
-            fridgeId: 'test_ooo_empty',
-            condition: FridgeCondition.outOfOrder,
-            foodPercentage: 0.0,
-          ),
-        );
+      test(
+        'Out of order condition always uses pink color regardless of food level',
+        () {
+          // Out of order fridges should ALWAYS be pink (#FFD4FF), not vary by food percentage
+          // Test multiple food levels to ensure color stays consistent
+          final oooFridgeEmptyFood = FridgeDomain(
+            id: 'test_ooo_empty',
+            name: 'Out of Order (Empty)',
+            verified: true,
+            location: FridgeLocationDomain(
+              street: '123 Main St',
+              city: 'Brooklyn',
+              state: 'NY',
+              zip: '11215',
+              geoLat: 40.6501,
+              geoLng: -73.9496,
+            ),
+            latestFridgeReport: FridgeReportDomain(
+              fridgeId: 'test_ooo_empty',
+              condition: FridgeCondition.outOfOrder,
+              foodPercentage: 0.0,
+            ),
+          );
 
-        final oooFridgeFullFood = FridgeDomain(
-          id: 'test_ooo_full',
-          name: 'Out of Order (Full)',
-          verified: true,
-          location: FridgeLocationDomain(
-            street: '123 Main St',
-            city: 'Brooklyn',
-            state: 'NY',
-            zip: '11215',
-            geoLat: 40.6501,
-            geoLng: -73.9496,
-          ),
-          latestFridgeReport: FridgeReportDomain(
-            fridgeId: 'test_ooo_full',
-            condition: FridgeCondition.outOfOrder,
-            foodPercentage: 1.0,
-          ),
-        );
+          final oooFridgeFullFood = FridgeDomain(
+            id: 'test_ooo_full',
+            name: 'Out of Order (Full)',
+            verified: true,
+            location: FridgeLocationDomain(
+              street: '123 Main St',
+              city: 'Brooklyn',
+              state: 'NY',
+              zip: '11215',
+              geoLat: 40.6501,
+              geoLng: -73.9496,
+            ),
+            latestFridgeReport: FridgeReportDomain(
+              fridgeId: 'test_ooo_full',
+              condition: FridgeCondition.outOfOrder,
+              foodPercentage: 1.0,
+            ),
+          );
 
-        final emptyWidget = FridgeIconUtils.getFridgeIcon(
-          fridge: oooFridgeEmptyFood,
-          size: 40,
-        );
+          final emptyWidget = FridgeIconUtils.getFridgeIcon(
+            fridge: oooFridgeEmptyFood,
+            size: 40,
+          );
 
-        final fullWidget = FridgeIconUtils.getFridgeIcon(
-          fridge: oooFridgeFullFood,
-          size: 40,
-        );
+          final fullWidget = FridgeIconUtils.getFridgeIcon(
+            fridge: oooFridgeFullFood,
+            size: 40,
+          );
 
-        // Both should render widgets (color is embedded in SVG)
-        expect(emptyWidget, isNotNull);
-        expect(fullWidget, isNotNull);
-      });
+          // Both should render widgets (color is embedded in SVG)
+          expect(emptyWidget, isNotNull);
+          expect(fullWidget, isNotNull);
+        },
+      );
     });
   });
 }

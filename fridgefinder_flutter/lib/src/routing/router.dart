@@ -7,16 +7,17 @@ import '../features/profile/presentation/profile_screen.dart';
 import '../common_widgets/main_shell.dart';
 
 // Placeholder screens for unimplemented features
-class FavoritesScreen extends StatelessWidget {
-  const FavoritesScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: const Center(child: Text('Favorites Screen - Coming Soon')),
-    );
-  }
-}
+// TODO: Implement Favorites feature in v1.1 after user accounts are added
+// class FavoritesScreen extends StatelessWidget {
+//   const FavoritesScreen({super.key});
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       body: const Center(child: Text('Favorites Screen - Coming Soon')),
+//     );
+//   }
+// }
 
 /// Custom page transition that prevents default transition and lets MainShell handle it
 CustomTransitionPage<void> _buildPageWithTransition(
@@ -54,11 +55,12 @@ final routerProvider = Provider<GoRouter>((ref) {
             pageBuilder: (context, state) =>
                 _buildPageWithTransition('/list', const ListScreen()),
           ),
-          GoRoute(
-            path: '/favorites',
-            pageBuilder: (context, state) =>
-                _buildPageWithTransition('/favorites', const FavoritesScreen()),
-          ),
+          // TODO: Re-enable Favorites route in v1.1 after implementing user accounts
+          // GoRoute(
+          //   path: '/favorites',
+          //   pageBuilder: (context, state) =>
+          //       _buildPageWithTransition('/favorites', const FavoritesScreen()),
+          // ),
           GoRoute(
             path: '/profile',
             pageBuilder: (context, state) =>

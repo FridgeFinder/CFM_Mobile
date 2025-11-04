@@ -14,7 +14,9 @@ void main() {
   });
 
   group('MainShell Widget Tests', () {
-    testWidgets('displays correct page title for map route', (WidgetTester tester) async {
+    testWidgets('displays correct page title for map route', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         ProviderScope(
           child: MaterialApp(
@@ -29,10 +31,15 @@ void main() {
       // Check for Fridge Map text (appears in AppBar and drawer when opened)
       expect(find.text('Fridge Map'), findsWidgets);
       // Verify it appears at least once
-      expect(find.text('Fridge Map').evaluate().length, greaterThanOrEqualTo(1));
+      expect(
+        find.text('Fridge Map').evaluate().length,
+        greaterThanOrEqualTo(1),
+      );
     });
 
-    testWidgets('displays correct page title for list route', (WidgetTester tester) async {
+    testWidgets('displays correct page title for list route', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         ProviderScope(
           child: MaterialApp(
@@ -47,34 +54,44 @@ void main() {
       // Check for Fridge List text (appears in AppBar and drawer when opened)
       expect(find.text('Fridge List'), findsWidgets);
       // Verify it appears at least once
-      expect(find.text('Fridge List').evaluate().length, greaterThanOrEqualTo(1));
+      expect(
+        find.text('Fridge List').evaluate().length,
+        greaterThanOrEqualTo(1),
+      );
     });
 
-    testWidgets('displays correct page title for favorites route', (WidgetTester tester) async {
+    testWidgets('displays correct page title for favorites route', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         ProviderScope(
           child: MaterialApp(
             home: MainShell(
               currentRoute: '/favorites',
-              child: const Scaffold(body: Center(child: Text('Favorites Screen'))),
+              child: const Scaffold(
+                body: Center(child: Text('Favorites Screen')),
+              ),
             ),
           ),
         ),
       );
 
-      // Check for Favorites text (appears in AppBar and drawer when opened)
-      expect(find.text('Favorites'), findsWidgets);
-      // Verify it appears at least once
-      expect(find.text('Favorites').evaluate().length, greaterThanOrEqualTo(1));
+      // Favorites route was removed - should default to "FridgeFinder" title
+      // The route doesn't exist, so it may show default title
+      expect(find.text('FridgeFinder'), findsWidgets);
     });
 
-    testWidgets('displays correct page title for profile route', (WidgetTester tester) async {
+    testWidgets('displays correct page title for profile route', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         ProviderScope(
           child: MaterialApp(
             home: MainShell(
               currentRoute: '/profile',
-              child: const Scaffold(body: Center(child: Text('Profile Screen'))),
+              child: const Scaffold(
+                body: Center(child: Text('Profile Screen')),
+              ),
             ),
           ),
         ),
@@ -86,7 +103,9 @@ void main() {
       expect(find.text('Profile').evaluate().length, greaterThanOrEqualTo(1));
     });
 
-    testWidgets('drawer displays all menu items when opened', (WidgetTester tester) async {
+    testWidgets('drawer displays all menu items when opened', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         ProviderScope(
           child: MaterialApp(
@@ -102,11 +121,11 @@ void main() {
       await tester.tap(find.byIcon(Icons.menu));
       await tester.pumpAndSettle();
 
-      // Verify all menu items are displayed
+      // Verify all menu items are displayed (Favorites was removed)
       expect(find.text('Fridge Map'), findsWidgets); // In appbar and drawer
       expect(find.text('Fridge List'), findsOneWidget);
-      expect(find.text('Favorites'), findsWidgets);
       expect(find.text('Profile'), findsWidgets);
+      // Favorites was removed - will be added in v1.1
     });
 
     testWidgets('drawer has close button', (WidgetTester tester) async {
@@ -153,7 +172,9 @@ void main() {
           child: MaterialApp(
             home: MainShell(
               currentRoute: '/',
-              child: const Scaffold(body: Center(child: Text('Custom Child Content'))),
+              child: const Scaffold(
+                body: Center(child: Text('Custom Child Content')),
+              ),
             ),
           ),
         ),

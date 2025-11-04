@@ -1,14 +1,19 @@
 import 'package:dio/dio.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import '../constants/api_constants.dart';
+import '../utils/app_logger.dart';
 import 'environment_provider.dart';
+
+part 'dio_provider.g.dart';
 
 /// Riverpod provider for Dio HTTP client with proper configuration
 /// Uses dynamic base URL from environment provider
-final dioProvider = Provider<Dio>((ref) {
+@riverpod
+Dio dio(Ref ref) {
   final baseUrl = ref.watch(apiBaseUrlProvider);
 
-  final dio = Dio(
+  final dioInstance = Dio(
     BaseOptions(
       baseUrl: baseUrl,
       connectTimeout: ApiConstants.connectTimeout,
@@ -21,18 +26,68 @@ final dioProvider = Provider<Dio>((ref) {
     ),
   );
 
-  // Add logging interceptor in debug mode
+  // Add connectivity check interceptor (runs before every request)
+  dioInstance.interceptors.add(
+    InterceptorsWrapper(
+      onRequest: (options, handler) async {
+        // Check internet connectivity before making request
+        final connectivityResult = await Connectivity().checkConnectivity();
+
+        // Check if there's no connectivity
+        if (connectivityResult == ConnectivityResult.none) {
+          logger.w(
+            'No internet connection - Request blocked: ${options.method} ${options.path}',
+          );
+          return handler.reject(
+            DioException(
+              requestOptions: options,
+              error:
+                  'No internet connection. Please check your network settings.',
+              type: DioExceptionType.connectionError,
+            ),
+          );
+        }
+
+        logger.apiRequest(
+          options.method,
+          '${options.baseUrl}${options.path}',
+          data: options.data,
+        );
+
+        return handler.next(options);
+      },
+      onResponse: (response, handler) {
+        logger.apiResponse(
+          response.requestOptions.path,
+          response.statusCode ?? 0,
+          data: response.data,
+        );
+        return handler.next(response);
+      },
+      onError: (error, handler) {
+        logger.e(
+          'API Error: ${error.message}',
+          error: error,
+          stackTrace: error.stackTrace,
+        );
+        return handler.next(error);
+      },
+    ),
+  );
+
+  // Add Dio's built-in logging interceptor in debug mode for detailed logs
   if (ApiConstants.isDevelopment) {
-    dio.interceptors.add(
+    dioInstance.interceptors.add(
       LogInterceptor(
         requestBody: true,
         responseBody: true,
         error: true,
         requestHeader: true,
         responseHeader: true,
+        logPrint: (obj) => logger.d(obj), // Use our logger instead of print
       ),
     );
   }
 
-  return dio;
-});
+  return dioInstance;
+}

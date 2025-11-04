@@ -11,10 +11,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: FridgeCard(
-              fridge: fridge,
-              onTap: () {},
-            ),
+            body: FridgeCard(fridge: fridge, onTap: () {}),
           ),
         ),
       );
@@ -22,16 +19,15 @@ void main() {
       expect(find.text(fridge.name), findsOneWidget);
     });
 
-    testWidgets('displays fridge location short address', (WidgetTester tester) async {
+    testWidgets('displays fridge location short address', (
+      WidgetTester tester,
+    ) async {
       final fridge = FridgeFixtures.verifiedFridgeWithFood;
 
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: FridgeCard(
-              fridge: fridge,
-              onTap: () {},
-            ),
+            body: FridgeCard(fridge: fridge, onTap: () {}),
           ),
         ),
       );
@@ -45,10 +41,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: FridgeCard(
-              fridge: fridge,
-              onTap: () {},
-            ),
+            body: FridgeCard(fridge: fridge, onTap: () {}),
           ),
         ),
       );
@@ -62,10 +55,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: FridgeCard(
-              fridge: fridge,
-              onTap: () {},
-            ),
+            body: FridgeCard(fridge: fridge, onTap: () {}),
           ),
         ),
       );
@@ -73,16 +63,15 @@ void main() {
       expect(find.text(fridge.foodLevelText), findsOneWidget);
     });
 
-    testWidgets('displays verification icon for unverified fridge', (WidgetTester tester) async {
+    testWidgets('displays verification icon for unverified fridge', (
+      WidgetTester tester,
+    ) async {
       final fridge = FridgeFixtures.notAtLocationFridge;
 
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: FridgeCard(
-              fridge: fridge,
-              onTap: () {},
-            ),
+            body: FridgeCard(fridge: fridge, onTap: () {}),
           ),
         ),
       );
@@ -90,16 +79,15 @@ void main() {
       expect(find.byIcon(Icons.info_outline), findsOneWidget);
     });
 
-    testWidgets('does not display verification icon for verified fridge', (WidgetTester tester) async {
+    testWidgets('does not display verification icon for verified fridge', (
+      WidgetTester tester,
+    ) async {
       final fridge = FridgeFixtures.verifiedFridgeWithFood;
 
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: FridgeCard(
-              fridge: fridge,
-              onTap: () {},
-            ),
+            body: FridgeCard(fridge: fridge, onTap: () {}),
           ),
         ),
       );
@@ -113,10 +101,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: FridgeCard(
-              fridge: fridge,
-              onTap: () {},
-            ),
+            body: FridgeCard(fridge: fridge, onTap: () {}),
           ),
         ),
       );
@@ -164,7 +149,9 @@ void main() {
       expect(find.byType(Card), findsOneWidget);
     });
 
-    testWidgets('displays Status and Food Level labels', (WidgetTester tester) async {
+    testWidgets('displays Status and Food Level labels', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -180,16 +167,15 @@ void main() {
       expect(find.text('Food Level'), findsOneWidget);
     });
 
-    testWidgets('displays status icon for fridge with report', (WidgetTester tester) async {
+    testWidgets('displays status icon for fridge with report', (
+      WidgetTester tester,
+    ) async {
       final fridge = FridgeFixtures.verifiedFridgeWithFood;
 
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: FridgeCard(
-              fridge: fridge,
-              onTap: () {},
-            ),
+            body: FridgeCard(fridge: fridge, onTap: () {}),
           ),
         ),
       );
@@ -204,10 +190,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: FridgeCard(
-              fridge: fridge,
-              onTap: () {},
-            ),
+            body: FridgeCard(fridge: fridge, onTap: () {}),
           ),
         ),
       );
@@ -222,10 +205,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: FridgeCard(
-              fridge: fridge,
-              onTap: () {},
-            ),
+            body: FridgeCard(fridge: fridge, onTap: () {}),
           ),
         ),
       );
@@ -234,25 +214,26 @@ void main() {
       expect(find.byIcon(Icons.build_circle), findsOneWidget);
     });
 
-    testWidgets('displays fridge name with max lines', (WidgetTester tester) async {
+    testWidgets('displays fridge name with max lines', (
+      WidgetTester tester,
+    ) async {
       final fridge = FridgeFixtures.verifiedFridgeWithFood;
 
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: FridgeCard(
-              fridge: fridge,
-              onTap: () {},
-            ),
+            body: FridgeCard(fridge: fridge, onTap: () {}),
           ),
         ),
       );
 
       final textWidgets = find.byType(Text);
-      final nameText = textWidgets.evaluate().firstWhere((element) {
-        final text = element.widget as Text;
-        return text.data == fridge.name;
-      }).widget as Text;
+      final nameText =
+          textWidgets.evaluate().firstWhere((element) {
+                final text = element.widget as Text;
+                return text.data == fridge.name;
+              }).widget
+              as Text;
 
       expect(nameText.maxLines, 1);
     });

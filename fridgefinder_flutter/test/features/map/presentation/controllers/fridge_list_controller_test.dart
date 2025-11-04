@@ -89,8 +89,8 @@ void main() {
         final notifier = container.read(selectedFridgeIdProvider.notifier);
         notifier.setSelectedFridgeId('livinggallery');
 
-        // Wait a tick for the provider to update
-        await Future.delayed(const Duration(milliseconds: 100));
+        // Wait for provider to update - need to read after state change
+        await container.read(fridgeListProvider.future);
 
         final selectedFridge = container.read(selectedFridgeProvider);
         expect(selectedFridge, isNotNull);
@@ -149,15 +149,18 @@ void main() {
         final notifier = container.read(searchQueryProvider.notifier);
         notifier.setSearchQuery('living');
 
-        await Future.delayed(const Duration(milliseconds: 100));
+        // Read the provider again to get updated value
+        await container.read(fridgeListProvider.future);
 
         final filtered = container.read(filteredFridgesProvider);
         expect(filtered, isNotEmpty);
         expect(
-          filtered.every((f) =>
-              f.name.toLowerCase().contains('living') ||
-              f.location.city.toLowerCase().contains('living') ||
-              f.location.state.toLowerCase().contains('living')),
+          filtered.every(
+            (f) =>
+                f.name.toLowerCase().contains('living') ||
+                f.location.city.toLowerCase().contains('living') ||
+                f.location.state.toLowerCase().contains('living'),
+          ),
           isTrue,
         );
       });
@@ -168,15 +171,18 @@ void main() {
         final notifier = container.read(searchQueryProvider.notifier);
         notifier.setSearchQuery('brooklyn');
 
-        await Future.delayed(const Duration(milliseconds: 100));
+        // Read the provider again to get updated value
+        await container.read(fridgeListProvider.future);
 
         final filtered = container.read(filteredFridgesProvider);
         expect(filtered, isNotEmpty);
         expect(
-          filtered.every((f) =>
-              f.name.toLowerCase().contains('brooklyn') ||
-              f.location.city.toLowerCase().contains('brooklyn') ||
-              f.location.state.toLowerCase().contains('brooklyn')),
+          filtered.every(
+            (f) =>
+                f.name.toLowerCase().contains('brooklyn') ||
+                f.location.city.toLowerCase().contains('brooklyn') ||
+                f.location.state.toLowerCase().contains('brooklyn'),
+          ),
           isTrue,
         );
       });
@@ -199,7 +205,8 @@ void main() {
         final notifier = container.read(searchQueryProvider.notifier);
         notifier.setSearchQuery('LIVING');
 
-        await Future.delayed(const Duration(milliseconds: 100));
+        // Read the provider again to get updated value
+        await container.read(fridgeListProvider.future);
 
         final filtered = container.read(filteredFridgesProvider);
         expect(filtered, isNotEmpty);
@@ -208,8 +215,9 @@ void main() {
 
     group('singleFridgeProvider', () {
       test('fetches single fridge by ID', () async {
-        final fridgeFuture =
-            container.read(singleFridgeProvider('livinggallery').future);
+        final fridgeFuture = container.read(
+          singleFridgeProvider('livinggallery').future,
+        );
         final fridge = await fridgeFuture;
 
         expect(fridge.id, equals('livinggallery'));
@@ -217,8 +225,9 @@ void main() {
       });
 
       test('fetches correct fridge for different ID', () async {
-        final fridgeFuture =
-            container.read(singleFridgeProvider('bshertnycfridge').future);
+        final fridgeFuture = container.read(
+          singleFridgeProvider('bshertnycfridge').future,
+        );
         final fridge = await fridgeFuture;
 
         expect(fridge.id, equals('bshertnycfridge'));

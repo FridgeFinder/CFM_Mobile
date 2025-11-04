@@ -1,6 +1,22 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.fridgefinder.fridgefinder_flutter">
+
+    <!-- Permissions at manifest level (CRITICAL: Must be outside <application> tag) -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
+    <!-- Background location - removed for v1.0 to simplify app store approval -->
+    <!-- Uncomment for future versions if implementing background notifications -->
+    <!-- <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"
+        android:maxSdkVersion="32" /> -->
+
+    <!-- For Android 13+ push notifications (when implementing Firebase Messaging) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+
     <application
-        android:label="fridgefinder_flutter"
+        android:label="FridgeFinder"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
@@ -30,14 +46,6 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
-        <!-- Location permissions -->
-        <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-        <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-        <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
-
-        <!-- Internet for map tiles -->
-        <uses-permission android:name="android.permission.INTERNET"/>
-        <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

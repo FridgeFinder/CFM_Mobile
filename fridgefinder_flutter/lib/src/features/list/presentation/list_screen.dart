@@ -72,6 +72,15 @@ class _ListScreenState extends ConsumerState<ListScreen> {
         data: (_) {
           return filterStateAsync.when(
             data: (filterState) {
+              if (_searchController.text != filterState.searchQuery) {
+                _searchController.value = TextEditingValue(
+                  text: filterState.searchQuery,
+                  selection: TextSelection.collapsed(
+                    offset: filterState.searchQuery.length,
+                  ),
+                );
+              }
+
               // Apply filter conditions first, then fuzzy search
               var filtered = fridgesWithDistance.where((fridgeWithDistance) {
                 return filterState.selectedConditions.any((filterCondition) {
@@ -90,35 +99,6 @@ class _ListScreenState extends ConsumerState<ListScreen> {
                       ) ||
                       fridge.location.state.toLowerCase().contains(searchQuery);
                 }).toList();
-              }
-
-              if (filtered.isEmpty) {
-                return common_widgets.EmptyStateView(
-                  title:
-                      filterState.searchQuery.isEmpty &&
-                          filterState.selectedConditions.length == 6
-                      ? 'No Fridges Found'
-                      : 'No results',
-                  message:
-                      filterState.searchQuery.isEmpty &&
-                          filterState.selectedConditions.length == 6
-                      ? 'There are no community fridges in your area yet.'
-                      : 'No fridges match your filters.',
-                  icon: Icons.search_off,
-                  action:
-                      filterState.searchQuery.isNotEmpty ||
-                          filterState.selectedConditions.length < 6
-                      ? ElevatedButton(
-                          onPressed: () {
-                            _searchController.clear();
-                            ref
-                                .read(mapFilterProvider.notifier)
-                                .selectAllConditions();
-                          },
-                          child: const Text('Clear Filters'),
-                        )
-                      : null,
-                );
               }
 
               return Column(
@@ -160,22 +140,53 @@ class _ListScreenState extends ConsumerState<ListScreen> {
 
                   // List of Fridges
                   Expanded(
-                    child: ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      itemCount: filtered.length,
-                      itemBuilder: (context, index) {
-                        final fridgeWithDistance = filtered[index];
-                        return FridgeCard(
-                          fridge: fridgeWithDistance.fridge,
-                          distanceKm: fridgeWithDistance.distanceKm,
-                          onTap: () => _showFridgeProfile(
-                            context,
-                            ref,
-                            fridgeWithDistance.fridge,
+                    child: filtered.isEmpty
+                        ? Center(
+                            child: common_widgets.EmptyStateView(
+                              title:
+                                  filterState.searchQuery.isEmpty &&
+                                      filterState.selectedConditions.length == 6
+                                  ? 'No Fridges Found'
+                                  : 'No results',
+                              message:
+                                  filterState.searchQuery.isEmpty &&
+                                      filterState.selectedConditions.length == 6
+                                  ? 'There are no community fridges in your area yet.'
+                                  : 'No fridges match your filters.',
+                              icon: Icons.search_off,
+                              action:
+                                  filterState.searchQuery.isNotEmpty ||
+                                      filterState.selectedConditions.length < 6
+                                  ? ElevatedButton(
+                                      onPressed: () {
+                                        _searchController.clear();
+                                        final notifier = ref.read(
+                                          mapFilterProvider.notifier,
+                                        );
+                                        notifier.clearSearch();
+                                        notifier.selectAllConditions();
+                                      },
+                                      child: const Text('Clear Filters'),
+                                    )
+                                  : null,
+                            ),
+                          )
+                        : ListView.builder(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            itemCount: filtered.length,
+                            itemBuilder: (context, index) {
+                              final fridgeWithDistance = filtered[index];
+                              return FridgeCard(
+                                fridge: fridgeWithDistance.fridge,
+                                distanceKm: fridgeWithDistance.distanceKm,
+                                onTap: () => _showFridgeProfile(
+                                  context,
+                                  ref,
+                                  fridgeWithDistance.fridge,
+                                ),
+                              );
+                            },
                           ),
-                        );
-                      },
-                    ),
                   ),
                 ],
               );
