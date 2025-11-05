@@ -47,6 +47,7 @@ That's it! The app will launch with dev environment settings by default.
 ## Prerequisites
 
 ### Required
+
 - **Flutter:** >=3.8.0 <4.0.0
 - **Dart SDK:** >=3.8.0 <4.0.0
 - **iOS:** Xcode 14+ with iOS 14.0+ support
@@ -54,6 +55,7 @@ That's it! The app will launch with dev environment settings by default.
 - **Xcode Command Line Tools** (Mac)
 
 ### Optional but Recommended
+
 - **Git** (version control)
 - **VS Code** with Flutter extension (development)
 - **Android Emulator** or **iOS Simulator** (testing)
@@ -89,9 +91,12 @@ flutter pub get
 ```
 
 This installs all packages listed in `pubspec.yaml`. Key dependencies:
+
 - **State Management:** Riverpod 3.0+ with code generation (reactive, type-safe)
 - **Navigation:** GoRouter (type-safe, persistent navigation)
 - **Mapping:** flutter_map with OpenStreetMap tiles
+- **Marker Clustering:** flutter_map_marker_cluster for grouping nearby markers
+- **Tile Caching:** flutter_map_cache with in-memory LRU cache (50MB)
 - **HTTP Client:** Dio with interceptors and connectivity checks
 - **Local Storage:** Hive (user settings, filter state)
 - **Immutable Models:** Freezed with JSON serialization (code-generated)
@@ -101,6 +106,7 @@ This installs all packages listed in `pubspec.yaml`. Key dependencies:
 ### 3. Generate Code
 
 The project uses code generation for:
+
 - **Freezed:** Immutable data models with `copyWith`, `toString`, `==`, and `hashCode`
 - **Riverpod:** Type-safe provider generators with `@riverpod` annotation
 - **JSON Serialization:** Automatic `fromJson`/`toJson` methods
@@ -110,6 +116,7 @@ dart run build_runner build --delete-conflicting-outputs
 ```
 
 Run this after modifying any:
+
 - Freezed models (with `@freezed` annotation)
 - Riverpod providers (with `@riverpod` annotation)
 - JSON serializable classes (with `@JsonSerializable` annotation)
@@ -164,7 +171,8 @@ fridgefinder_flutter/
 │       │   │   ├── dio_provider.dart     # HTTP client with interceptors
 │       │   │   ├── environment_provider.dart  # API environment selection
 │       │   │   ├── location_provider.dart    # Geolocation services
-│       │   │   └── theme_provider.dart  # Theme mode (light/dark/system)
+│       │   │   ├── theme_provider.dart  # Theme mode (light/dark/system)
+│       │   │   └── map_cache_provider.dart  # Map tile caching provider
 │       │   ├── theme/
 │       │   │   └── app_theme.dart        # Material Design 3 theme definitions
 │       │   ├── extensions/
@@ -192,6 +200,7 @@ fridgefinder_flutter/
 │       │   │       │   └── map_screen.dart                 # Main map UI
 │       │   │       └── widgets/
 │       │   │           ├── fridge_marker.dart              # Custom map markers
+│       │   │           ├── fridge_cluster_widget.dart      # Cluster marker widget
 │       │   │           ├── map_filter_panel.dart           # Filter UI
 │       │   │           ├── filter_pills_row.dart           # Filter buttons row
 │       │   │           ├── filter_pill_button.dart         # Individual filter button
@@ -297,7 +306,7 @@ class MapFilter extends _$MapFilter {
 List<FridgeDomain> mapFilteredFridges(MapFilteredFridgesRef ref) {
   final fridgesAsync = ref.watch(fridgeListProvider);
   final filters = ref.watch(mapFilterProvider);
-  
+
   return fridgesAsync.whenOrNull(
     data: (fridges) => fridges.where((f) => filters.matchesFridge(f)).toList(),
   ) ?? [];
@@ -305,6 +314,7 @@ List<FridgeDomain> mapFilteredFridges(MapFilteredFridgesRef ref) {
 ```
 
 **Benefits:**
+
 - No BuildContext required
 - Fine-grained reactivity (widget rebuilds only when needed)
 - Easy testing (mock providers directly)
@@ -316,6 +326,7 @@ List<FridgeDomain> mapFilteredFridges(MapFilteredFridgesRef ref) {
 Each feature module has three distinct layers:
 
 **Data Layer** (`/data`)
+
 - Repository pattern implementing abstract interfaces (dependency inversion)
 - API client (Dio) with connectivity checks and interceptors
 - Local storage (Hive) for persistent state
@@ -323,6 +334,7 @@ Each feature module has three distinct layers:
 - Error handling with custom exception hierarchy
 
 **Domain Layer** (`/domain`)
+
 - **Freezed immutable models** with automatic `copyWith`, `toString`, `==`, and `hashCode`
 - Automatic JSON serialization via `json_serializable` (code-generated `fromJson`/`toJson`)
 - Precise API mapping (snake_case ↔ camelCase) via `@JsonKey` annotations
@@ -332,6 +344,7 @@ Each feature module has three distinct layers:
 - Business logic separated from data access
 
 **Presentation Layer** (`/presentation`)
+
 - Screens (full-page widgets)
 - Controllers (state management via Riverpod)
 - Widgets (reusable UI components)
@@ -360,6 +373,7 @@ final repository = ref.watch(fridgeRepositoryProvider);
 ```
 
 **Advantages:**
+
 - Easy to mock for testing
 - Centralized configuration
 - Consistent dependencies across app
@@ -385,6 +399,7 @@ GoRouter(
 ```
 
 **Features:**
+
 - ShellRoute maintains bottom nav while switching screens
 - Named routes with type-safe parameters
 - Slide transitions between screens
@@ -453,8 +468,10 @@ fridges.when(
 Interactive OpenStreetMap displaying community fridges with advanced filtering.
 
 **Key Features:**
+
 - **Real-time Mapping:** flutter_map with OpenStreetMap tiles
-- **Marker Clustering:** Groups nearby markers for cleaner display
+- **Tile Caching:** Map tiles cached locally for faster loading and offline support (50MB cache, 30-day expiry)
+- **Marker Clustering:** Groups nearby markers for cleaner display (configurable radius: 40px)
 - **User Location:** Real-time GPS tracking with permission controls
 - **Filter Panel:** Condition-based filtering + fuzzy text search
 - **Distance Sorting:** Shows distance from user location
@@ -462,11 +479,13 @@ Interactive OpenStreetMap displaying community fridges with advanced filtering.
 - **Status Indicators:** Color-coded markers (good=green, dirty=orange, broken=red)
 
 **Filtering System:**
+
 - **Condition Filters:** Good (with/without food), Dirty, Out of Order, Ghost, Not at Location
 - **Search:** Real-time fuzzy matching on fridge names
 - **Persistence:** Filters saved locally (restored on app reopen)
 
 **State Management:**
+
 - `fridgeListProvider` - Fetches all fridges from API
 - `mapFilterProvider` - Manages filter state (persisted with Hive)
 - `mapFilteredFridgesProvider` - Computed list of filtered fridges
@@ -478,6 +497,7 @@ Interactive OpenStreetMap displaying community fridges with advanced filtering.
 Scrollable list of community fridges with integrated filtering.
 
 **Key Features:**
+
 - **Distance Sorting:** Ordered by proximity to user location
 - **Unified Filters:** Uses same filter pills as map view
 - **Fridge Cards:** Visual cards showing name, status, distance, last report
@@ -485,6 +505,7 @@ Scrollable list of community fridges with integrated filtering.
 - **Pull-to-Refresh:** Easy data refresh (via AsyncValue)
 
 **State Management:**
+
 - Shares `mapFilterProvider` with map view (consistent filtering)
 - Watches `mapFilteredFridgesProvider` for filtered results
 
@@ -495,18 +516,21 @@ Scrollable list of community fridges with integrated filtering.
 User preferences and fridge details.
 
 **Settings:**
+
 - **Theme Mode:** Light / Dark / System (Material Design 3)
 - **Location Toggle:** Enable/disable GPS access
 - **API Environment:** Switch between dev/prod servers
 - **Persistence:** All settings saved with Hive
 
 **Fridge Details (Bottom Sheet):**
+
 - Full fridge information (name, address, maintainer contact)
 - Latest status report (condition, food percentage, timestamp)
 - **Report Form:** Submit status updates (condition + notes + optional photo)
 - **Photo Upload:** Upload condition photos to server
 
 **State Management:**
+
 - `themeModeProvider` - Theme preference
 - `environmentProvider` - API environment
 - `locationAccessProvider` - Location toggle
@@ -516,16 +540,19 @@ User preferences and fridge details.
 **Note:** Favorites feature was removed from v1.0 navigation to ensure app store approval. It will be added in v1.1 after user accounts are implemented.
 
 **Authentication** (`/auth`)
+
 - Feature module structure ready
 - Firebase Auth dependencies included
 - Ready for user login/signup integration
 
 **Notifications** (`/notifications`)
+
 - Feature module structure ready
 - Firebase Messaging dependencies included
 - Placeholder for push notifications
 
 **Advanced Search** (`/search`)
+
 - Feature module structure ready
 - Fuzzy search utilities already built
 - Ready for dedicated search screen
@@ -537,25 +564,30 @@ User preferences and fridge details.
 ### Daily Development Loop
 
 1. **Update dependencies** (if needed)
+
    ```bash
    flutter pub upgrade
    ```
 
 2. **Start development** with hot reload
+
    ```bash
    flutter run
    ```
 
 3. **Make changes** to Dart files
+
    - Hot reload updates UI instantly (Ctrl/Cmd + S)
    - Hot restart for deeper changes (Ctrl/Cmd + Shift + S)
 
 4. **Generate code** when modifying models/providers
+
    ```bash
    dart run build_runner build
    ```
 
 5. **Run tests** before committing
+
    ```bash
    flutter test
    ```
@@ -571,6 +603,7 @@ User preferences and fridge details.
 Following the established architecture:
 
 1. **Create feature directory structure**
+
    ```
    lib/src/features/my_feature/
    ├── data/
@@ -587,16 +620,17 @@ Following the established architecture:
    ```
 
 2. **Create data models** with Freezed
+
    ```dart
    import 'package:freezed_annotation/freezed_annotation.dart';
-   
+
    part 'my_domain.freezed.dart';
    part 'my_domain.g.dart';
-   
+
    @freezed
    class MyDomain with _$MyDomain {
      const MyDomain._(); // Required for custom methods
-     
+
      const factory MyDomain({
        required String id,
        required String name,
@@ -609,6 +643,7 @@ Following the established architecture:
    ```
 
 3. **Create repository**
+
    ```dart
    class MyRepository {
      final Dio dio;
@@ -620,6 +655,7 @@ Following the established architecture:
    ```
 
 4. **Create providers**
+
    ```dart
    @riverpod
    MyRepository myRepository(MyRepositoryRef ref) {
@@ -633,6 +669,7 @@ Following the established architecture:
    ```
 
 5. **Create screens and widgets**
+
    ```dart
    class MyScreen extends ConsumerWidget {
      @override
@@ -648,6 +685,7 @@ Following the established architecture:
    ```
 
 6. **Add route in GoRouter** (`lib/src/routing/router.dart`)
+
    ```dart
    GoRoute(
      path: '/my-feature',
@@ -663,16 +701,19 @@ Following the established architecture:
 ### Modifying Existing Features
 
 **Map/List Changes:**
+
 - Controllers are in `lib/src/features/map/presentation/controllers/`
 - Widgets are in `lib/src/features/map/presentation/widgets/`
 - Repository is in `lib/src/features/map/data/`
 
 **Adding API Endpoints:**
+
 - Add method to `FridgeRepository` in `lib/src/features/map/data/`
 - Create Riverpod provider to call it
 - Call from screen/widget via `ref.watch()`
 
 **UI Customization:**
+
 - Edit theme in `lib/src/core/theme/app_theme.dart`
 - Modify common widgets in `lib/src/common_widgets/`
 - Component-specific styling in feature widgets
@@ -693,16 +734,19 @@ dart run build_runner clean
 ```
 
 **Triggers code generation for:**
+
 - `@freezed` classes → `*.freezed.dart` (immutability, copyWith, equality)
 - `@riverpod` providers → `*.g.dart` (type-safe providers)
 - `@JsonSerializable` models → `*.g.dart` (JSON serialization)
 
 **Important:** Always run `--delete-conflicting-outputs` flag on first build:
+
 ```bash
 dart run build_runner build --delete-conflicting-outputs
 ```
 
 For iOS builds, ensure code generation runs before building:
+
 ```bash
 dart run build_runner build --delete-conflicting-outputs
 flutter build ios
@@ -721,6 +765,7 @@ test/
 ├── core/utils/               # Utility tests (fuzzy search, etc.)
 ├── features/
 │   ├── map/presentation/     # Map screen & controller tests
+│   │   └── widgets/          # Widget tests (fridge_marker, fridge_cluster_widget)
 │   └── list/presentation/    # List screen tests
 ├── shared/widgets/           # Common widget tests
 ├── integration/              # Full app workflow tests
@@ -731,7 +776,7 @@ test/
 └── helpers/                  # Test utilities (test_helpers.dart)
 ```
 
-**Test Status:** 246 tests passing, 5 navigation integration tests remaining (timing-related)
+**Test Status:** 267 tests passing, 5 navigation integration tests remaining (timing-related). New tests added for marker clustering (21 tests) and map caching (5 tests).
 
 ### Running Tests
 
@@ -755,6 +800,7 @@ flutter test --watch
 ### Writing Tests
 
 **Unit Test Example (Utility):**
+
 ```dart
 void main() {
   group('FuzzySearch', () {
@@ -772,6 +818,7 @@ void main() {
 ```
 
 **Widget Test Example:**
+
 ```dart
 void main() {
   group('FridgeCard', () {
@@ -791,10 +838,12 @@ void main() {
 ```
 
 **Riverpod Provider Test Example (Code-Generated):**
+
 ```dart
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fridgefinder_app/src/features/map/presentation/controllers/fridge_list_controller.dart';
+import 'package:fridgefinder_app/src/core/providers/map_cache_provider.dart';
 import '../../helpers/test_helpers.dart';
 
 void main() {
@@ -808,6 +857,14 @@ void main() {
 
       final result = await container.read(fridgeListProvider.future);
       expect(result, mockFridges);
+    });
+  });
+
+  group('CachedTileProvider', () {
+    test('creates cached tile provider', () async {
+      final container = createTestProviderContainer();
+      final cachedTileProvider = container.read(cachedTileProviderProvider);
+      expect(cachedTileProvider, isA<CachedTileProvider>());
     });
   });
 }
@@ -830,6 +887,7 @@ void main() {
 ### Common Issues & Solutions
 
 #### 1. "Build failed" after pubspec.yaml changes
+
 ```bash
 flutter clean
 flutter pub get
@@ -837,6 +895,7 @@ dart run build_runner build
 ```
 
 #### 2. Hot reload not working
+
 ```bash
 # Hot restart instead
 flutter run -r
@@ -846,33 +905,41 @@ flutter run --no-fast-start
 ```
 
 #### 3. Code generation not running
+
 ```bash
 dart run build_runner clean
 dart run build_runner build
 ```
 
 #### 4. "Location permission denied" on startup
+
 - **iOS:** Check `ios/Runner/Info.plist` for location permissions
 - **Android:** Check `android/app/src/main/AndroidManifest.xml`
 - **Solution:** Grant location permissions in app settings or reinstall app
 
 #### 5. Map tiles not loading
+
 - Ensure internet connection (OpenStreetMap tiles are fetched from network)
+- Map tiles are cached in memory (50MB cache) - cached tiles load instantly after first visit
 - Check Dio configuration in `lib/src/core/providers/dio_provider.dart`
 - Clear cache: `flutter clean && flutter pub get`
+- Map cache provider: `lib/src/core/providers/map_cache_provider.dart` (uses MemCacheStore)
 
 #### 6. "Hive box not found" error
+
 - This occurs when Hive databases don't exist (first run is normal)
 - Solution: Clear app data and reinstall, or manually open boxes
 - Check `lib/main.dart` for Hive initialization
 
 #### 7. API calls timing out
+
 - Check API environment setting (Profile → Settings)
 - Verify API endpoints in `lib/src/core/constants/api_constants.dart`
 - Check network connectivity
 - Increase timeout values if needed
 
-#### 8. "Unhandled Exception: Bad state: * Out of Life Cycle"
+#### 8. "Unhandled Exception: Bad state: \* Out of Life Cycle"
+
 - Usually occurs during hot restart with Riverpod
 - Solution: Use full restart or run `flutter run -r`
 
@@ -908,6 +975,7 @@ We welcome contributions! Here's how to contribute to FridgeFinder:
 ### Contribution Process
 
 1. **Create a feature branch**
+
    ```bash
    git checkout -b feature/your-feature-name
    # or
@@ -915,22 +983,26 @@ We welcome contributions! Here's how to contribute to FridgeFinder:
    ```
 
 2. **Make your changes**
+
    - Follow the architecture patterns (feature-based structure)
    - Keep commits atomic and descriptive
    - Use meaningful commit messages (e.g., "Add fuzzy search to map filter")
 
 3. **Generate code if needed**
+
    ```bash
    dart run build_runner build
    ```
 
 4. **Test your changes**
+
    ```bash
    flutter test
    flutter analyze  # Check code quality
    ```
 
 5. **Push to your branch**
+
    ```bash
    git push origin feature/your-feature-name
    ```
@@ -990,15 +1062,17 @@ We welcome contributions! Here's how to contribute to FridgeFinder:
 
 ### Key Dependencies Documentation
 
-| Package | Purpose | Documentation |
-|---------|---------|----------------|
-| flutter_riverpod | State management | https://riverpod.dev |
-| go_router | Navigation | https://pub.dev/packages/go_router |
-| flutter_map | Mapping | https://github.com/fleaflet/flutter_map |
-| dio | HTTP client | https://pub.dev/packages/dio |
-| freezed | Code generation | https://pub.dev/packages/freezed |
-| hive | Local storage | https://docs.hivedb.dev |
-| geolocator | Location services | https://pub.dev/packages/geolocator |
+| Package                    | Purpose           | Documentation                                       |
+| -------------------------- | ----------------- | --------------------------------------------------- |
+| flutter_riverpod           | State management  | https://riverpod.dev                                |
+| go_router                  | Navigation        | https://pub.dev/packages/go_router                  |
+| flutter_map                | Mapping           | https://github.com/fleaflet/flutter_map             |
+| flutter_map_marker_cluster | Marker clustering | https://pub.dev/packages/flutter_map_marker_cluster |
+| flutter_map_cache          | Map tile caching  | https://pub.dev/packages/flutter_map_cache          |
+| dio                        | HTTP client       | https://pub.dev/packages/dio                        |
+| freezed                    | Code generation   | https://pub.dev/packages/freezed                    |
+| hive                       | Local storage     | https://docs.hivedb.dev                             |
+| geolocator                 | Location services | https://pub.dev/packages/geolocator                 |
 
 ### Related Resources
 
@@ -1013,7 +1087,10 @@ We welcome contributions! Here's how to contribute to FridgeFinder:
 ### Current Implementation (v1.0.0)
 
 ✅ **Complete:**
+
 - Map view with filtering and clustering
+- **Marker clustering** - Groups nearby markers for cleaner display (configurable radius)
+- **Map tile caching** - 50MB in-memory cache with 30-day expiry for faster loading
 - List view with distance-based sorting
 - User location tracking
 - Fuzzy search across fridges
@@ -1027,13 +1104,16 @@ We welcome contributions! Here's how to contribute to FridgeFinder:
 - Repository pattern with dependency inversion
 - Structured logging and error handling
 - Network connectivity checks
+- **App icons** - Generated for iOS (blue background) and Android (transparent)
 - Comprehensive test suite (246+ tests)
 - App store readiness (privacy policy, proper permissions, etc.)
 
 🚧 **In Development:**
+
 - Advanced search (structure ready)
 
 ⏳ **Planned:**
+
 - **Favorites feature** (v1.1 - will be added after user accounts)
 - User authentication (Firebase Auth structure ready)
 - Push notifications (Firebase Messaging structure ready)
@@ -1065,6 +1145,7 @@ For questions, issues, or suggestions:
 Built with ❤️ by the Community Fridge Finder team and contributors.
 
 **Key Technologies:**
+
 - Flutter & Dart
 - Riverpod
 - GoRouter
@@ -1080,17 +1161,24 @@ Built with ❤️ by the Community Fridge Finder team and contributors.
 ## Recent Updates (December 2025)
 
 ### Architecture Improvements
+
 - ✅ **Freezed Implementation:** All domain models (`FridgeDomain`, `FridgeLocationDomain`, `FridgeMaintainerDomain`, `FridgeReportDomain`, `UserLocation`, `MapFilterState`) now use Freezed for immutability
 - ✅ **Riverpod Code Generation:** All providers converted to code generation with `@riverpod` annotation for type safety
-- ✅ **Test Coverage:** Comprehensive test suite with 246+ passing tests
-- ✅ **App Store Readiness:** Privacy policy created, navigation cleaned up, proper permissions configured
+- ✅ **Marker Clustering:** Implemented `flutter_map_marker_cluster` for grouping nearby markers, improving map performance and UX
+- ✅ **Map Tile Caching:** Added `flutter_map_cache` with in-memory LRU cache (50MB) for faster map loading and reduced data usage
+- ✅ **Test Coverage:** Comprehensive test suite with 267 passing tests (21 new tests for marker clustering and map caching)
+- ✅ **App Store Readiness:** Privacy policy created, navigation cleaned up, proper permissions configured, app icons generated
 
 ### Code Quality
+
 - ✅ **Const Optimization:** Applied `dart fix --apply` for performance improvements
 - ✅ **Navigation Cleanup:** Removed Favorites placeholder to ensure app store approval
 - ✅ **Provider Overrides:** Improved test helpers with proper provider mocking
+- ✅ **Marker Clustering Tests:** Added comprehensive widget tests (21 tests covering size, colors, theming)
+- ✅ **Map Caching Tests:** Added provider tests for tile caching functionality (5 tests)
 
 ### App Store Preparation
+
 - ✅ **Privacy Policy:** Created HTML privacy policy ready for hosting
 - ✅ **Documentation:** Complete guide for remaining submission tasks (`REMAINING_TASKS_GUIDE.md`)
 - ✅ **Configuration:** iOS PrivacyInfo.xcprivacy, Android permissions properly configured
