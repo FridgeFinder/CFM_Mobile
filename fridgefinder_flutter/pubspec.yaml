@@ -42,7 +42,6 @@ dependencies:
 
   # Forms & Validation
   flutter_form_builder: ^10.2.0
-  # Removed: form_builder_validators (not used, custom validation used)
 
   # Data Models
   freezed_annotation: ^3.1.0
@@ -55,7 +54,6 @@ dependencies:
 
   # Utilities
   intl: ^0.20.2
-  # Removed: uuid (not used in current implementation)
   flutter_svg: ^2.0.10 # For custom SVG icons
   logger: ^2.0.0 # Structured logging for debugging and production
 
@@ -72,6 +70,7 @@ dev_dependencies:
 
   # Testing
   mockito: ^5.4.4
+  flutter_launcher_icons: ^0.14.4
 
 flutter:
   uses-material-design: true
@@ -80,3 +79,11 @@ flutter:
   assets:
     - assets/icons/
     - assets/images/
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icons/app_icon.png"
+  image_path_ios: "assets/icons/app_icon_ios.png" # iOS-specific with blue background
+  min_sdk_android: 21
+  remove_alpha_ios: false # Not needed since iOS icon already has opaque background
