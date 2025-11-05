@@ -20,8 +20,7 @@ dependencies:
   # Maps - Complete flutter_map stack with all features
   flutter_map: ^8.2.2
   latlong2: ^0.9.0
-  # Removed: flutter_map_marker_cluster (not used)
-  # Removed: flutter_map_location_marker (custom implementation used)
+  flutter_map_marker_cluster: ^8.2.2
 
   # HTTP & API
   dio: ^5.4.0
@@ -56,6 +55,7 @@ dependencies:
   intl: ^0.20.2
   flutter_svg: ^2.0.10 # For custom SVG icons
   logger: ^2.0.0 # Structured logging for debugging and production
+  flutter_map_cache: ^2.0.0+1
 
 dev_dependencies:
   flutter_test:

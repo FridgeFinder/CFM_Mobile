@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 import '../../domain/models/fridge_domain.dart';
 import '../controllers/fridge_list_controller.dart';
 import '../widgets/fridge_marker.dart';
+import '../widgets/fridge_cluster_widget.dart';
 import '../widgets/user_location_indicator.dart';
 import '../widgets/map_filter_panel.dart';
 import '../widgets/filter_status_indicator.dart';
 import '../../../profile/presentation/fridge_profile_sheet.dart';
 import '../../../../common_widgets/index.dart' as common_widgets;
 import '../../../../core/providers/location_provider.dart';
+import '../../../../core/providers/map_cache_provider.dart';
 
 /// Map screen showing all community fridges on a map
 class MapScreen extends ConsumerStatefulWidget {
@@ -116,10 +119,12 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                   minZoom: 10.0,
                 ),
                 children: [
+                  // Tile layer with caching
                   TileLayer(
                     urlTemplate:
                         'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                     userAgentPackageName: 'com.example.fridgefinder',
+                    tileProvider: ref.watch(cachedTileProviderProvider),
                   ),
                   // User location marker with pulsating circle
                   userLocationStream.when(
@@ -139,22 +144,42 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                     loading: () => const SizedBox.shrink(),
                     error: (_, _) => const SizedBox.shrink(),
                   ),
-                  // Fridge markers - use filtered fridges
-                  MarkerLayer(
-                    markers: filteredFridges
-                        .map(
-                          (fridge) => Marker(
-                            point: LatLng(
-                              fridge.location.geoLat,
-                              fridge.location.geoLng,
-                            ),
-                            child: GestureDetector(
-                              onTap: () => _showFridgeProfile(fridge),
+                  // Fridge markers with clustering - use filtered fridges
+                  MarkerClusterLayerWidget(
+                    options: MarkerClusterLayerOptions(
+                      maxClusterRadius: 40,
+                      size: const Size(50, 50),
+                      markers: filteredFridges
+                          .map(
+                            (fridge) => Marker(
+                              point: LatLng(
+                                fridge.location.geoLat,
+                                fridge.location.geoLng,
+                              ),
+                              width: FridgeMarker.markerSize,
+                              height: FridgeMarker.markerSize,
                               child: FridgeMarker(fridge: fridge),
                             ),
-                          ),
-                        )
-                        .toList(),
+                          )
+                          .toList(),
+                      builder: (context, markers) {
+                        return FridgeClusterWidget(
+                          markerCount: markers.length,
+                          isDarkMode:
+                              Theme.of(context).brightness == Brightness.dark,
+                        );
+                      },
+                      onMarkerTap: (marker) {
+                        // Find the fridge corresponding to this marker
+                        final markerPoint = marker.point;
+                        final fridge = filteredFridges.firstWhere(
+                          (fridge) =>
+                              fridge.location.geoLat == markerPoint.latitude &&
+                              fridge.location.geoLng == markerPoint.longitude,
+                        );
+                        _showFridgeProfile(fridge);
+                      },
+                    ),
                   ),
                 ],
               ),
