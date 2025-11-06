@@ -121,6 +121,7 @@ app.*.symbols
 # Environment variables
 .env
 .env.local
+secrets
 
 # macOS
 .DS_Storeß

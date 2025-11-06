@@ -856,7 +856,7 @@ as String?,
 /// @nodoc
 mixin _$FridgeDomain {
 
- String get id; String get name; bool get verified; FridgeLocationDomain get location; FridgeMaintainerDomain? get maintainer; String? get notes; String? get photoUrl;// ignore: invalid_annotation_target
+ String get id; String get name; bool get verified; FridgeLocationDomain get location; FridgeMaintainerDomain? get maintainer; String? get notes; String? get photoUrl;
 @JsonKey(name: 'last_edited') String? get lastEdited;// Unix epoch timestamp as string
  FridgeReportDomain? get latestFridgeReport;
 /// Create a copy of FridgeDomain
@@ -1103,7 +1103,6 @@ class _FridgeDomain extends FridgeDomain {
 @override final  FridgeMaintainerDomain? maintainer;
 @override final  String? notes;
 @override final  String? photoUrl;
-// ignore: invalid_annotation_target
 @override@JsonKey(name: 'last_edited') final  String? lastEdited;
 // Unix epoch timestamp as string
 @override final  FridgeReportDomain? latestFridgeReport;

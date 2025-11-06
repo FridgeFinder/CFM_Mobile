@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "576156648133",
+    "project_id": "fridgefinder-app",
+    "storage_bucket": "fridgefinder-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:576156648133:android:f0333612c00607a18666ac",
+        "android_client_info": {
+          "package_name": "com.fridgefinder.fridgefinder_flutter"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBkojMiASYv7sH0W7FimcNATZ7piPhKVCQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,73 @@
+# Fastfile for iOS
+
+default_platform(:ios)
+
+platform :ios do
+  desc "Generate screenshots for App Store"
+  lane :screenshots do
+    # Build the app for screenshots
+    build_app(
+      workspace: "Runner.xcworkspace",
+      scheme: "Runner",
+      configuration: "Release"
+    )
+    
+    # Capture screenshots
+    capture_screenshots(
+      workspace: "Runner.xcworkspace",
+      scheme: "Runner",
+      devices: [
+        "iPhone 15 Pro Max",
+        "iPhone 15 Pro",
+        "iPhone 15",
+        "iPhone SE (3rd generation)",
+        "iPad Pro (12.9-inch) (6th generation)"
+      ]
+    )
+    
+    # Upload screenshots to App Store Connect
+    upload_to_app_store(
+      force: true,
+      skip_metadata: false,
+      skip_screenshots: false,
+      skip_app_version_update: true
+    )
+  end
+
+  desc "Build and upload to Firebase App Distribution"
+  lane :beta do
+    # Ensure we're on the correct branch/tag
+    ensure_git_status_clean
+    
+    # Build the app using Flutter
+    sh("cd .. && flutter build ipa --release")
+    
+    # Upload to Firebase App Distribution
+    firebase_app_distribution(
+      app: ENV["FIREBASE_APP_ID_IOS"],
+      groups: ENV["FIREBASE_DISTRIBUTION_GROUPS"] || "testers",
+      release_notes: ENV["RELEASE_NOTES"] || "Beta build from Fastlane",
+      firebase_cli_token: ENV["FIREBASE_CLI_TOKEN"],
+      ipa_path: "../build/ios/ipa/FridgeFinder.ipa"
+    )
+  end
+
+  desc "Build and upload to App Store Connect"
+  lane :release do
+    # Ensure we're on the correct branch/tag
+    ensure_git_status_clean
+    
+    # Build the app using Flutter
+    sh("cd .. && flutter build ipa --release")
+    
+    # Upload to App Store Connect
+    upload_to_app_store(
+      ipa: "../build/ios/ipa/FridgeFinder.ipa",
+      force: true,
+      skip_metadata: true,
+      skip_screenshots: true,
+      skip_app_version_update: false
+    )
+  end
+end
+

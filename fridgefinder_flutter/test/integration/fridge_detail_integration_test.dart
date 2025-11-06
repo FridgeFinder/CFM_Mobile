@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:fridgefinder_app/app.dart';
 import 'package:fridgefinder_app/src/features/list/presentation/list_screen.dart';
 import 'package:fridgefinder_app/src/features/map/presentation/controllers/fridge_list_controller.dart';
 import '../fixtures/fridge_fixtures.dart';

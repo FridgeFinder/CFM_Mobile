@@ -8,7 +8,6 @@ import 'package:fridgefinder_app/src/core/providers/environment_provider.dart';
 import 'package:fridgefinder_app/src/features/map/presentation/controllers/map_filter_controller.dart';
 import 'package:fridgefinder_app/src/features/map/presentation/controllers/filter_condition.dart';
 import 'package:fridgefinder_app/src/core/providers/location_provider.dart';
-import 'package:fridgefinder_app/src/features/map/presentation/controllers/fridge_list_controller.dart';
 import 'fixtures/fridge_fixtures.dart';
 
 /// Mock repository that returns fixture data
@@ -63,7 +62,7 @@ Dio createTestDio() {
 
 /// Get base provider overrides for testing (dio, environment, etc.)
 /// Returns a list that can be spread into ProviderScope.overrides
-getBaseTestOverrides({FridgeRepository? fridgeRepository, Dio? dio}) {
+List<dynamic> getBaseTestOverrides({FridgeRepository? fridgeRepository, Dio? dio}) {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   final repository = fridgeRepository ?? MockFridgeRepository();
@@ -74,11 +73,6 @@ getBaseTestOverrides({FridgeRepository? fridgeRepository, Dio? dio}) {
     selectedConditions: FilterCondition.values.toSet(),
     searchQuery: '',
   );
-
-  // Create fridgesWithDistance list for direct override (bypasses async timing issues)
-  final fridgesWithDistance = FridgeFixtures.allFridges
-      .map((fridge) => FridgeWithDistance(fridge: fridge, distanceKm: null))
-      .toList();
 
   return [
     // Override dio provider to avoid connectivity_plus platform channel calls

@@ -1,0 +1,37 @@
+# A list of devices you want to take screenshots from
+devices([
+  "iPhone 15 Pro Max",
+  "iPhone 15 Pro",
+  "iPhone 15",
+  "iPhone SE (3rd generation)",
+  "iPad Pro (12.9-inch) (6th generation)",
+])
+
+# A list of locales you want to take screenshots for
+locales([
+  "en-US",
+])
+
+# A list of languages you want to take screenshots for
+languages([
+  "en-US",
+])
+
+# The name of the scheme which contains the UI Tests
+scheme("Runner")
+
+# The project where your UI Tests are located
+project("./Runner.xcworkspace")
+
+# Where should the resulting screenshots be stored?
+output_directory("./screenshots")
+
+# Clear all previously generated screenshots before creating new ones
+clear_previous_screenshots(true)
+
+# Skip the summary at the end
+skip_open_summary(true)
+
+# Stop the script after the first failure
+stop_after_first_error(true)
+

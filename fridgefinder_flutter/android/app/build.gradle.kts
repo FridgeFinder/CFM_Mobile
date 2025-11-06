@@ -1,5 +1,11 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     id("com.android.application")
+    // START: FlutterFire Configuration
+    id("com.google.gms.google-services")
+    // END: FlutterFire Configuration
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
@@ -7,10 +13,10 @@ plugins {
 
 // Load keystore properties for release signing
 // Create android/key.properties file with your keystore details
-def keystorePropertiesFile = rootProject.file("key.properties")
-def keystoreProperties = new Properties()
+val keystorePropertiesFile = rootProject.file("key.properties")
+val keystoreProperties = Properties()
 if (keystorePropertiesFile.exists()) {
-    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
 android {
@@ -47,27 +53,27 @@ android {
     // Signing configurations
     signingConfigs {
         if (keystorePropertiesFile.exists()) {
-            release {
-                keyAlias = keystoreProperties['keyAlias']
-                keyPassword = keystoreProperties['keyPassword']
-                storeFile = file(keystoreProperties['storeFile'])
-                storePassword = keystoreProperties['storePassword']
+            create("release") {
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+                storeFile = file(keystoreProperties.getProperty("storeFile") ?: "")
+                storePassword = keystoreProperties.getProperty("storePassword")
             }
         }
     }
 
     buildTypes {
-        release {
+        getByName("release") {
             // Use release signing if keystore exists, otherwise use debug
             if (keystorePropertiesFile.exists()) {
-                signingConfig = signingConfigs.release
+                signingConfig = signingConfigs.getByName("release")
             } else {
-                signingConfig = signingConfigs.debug
+                signingConfig = signingConfigs.getByName("debug")
             }
 
             // Enable code shrinking and obfuscation for smaller APK
-            minifyEnabled = true
-            shrinkResources = true
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

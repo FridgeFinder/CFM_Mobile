@@ -1,0 +1,10 @@
+app_identifier("com.fridgefinder.fridgefinderFlutter")
+apple_id(ENV["APP_STORE_CONNECT_USERNAME"]) # Optional, can be set via environment variable
+team_id(ENV["APP_STORE_CONNECT_TEAM_ID"]) # Optional, can be set via environment variable
+
+# For App Store Connect API Key authentication (recommended)
+# These are set via environment variables in CI/CD:
+# - APP_STORE_CONNECT_API_KEY_ID
+# - APP_STORE_CONNECT_ISSUER_ID
+# - APP_STORE_CONNECT_API_KEY_PATH (path to .p8 file)
+

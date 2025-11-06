@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fridgefinder_app/src/features/map/presentation/widgets/fridge_cluster_widget.dart';
 
@@ -137,10 +136,10 @@ void main() {
       // Should use blue with transparency in dark mode
       final color = decoration.color;
       expect(color, isNotNull);
-      expect(color!.red, 33); // RGB(33, 150, 243)
-      expect(color.green, 150);
-      expect(color.blue, 243);
-      expect(color.alpha, lessThan(255)); // Has transparency
+      expect((color!.r * 255.0).round() & 0xff, 33); // RGB(33, 150, 243)
+      expect((color.g * 255.0).round() & 0xff, 150);
+      expect((color.b * 255.0).round() & 0xff, 243);
+      expect((color.a * 255.0).round() & 0xff, lessThan(255)); // Has transparency
     });
 
     testWidgets('uses dark theme colors when isDarkMode is true', (
@@ -162,10 +161,10 @@ void main() {
       // Should use blue with transparency when isDarkMode is true
       final color = decoration.color;
       expect(color, isNotNull);
-      expect(color!.red, 33);
-      expect(color.green, 150);
-      expect(color.blue, 243);
-      expect(color.alpha, lessThan(255));
+      expect((color!.r * 255.0).round() & 0xff, 33);
+      expect((color.g * 255.0).round() & 0xff, 150);
+      expect((color.b * 255.0).round() & 0xff, 243);
+      expect((color.a * 255.0).round() & 0xff, lessThan(255));
     });
 
     testWidgets('displays white border', (WidgetTester tester) async {
