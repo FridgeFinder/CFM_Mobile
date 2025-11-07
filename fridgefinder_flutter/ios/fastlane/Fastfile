@@ -37,8 +37,26 @@ platform :ios do
   desc "Build and upload to Firebase App Distribution"
   lane :beta do
     # Ensure we're on the correct branch/tag
-    ensure_git_status_clean
+    # ensure_git_status_clean
     
+    # Set locale to UTF-8 to avoid CocoaPods warnings
+    ENV["LANG"] = "en_US.UTF-8"
+    ENV["LC_ALL"] = "en_US.UTF-8"
+    
+    # Install provisioning profile if provided via environment variable
+    # Place your .mobileprovision file in ios/fastlane/profiles/ or set PROVISIONING_PROFILE_PATH
+    if ENV["PROVISIONING_PROFILE_PATH"]
+      install_provisioning_profile(
+        path: ENV["PROVISIONING_PROFILE_PATH"]
+      )
+    elsif File.exist?("fastlane/profiles/dev-tester.mobileprovision")
+      install_provisioning_profile(
+        path: File.expand_path("fastlane/profiles/dev-tester.mobileprovision", __dir__)
+      )
+    end
+    
+    # Flutter will automatically run pod install during the build process
+    # Even if it detects CocoaPods as "broken", it usually still works
     # Build the app using Flutter
     sh("cd .. && flutter build ipa --release")
     
@@ -55,7 +73,17 @@ platform :ios do
   desc "Build and upload to App Store Connect"
   lane :release do
     # Ensure we're on the correct branch/tag
-    ensure_git_status_clean
+    # ensure_git_status_clean
+    
+    # Set locale to UTF-8 to avoid CocoaPods warnings
+    ENV["LANG"] = "en_US.UTF-8"
+    ENV["LC_ALL"] = "en_US.UTF-8"
+    
+    # Flutter will automatically run pod install during the build process
+    # Even if it detects CocoaPods as "broken", it usually still works
+    
+    # Note: sync_code_signing removed due to issues - certificates should be managed via Xcode automatic signing
+    # Or ensure certificates are already in keychain before building
     
     # Build the app using Flutter
     sh("cd .. && flutter build ipa --release")

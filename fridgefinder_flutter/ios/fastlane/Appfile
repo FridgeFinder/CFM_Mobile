@@ -1,4 +1,4 @@
-app_identifier("com.fridgefinder.fridgefinderFlutter")
+app_identifier("com.fridgefinder.fridgefinderFlutterApp")
 apple_id(ENV["APP_STORE_CONNECT_USERNAME"]) # Optional, can be set via environment variable
 team_id(ENV["APP_STORE_CONNECT_TEAM_ID"]) # Optional, can be set via environment variable
 

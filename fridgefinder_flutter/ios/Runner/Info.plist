@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
@@ -24,6 +26,26 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>FridgeFinder needs camera access to take photos of fridge conditions for status reports.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>FridgeFinder needs background location access to send you notifications when you're near a community fridge that needs volunteers or has fresh food available.</string>
+	<key>NSLocationTemporaryUsageDescriptionDictionary</key>
+	<dict>
+		<key>FindNearbyFridges</key>
+		<string>FridgeFinder needs your current location to show community fridges near you.</string>
+	</dict>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>FridgeFinder needs your location to show nearby community fridges on the map and calculate distances. Your location is never stored or shared.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>FridgeFinder needs access to your photo library to upload photos of fridge conditions for the community.</string>
+	<key>UIApplicationSupportsIndirectInputEvents</key>
+	<true/>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+		<string>remote-notification</string>
+	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
@@ -40,40 +62,6 @@
 		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
-	</array>
-	<key>CADisableMinimumFrameDurationOnPhone</key>
-	<true/>
-	<key>UIApplicationSupportsIndirectInputEvents</key>
-	<true/>
-	<!-- Location permissions - Clear explanations required by App Store -->
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>FridgeFinder needs your location to show nearby community fridges on the map and calculate distances. Your location is never stored or shared.</string>
-
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>FridgeFinder needs background location access to send you notifications when you're near a community fridge that needs volunteers or has fresh food available.</string>
-
-	<!-- Temporary location usage for iOS 14+ -->
-	<key>NSLocationTemporaryUsageDescriptionDictionary</key>
-	<dict>
-		<key>FindNearbyFridges</key>
-		<string>FridgeFinder needs your current location to show community fridges near you.</string>
-	</dict>
-
-	<!-- Photo library access (for uploading fridge status photos) -->
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>FridgeFinder needs access to your photo library to upload photos of fridge conditions for the community.</string>
-
-	<!-- Camera access (for taking fridge status photos) -->
-	<key>NSCameraUsageDescription</key>
-	<string>FridgeFinder needs camera access to take photos of fridge conditions for status reports.</string>
-
-	<!-- Background modes (for future features) -->
-	<key>UIBackgroundModes</key>
-	<array>
-		<string>fetch</string>
-		<string>remote-notification</string>
-		<!-- Background location commented out for v1.0 -->
-		<!-- <string>location</string> -->
 	</array>
 </dict>
 </plist>

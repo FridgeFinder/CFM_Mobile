@@ -63,6 +63,6 @@ class DefaultFirebaseOptions {
     messagingSenderId: '576156648133',
     projectId: 'fridgefinder-app',
     storageBucket: 'fridgefinder-app.firebasestorage.app',
-    iosBundleId: 'com.fridgefinder.fridgefinderFlutter',
+    iosBundleId: 'com.fridgefinder.fridgefinderFlutterApp',
   );
 }
