@@ -144,6 +144,7 @@ screenshots/
 
 # App Store Connect API Key
 *.p8
+*.mobileprovision
 
 # Environment variables
 .env
