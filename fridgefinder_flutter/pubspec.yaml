@@ -4,7 +4,7 @@ publish_to: "none"
 version: 1.0.0+1
 
 environment:
-  sdk: ">=3.6.0-0 <4.0.0"
+  sdk: ">=3.5.0 <4.0.0"
 
 dependencies:
   flutter:
@@ -14,8 +14,8 @@ dependencies:
   go_router: ^16.3.0
 
   # State Management
-  flutter_riverpod: ^3.0.3
-  riverpod_annotation: ^3.0.3
+  flutter_riverpod: ^2.6.1
+  riverpod_annotation: ^2.6.1
 
   # Maps - Complete flutter_map stack with all features
   flutter_map: ^8.2.2
@@ -44,7 +44,7 @@ dependencies:
   flutter_form_builder: ^10.2.0
 
   # Data Models
-  freezed_annotation: ^3.1.0
+  freezed_annotation: ^2.4.4
   json_annotation: ^4.8.1
 
   # Local Storage
@@ -61,12 +61,12 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^6.0.0
+  flutter_lints: ^5.0.0
 
   # Code generation
-  riverpod_generator: ^3.0.3
+  riverpod_generator: ^2.6.2
   build_runner: ^2.4.9
-  freezed: ^3.2.3
+  freezed: ^2.5.7
   json_serializable: ^6.7.1
 
   # Testing
