@@ -6,55 +6,22 @@ part of 'map_filter_controller.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-// GENERATED CODE - DO NOT MODIFY BY HAND
-// ignore_for_file: type=lint, type=warning
-/// Notifier for managing map filter state with persistence using Hive
-
-@ProviderFor(MapFilter)
-const mapFilterProvider = MapFilterProvider._();
-
-/// Notifier for managing map filter state with persistence using Hive
-final class MapFilterProvider
-    extends $AsyncNotifierProvider<MapFilter, MapFilterState> {
-  /// Notifier for managing map filter state with persistence using Hive
-  const MapFilterProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'mapFilterProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$mapFilterHash();
-
-  @$internal
-  @override
-  MapFilter create() => MapFilter();
-}
-
 String _$mapFilterHash() => r'2cba47b5d95c41280f0553cc9af5741c018f9712';
 
 /// Notifier for managing map filter state with persistence using Hive
+///
+/// Copied from [MapFilter].
+@ProviderFor(MapFilter)
+final mapFilterProvider =
+    AutoDisposeAsyncNotifierProvider<MapFilter, MapFilterState>.internal(
+  MapFilter.new,
+  name: r'mapFilterProvider',
+  debugGetCreateSourceHash:
+      const bool.fromEnvironment('dart.vm.product') ? null : _$mapFilterHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
 
-abstract class _$MapFilter extends $AsyncNotifier<MapFilterState> {
-  FutureOr<MapFilterState> build();
-  @$mustCallSuper
-  @override
-  void runBuild() {
-    final created = build();
-    final ref = this.ref as $Ref<AsyncValue<MapFilterState>, MapFilterState>;
-    final element =
-        ref.element
-            as $ClassProviderElement<
-              AnyNotifier<AsyncValue<MapFilterState>, MapFilterState>,
-              AsyncValue<MapFilterState>,
-              Object?,
-              Object?
-            >;
-    element.handleValue(ref, created);
-  }
-}
+typedef _$MapFilter = AutoDisposeAsyncNotifier<MapFilterState>;
+// ignore_for_file: type=lint
+// ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package

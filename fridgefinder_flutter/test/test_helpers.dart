@@ -8,6 +8,7 @@ import 'package:fridgefinder_app/src/core/providers/environment_provider.dart';
 import 'package:fridgefinder_app/src/features/map/presentation/controllers/map_filter_controller.dart';
 import 'package:fridgefinder_app/src/features/map/presentation/controllers/filter_condition.dart';
 import 'package:fridgefinder_app/src/core/providers/location_provider.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'fixtures/fridge_fixtures.dart';
 
 /// Mock repository that returns fixture data
@@ -79,7 +80,7 @@ List<dynamic> getBaseTestOverrides({FridgeRepository? fridgeRepository, Dio? dio
     dioProvider.overrideWithValue(dioInstance),
     fridgeRepositoryProvider.overrideWithValue(repository),
     // Override environment provider to avoid Hive dependencies in unit tests
-    environmentProvider.overrideWithValue(ApiEnvironment.prod),
+    environmentProvider.overrideWith(() => _MockEnvironmentNotifier()),
     apiBaseUrlProvider.overrideWith(
       (ref) => 'https://api-prod.communityfridgefinder.com/v1',
     ),
@@ -90,6 +91,12 @@ List<dynamic> getBaseTestOverrides({FridgeRepository? fridgeRepository, Dio? dio
     // Note: fridgesSortedByDistanceProvider should be overridden in individual tests
     // AFTER fridgeListProvider override to ensure proper dependency resolution
   ];
+}
+
+/// Mock Environment notifier for tests
+class _MockEnvironmentNotifier extends Environment {
+  @override
+  ApiEnvironment build() => ApiEnvironment.prod;
 }
 
 /// Mock MapFilter implementation for testing

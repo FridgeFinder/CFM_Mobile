@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:riverpod/riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../map/domain/models/fridge_domain.dart';
 import '../../../map/domain/repositories/i_fridge_repository.dart';

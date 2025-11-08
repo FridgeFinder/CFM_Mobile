@@ -142,7 +142,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                       return const SizedBox.shrink();
                     },
                     loading: () => const SizedBox.shrink(),
-                    error: (_, _) => const SizedBox.shrink(),
+                    error: (_, __) => const SizedBox.shrink(),
                   ),
                   // Fridge markers with clustering - use filtered fridges
                   MarkerClusterLayerWidget(

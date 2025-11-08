@@ -37,7 +37,7 @@ class FilterPillButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final themeMode = ref.watch(appThemeModeProvider);
+    final themeMode = ref.watch(appThemeModeNotifierProvider);
 
     // Determine if dark mode
     final isDarkMode =

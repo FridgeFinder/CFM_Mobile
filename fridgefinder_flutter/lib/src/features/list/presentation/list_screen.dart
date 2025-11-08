@@ -192,7 +192,7 @@ class _ListScreenState extends ConsumerState<ListScreen> {
               );
             },
             loading: () => const SizedBox.shrink(),
-            error: (_, _) => const SizedBox.shrink(),
+            error: (_, __) => const SizedBox.shrink(),
           );
         },
       ),

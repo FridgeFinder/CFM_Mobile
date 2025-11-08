@@ -6,55 +6,24 @@ part of 'fridge_repository.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-// GENERATED CODE - DO NOT MODIFY BY HAND
-// ignore_for_file: type=lint, type=warning
-/// Riverpod provider for FridgeRepository
-
-@ProviderFor(fridgeRepository)
-const fridgeRepositoryProvider = FridgeRepositoryProvider._();
-
-/// Riverpod provider for FridgeRepository
-
-final class FridgeRepositoryProvider
-    extends
-        $FunctionalProvider<
-          FridgeRepository,
-          FridgeRepository,
-          FridgeRepository
-        >
-    with $Provider<FridgeRepository> {
-  /// Riverpod provider for FridgeRepository
-  const FridgeRepositoryProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'fridgeRepositoryProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$fridgeRepositoryHash();
-
-  @$internal
-  @override
-  $ProviderElement<FridgeRepository> $createElement($ProviderPointer pointer) =>
-      $ProviderElement(pointer);
-
-  @override
-  FridgeRepository create(Ref ref) {
-    return fridgeRepository(ref);
-  }
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(FridgeRepository value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<FridgeRepository>(value),
-    );
-  }
-}
-
 String _$fridgeRepositoryHash() => r'2c557dbcfa0c2f40b95f9ea9d3ebf91d0b60210a';
+
+/// Riverpod provider for FridgeRepository
+///
+/// Copied from [fridgeRepository].
+@ProviderFor(fridgeRepository)
+final fridgeRepositoryProvider = AutoDisposeProvider<FridgeRepository>.internal(
+  fridgeRepository,
+  name: r'fridgeRepositoryProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$fridgeRepositoryHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef FridgeRepositoryRef = AutoDisposeProviderRef<FridgeRepository>;
+// ignore_for_file: type=lint
+// ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package

@@ -1,5 +1,5 @@
-// GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
@@ -9,269 +9,176 @@ part of 'location_provider.dart';
 // FreezedGenerator
 // **************************************************************************
 
-// dart format off
 T _$identity<T>(T value) => value;
+
+final _privateConstructorUsedError = UnsupportedError(
+    'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models');
+
 /// @nodoc
 mixin _$UserLocation {
+  LatLng get position => throw _privateConstructorUsedError;
+  double get accuracy => throw _privateConstructorUsedError;
+  DateTime get timestamp => throw _privateConstructorUsedError;
 
- LatLng get position; double get accuracy; DateTime get timestamp;
-/// Create a copy of UserLocation
-/// with the given fields replaced by the non-null parameter values.
-@JsonKey(includeFromJson: false, includeToJson: false)
-@pragma('vm:prefer-inline')
-$UserLocationCopyWith<UserLocation> get copyWith => _$UserLocationCopyWithImpl<UserLocation>(this as UserLocation, _$identity);
-
-
-
-@override
-bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is UserLocation&&(identical(other.position, position) || other.position == position)&&(identical(other.accuracy, accuracy) || other.accuracy == accuracy)&&(identical(other.timestamp, timestamp) || other.timestamp == timestamp));
-}
-
-
-@override
-int get hashCode => Object.hash(runtimeType,position,accuracy,timestamp);
-
-@override
-String toString() {
-  return 'UserLocation(position: $position, accuracy: $accuracy, timestamp: $timestamp)';
-}
-
-
+  /// Create a copy of UserLocation
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  $UserLocationCopyWith<UserLocation> get copyWith =>
+      throw _privateConstructorUsedError;
 }
 
 /// @nodoc
-abstract mixin class $UserLocationCopyWith<$Res>  {
-  factory $UserLocationCopyWith(UserLocation value, $Res Function(UserLocation) _then) = _$UserLocationCopyWithImpl;
-@useResult
-$Res call({
- LatLng position, double accuracy, DateTime timestamp
-});
-
-
-
-
+abstract class $UserLocationCopyWith<$Res> {
+  factory $UserLocationCopyWith(
+          UserLocation value, $Res Function(UserLocation) then) =
+      _$UserLocationCopyWithImpl<$Res, UserLocation>;
+  @useResult
+  $Res call({LatLng position, double accuracy, DateTime timestamp});
 }
+
 /// @nodoc
-class _$UserLocationCopyWithImpl<$Res>
+class _$UserLocationCopyWithImpl<$Res, $Val extends UserLocation>
     implements $UserLocationCopyWith<$Res> {
-  _$UserLocationCopyWithImpl(this._self, this._then);
+  _$UserLocationCopyWithImpl(this._value, this._then);
 
-  final UserLocation _self;
-  final $Res Function(UserLocation) _then;
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
 
-/// Create a copy of UserLocation
-/// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? position = null,Object? accuracy = null,Object? timestamp = null,}) {
-  return _then(_self.copyWith(
-position: null == position ? _self.position : position // ignore: cast_nullable_to_non_nullable
-as LatLng,accuracy: null == accuracy ? _self.accuracy : accuracy // ignore: cast_nullable_to_non_nullable
-as double,timestamp: null == timestamp ? _self.timestamp : timestamp // ignore: cast_nullable_to_non_nullable
-as DateTime,
-  ));
+  /// Create a copy of UserLocation
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? position = null,
+    Object? accuracy = null,
+    Object? timestamp = null,
+  }) {
+    return _then(_value.copyWith(
+      position: null == position
+          ? _value.position
+          : position // ignore: cast_nullable_to_non_nullable
+              as LatLng,
+      accuracy: null == accuracy
+          ? _value.accuracy
+          : accuracy // ignore: cast_nullable_to_non_nullable
+              as double,
+      timestamp: null == timestamp
+          ? _value.timestamp
+          : timestamp // ignore: cast_nullable_to_non_nullable
+              as DateTime,
+    ) as $Val);
+  }
 }
 
+/// @nodoc
+abstract class _$$UserLocationImplCopyWith<$Res>
+    implements $UserLocationCopyWith<$Res> {
+  factory _$$UserLocationImplCopyWith(
+          _$UserLocationImpl value, $Res Function(_$UserLocationImpl) then) =
+      __$$UserLocationImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call({LatLng position, double accuracy, DateTime timestamp});
 }
 
+/// @nodoc
+class __$$UserLocationImplCopyWithImpl<$Res>
+    extends _$UserLocationCopyWithImpl<$Res, _$UserLocationImpl>
+    implements _$$UserLocationImplCopyWith<$Res> {
+  __$$UserLocationImplCopyWithImpl(
+      _$UserLocationImpl _value, $Res Function(_$UserLocationImpl) _then)
+      : super(_value, _then);
 
-/// Adds pattern-matching-related methods to [UserLocation].
-extension UserLocationPatterns on UserLocation {
-/// A variant of `map` that fallback to returning `orElse`.
-///
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case final Subclass value:
-///     return ...;
-///   case _:
-///     return orElse();
-/// }
-/// ```
-
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _UserLocation value)?  $default,{required TResult orElse(),}){
-final _that = this;
-switch (_that) {
-case _UserLocation() when $default != null:
-return $default(_that);case _:
-  return orElse();
-
-}
-}
-/// A `switch`-like method, using callbacks.
-///
-/// Callbacks receives the raw object, upcasted.
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case final Subclass value:
-///     return ...;
-///   case final Subclass2 value:
-///     return ...;
-/// }
-/// ```
-
-@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _UserLocation value)  $default,){
-final _that = this;
-switch (_that) {
-case _UserLocation():
-return $default(_that);case _:
-  throw StateError('Unexpected subclass');
-
-}
-}
-/// A variant of `map` that fallback to returning `null`.
-///
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case final Subclass value:
-///     return ...;
-///   case _:
-///     return null;
-/// }
-/// ```
-
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _UserLocation value)?  $default,){
-final _that = this;
-switch (_that) {
-case _UserLocation() when $default != null:
-return $default(_that);case _:
-  return null;
-
-}
-}
-/// A variant of `when` that fallback to an `orElse` callback.
-///
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case Subclass(:final field):
-///     return ...;
-///   case _:
-///     return orElse();
-/// }
-/// ```
-
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( LatLng position,  double accuracy,  DateTime timestamp)?  $default,{required TResult orElse(),}) {final _that = this;
-switch (_that) {
-case _UserLocation() when $default != null:
-return $default(_that.position,_that.accuracy,_that.timestamp);case _:
-  return orElse();
-
-}
-}
-/// A `switch`-like method, using callbacks.
-///
-/// As opposed to `map`, this offers destructuring.
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case Subclass(:final field):
-///     return ...;
-///   case Subclass2(:final field2):
-///     return ...;
-/// }
-/// ```
-
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( LatLng position,  double accuracy,  DateTime timestamp)  $default,) {final _that = this;
-switch (_that) {
-case _UserLocation():
-return $default(_that.position,_that.accuracy,_that.timestamp);case _:
-  throw StateError('Unexpected subclass');
-
-}
-}
-/// A variant of `when` that fallback to returning `null`
-///
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case Subclass(:final field):
-///     return ...;
-///   case _:
-///     return null;
-/// }
-/// ```
-
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( LatLng position,  double accuracy,  DateTime timestamp)?  $default,) {final _that = this;
-switch (_that) {
-case _UserLocation() when $default != null:
-return $default(_that.position,_that.accuracy,_that.timestamp);case _:
-  return null;
-
-}
-}
-
+  /// Create a copy of UserLocation
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? position = null,
+    Object? accuracy = null,
+    Object? timestamp = null,
+  }) {
+    return _then(_$UserLocationImpl(
+      position: null == position
+          ? _value.position
+          : position // ignore: cast_nullable_to_non_nullable
+              as LatLng,
+      accuracy: null == accuracy
+          ? _value.accuracy
+          : accuracy // ignore: cast_nullable_to_non_nullable
+              as double,
+      timestamp: null == timestamp
+          ? _value.timestamp
+          : timestamp // ignore: cast_nullable_to_non_nullable
+              as DateTime,
+    ));
+  }
 }
 
 /// @nodoc
 
+class _$UserLocationImpl extends _UserLocation {
+  const _$UserLocationImpl(
+      {required this.position, required this.accuracy, required this.timestamp})
+      : super._();
 
-class _UserLocation extends UserLocation {
-  const _UserLocation({required this.position, required this.accuracy, required this.timestamp}): super._();
-  
+  @override
+  final LatLng position;
+  @override
+  final double accuracy;
+  @override
+  final DateTime timestamp;
 
-@override final  LatLng position;
-@override final  double accuracy;
-@override final  DateTime timestamp;
+  @override
+  String toString() {
+    return 'UserLocation(position: $position, accuracy: $accuracy, timestamp: $timestamp)';
+  }
 
-/// Create a copy of UserLocation
-/// with the given fields replaced by the non-null parameter values.
-@override @JsonKey(includeFromJson: false, includeToJson: false)
-@pragma('vm:prefer-inline')
-_$UserLocationCopyWith<_UserLocation> get copyWith => __$UserLocationCopyWithImpl<_UserLocation>(this, _$identity);
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$UserLocationImpl &&
+            (identical(other.position, position) ||
+                other.position == position) &&
+            (identical(other.accuracy, accuracy) ||
+                other.accuracy == accuracy) &&
+            (identical(other.timestamp, timestamp) ||
+                other.timestamp == timestamp));
+  }
 
+  @override
+  int get hashCode => Object.hash(runtimeType, position, accuracy, timestamp);
 
-
-@override
-bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _UserLocation&&(identical(other.position, position) || other.position == position)&&(identical(other.accuracy, accuracy) || other.accuracy == accuracy)&&(identical(other.timestamp, timestamp) || other.timestamp == timestamp));
+  /// Create a copy of UserLocation
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$UserLocationImplCopyWith<_$UserLocationImpl> get copyWith =>
+      __$$UserLocationImplCopyWithImpl<_$UserLocationImpl>(this, _$identity);
 }
 
+abstract class _UserLocation extends UserLocation {
+  const factory _UserLocation(
+      {required final LatLng position,
+      required final double accuracy,
+      required final DateTime timestamp}) = _$UserLocationImpl;
+  const _UserLocation._() : super._();
 
-@override
-int get hashCode => Object.hash(runtimeType,position,accuracy,timestamp);
+  @override
+  LatLng get position;
+  @override
+  double get accuracy;
+  @override
+  DateTime get timestamp;
 
-@override
-String toString() {
-  return 'UserLocation(position: $position, accuracy: $accuracy, timestamp: $timestamp)';
+  /// Create a copy of UserLocation
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$UserLocationImplCopyWith<_$UserLocationImpl> get copyWith =>
+      throw _privateConstructorUsedError;
 }
-
-
-}
-
-/// @nodoc
-abstract mixin class _$UserLocationCopyWith<$Res> implements $UserLocationCopyWith<$Res> {
-  factory _$UserLocationCopyWith(_UserLocation value, $Res Function(_UserLocation) _then) = __$UserLocationCopyWithImpl;
-@override @useResult
-$Res call({
- LatLng position, double accuracy, DateTime timestamp
-});
-
-
-
-
-}
-/// @nodoc
-class __$UserLocationCopyWithImpl<$Res>
-    implements _$UserLocationCopyWith<$Res> {
-  __$UserLocationCopyWithImpl(this._self, this._then);
-
-  final _UserLocation _self;
-  final $Res Function(_UserLocation) _then;
-
-/// Create a copy of UserLocation
-/// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? position = null,Object? accuracy = null,Object? timestamp = null,}) {
-  return _then(_UserLocation(
-position: null == position ? _self.position : position // ignore: cast_nullable_to_non_nullable
-as LatLng,accuracy: null == accuracy ? _self.accuracy : accuracy // ignore: cast_nullable_to_non_nullable
-as double,timestamp: null == timestamp ? _self.timestamp : timestamp // ignore: cast_nullable_to_non_nullable
-as DateTime,
-  ));
-}
-
-
-}
-
-// dart format on

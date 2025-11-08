@@ -1,5 +1,5 @@
-// GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
@@ -9,272 +9,171 @@ part of 'map_filter_controller.dart';
 // FreezedGenerator
 // **************************************************************************
 
-// dart format off
 T _$identity<T>(T value) => value;
+
+final _privateConstructorUsedError = UnsupportedError(
+    'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models');
+
 /// @nodoc
 mixin _$MapFilterState {
+  Set<FilterCondition> get selectedConditions =>
+      throw _privateConstructorUsedError;
+  String get searchQuery => throw _privateConstructorUsedError;
 
- Set<FilterCondition> get selectedConditions; String get searchQuery;
-/// Create a copy of MapFilterState
-/// with the given fields replaced by the non-null parameter values.
-@JsonKey(includeFromJson: false, includeToJson: false)
-@pragma('vm:prefer-inline')
-$MapFilterStateCopyWith<MapFilterState> get copyWith => _$MapFilterStateCopyWithImpl<MapFilterState>(this as MapFilterState, _$identity);
-
-
-
-@override
-bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is MapFilterState&&const DeepCollectionEquality().equals(other.selectedConditions, selectedConditions)&&(identical(other.searchQuery, searchQuery) || other.searchQuery == searchQuery));
-}
-
-
-@override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(selectedConditions),searchQuery);
-
-@override
-String toString() {
-  return 'MapFilterState(selectedConditions: $selectedConditions, searchQuery: $searchQuery)';
-}
-
-
+  /// Create a copy of MapFilterState
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  $MapFilterStateCopyWith<MapFilterState> get copyWith =>
+      throw _privateConstructorUsedError;
 }
 
 /// @nodoc
-abstract mixin class $MapFilterStateCopyWith<$Res>  {
-  factory $MapFilterStateCopyWith(MapFilterState value, $Res Function(MapFilterState) _then) = _$MapFilterStateCopyWithImpl;
-@useResult
-$Res call({
- Set<FilterCondition> selectedConditions, String searchQuery
-});
-
-
-
-
+abstract class $MapFilterStateCopyWith<$Res> {
+  factory $MapFilterStateCopyWith(
+          MapFilterState value, $Res Function(MapFilterState) then) =
+      _$MapFilterStateCopyWithImpl<$Res, MapFilterState>;
+  @useResult
+  $Res call({Set<FilterCondition> selectedConditions, String searchQuery});
 }
+
 /// @nodoc
-class _$MapFilterStateCopyWithImpl<$Res>
+class _$MapFilterStateCopyWithImpl<$Res, $Val extends MapFilterState>
     implements $MapFilterStateCopyWith<$Res> {
-  _$MapFilterStateCopyWithImpl(this._self, this._then);
+  _$MapFilterStateCopyWithImpl(this._value, this._then);
 
-  final MapFilterState _self;
-  final $Res Function(MapFilterState) _then;
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
 
-/// Create a copy of MapFilterState
-/// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? selectedConditions = null,Object? searchQuery = null,}) {
-  return _then(_self.copyWith(
-selectedConditions: null == selectedConditions ? _self.selectedConditions : selectedConditions // ignore: cast_nullable_to_non_nullable
-as Set<FilterCondition>,searchQuery: null == searchQuery ? _self.searchQuery : searchQuery // ignore: cast_nullable_to_non_nullable
-as String,
-  ));
+  /// Create a copy of MapFilterState
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? selectedConditions = null,
+    Object? searchQuery = null,
+  }) {
+    return _then(_value.copyWith(
+      selectedConditions: null == selectedConditions
+          ? _value.selectedConditions
+          : selectedConditions // ignore: cast_nullable_to_non_nullable
+              as Set<FilterCondition>,
+      searchQuery: null == searchQuery
+          ? _value.searchQuery
+          : searchQuery // ignore: cast_nullable_to_non_nullable
+              as String,
+    ) as $Val);
+  }
 }
 
+/// @nodoc
+abstract class _$$MapFilterStateImplCopyWith<$Res>
+    implements $MapFilterStateCopyWith<$Res> {
+  factory _$$MapFilterStateImplCopyWith(_$MapFilterStateImpl value,
+          $Res Function(_$MapFilterStateImpl) then) =
+      __$$MapFilterStateImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call({Set<FilterCondition> selectedConditions, String searchQuery});
 }
 
+/// @nodoc
+class __$$MapFilterStateImplCopyWithImpl<$Res>
+    extends _$MapFilterStateCopyWithImpl<$Res, _$MapFilterStateImpl>
+    implements _$$MapFilterStateImplCopyWith<$Res> {
+  __$$MapFilterStateImplCopyWithImpl(
+      _$MapFilterStateImpl _value, $Res Function(_$MapFilterStateImpl) _then)
+      : super(_value, _then);
 
-/// Adds pattern-matching-related methods to [MapFilterState].
-extension MapFilterStatePatterns on MapFilterState {
-/// A variant of `map` that fallback to returning `orElse`.
-///
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case final Subclass value:
-///     return ...;
-///   case _:
-///     return orElse();
-/// }
-/// ```
-
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _MapFilterState value)?  $default,{required TResult orElse(),}){
-final _that = this;
-switch (_that) {
-case _MapFilterState() when $default != null:
-return $default(_that);case _:
-  return orElse();
-
-}
-}
-/// A `switch`-like method, using callbacks.
-///
-/// Callbacks receives the raw object, upcasted.
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case final Subclass value:
-///     return ...;
-///   case final Subclass2 value:
-///     return ...;
-/// }
-/// ```
-
-@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _MapFilterState value)  $default,){
-final _that = this;
-switch (_that) {
-case _MapFilterState():
-return $default(_that);case _:
-  throw StateError('Unexpected subclass');
-
-}
-}
-/// A variant of `map` that fallback to returning `null`.
-///
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case final Subclass value:
-///     return ...;
-///   case _:
-///     return null;
-/// }
-/// ```
-
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _MapFilterState value)?  $default,){
-final _that = this;
-switch (_that) {
-case _MapFilterState() when $default != null:
-return $default(_that);case _:
-  return null;
-
-}
-}
-/// A variant of `when` that fallback to an `orElse` callback.
-///
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case Subclass(:final field):
-///     return ...;
-///   case _:
-///     return orElse();
-/// }
-/// ```
-
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( Set<FilterCondition> selectedConditions,  String searchQuery)?  $default,{required TResult orElse(),}) {final _that = this;
-switch (_that) {
-case _MapFilterState() when $default != null:
-return $default(_that.selectedConditions,_that.searchQuery);case _:
-  return orElse();
-
-}
-}
-/// A `switch`-like method, using callbacks.
-///
-/// As opposed to `map`, this offers destructuring.
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case Subclass(:final field):
-///     return ...;
-///   case Subclass2(:final field2):
-///     return ...;
-/// }
-/// ```
-
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( Set<FilterCondition> selectedConditions,  String searchQuery)  $default,) {final _that = this;
-switch (_that) {
-case _MapFilterState():
-return $default(_that.selectedConditions,_that.searchQuery);case _:
-  throw StateError('Unexpected subclass');
-
-}
-}
-/// A variant of `when` that fallback to returning `null`
-///
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case Subclass(:final field):
-///     return ...;
-///   case _:
-///     return null;
-/// }
-/// ```
-
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( Set<FilterCondition> selectedConditions,  String searchQuery)?  $default,) {final _that = this;
-switch (_that) {
-case _MapFilterState() when $default != null:
-return $default(_that.selectedConditions,_that.searchQuery);case _:
-  return null;
-
-}
-}
-
+  /// Create a copy of MapFilterState
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? selectedConditions = null,
+    Object? searchQuery = null,
+  }) {
+    return _then(_$MapFilterStateImpl(
+      selectedConditions: null == selectedConditions
+          ? _value._selectedConditions
+          : selectedConditions // ignore: cast_nullable_to_non_nullable
+              as Set<FilterCondition>,
+      searchQuery: null == searchQuery
+          ? _value.searchQuery
+          : searchQuery // ignore: cast_nullable_to_non_nullable
+              as String,
+    ));
+  }
 }
 
 /// @nodoc
 
+class _$MapFilterStateImpl extends _MapFilterState {
+  const _$MapFilterStateImpl(
+      {required final Set<FilterCondition> selectedConditions,
+      this.searchQuery = ''})
+      : _selectedConditions = selectedConditions,
+        super._();
 
-class _MapFilterState extends MapFilterState {
-  const _MapFilterState({required final  Set<FilterCondition> selectedConditions, this.searchQuery = ''}): _selectedConditions = selectedConditions,super._();
-  
+  final Set<FilterCondition> _selectedConditions;
+  @override
+  Set<FilterCondition> get selectedConditions {
+    if (_selectedConditions is EqualUnmodifiableSetView)
+      return _selectedConditions;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableSetView(_selectedConditions);
+  }
 
- final  Set<FilterCondition> _selectedConditions;
-@override Set<FilterCondition> get selectedConditions {
-  if (_selectedConditions is EqualUnmodifiableSetView) return _selectedConditions;
-  // ignore: implicit_dynamic_type
-  return EqualUnmodifiableSetView(_selectedConditions);
+  @override
+  @JsonKey()
+  final String searchQuery;
+
+  @override
+  String toString() {
+    return 'MapFilterState(selectedConditions: $selectedConditions, searchQuery: $searchQuery)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$MapFilterStateImpl &&
+            const DeepCollectionEquality()
+                .equals(other._selectedConditions, _selectedConditions) &&
+            (identical(other.searchQuery, searchQuery) ||
+                other.searchQuery == searchQuery));
+  }
+
+  @override
+  int get hashCode => Object.hash(runtimeType,
+      const DeepCollectionEquality().hash(_selectedConditions), searchQuery);
+
+  /// Create a copy of MapFilterState
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$MapFilterStateImplCopyWith<_$MapFilterStateImpl> get copyWith =>
+      __$$MapFilterStateImplCopyWithImpl<_$MapFilterStateImpl>(
+          this, _$identity);
 }
 
-@override@JsonKey() final  String searchQuery;
+abstract class _MapFilterState extends MapFilterState {
+  const factory _MapFilterState(
+      {required final Set<FilterCondition> selectedConditions,
+      final String searchQuery}) = _$MapFilterStateImpl;
+  const _MapFilterState._() : super._();
 
-/// Create a copy of MapFilterState
-/// with the given fields replaced by the non-null parameter values.
-@override @JsonKey(includeFromJson: false, includeToJson: false)
-@pragma('vm:prefer-inline')
-_$MapFilterStateCopyWith<_MapFilterState> get copyWith => __$MapFilterStateCopyWithImpl<_MapFilterState>(this, _$identity);
+  @override
+  Set<FilterCondition> get selectedConditions;
+  @override
+  String get searchQuery;
 
-
-
-@override
-bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _MapFilterState&&const DeepCollectionEquality().equals(other._selectedConditions, _selectedConditions)&&(identical(other.searchQuery, searchQuery) || other.searchQuery == searchQuery));
+  /// Create a copy of MapFilterState
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$MapFilterStateImplCopyWith<_$MapFilterStateImpl> get copyWith =>
+      throw _privateConstructorUsedError;
 }
-
-
-@override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_selectedConditions),searchQuery);
-
-@override
-String toString() {
-  return 'MapFilterState(selectedConditions: $selectedConditions, searchQuery: $searchQuery)';
-}
-
-
-}
-
-/// @nodoc
-abstract mixin class _$MapFilterStateCopyWith<$Res> implements $MapFilterStateCopyWith<$Res> {
-  factory _$MapFilterStateCopyWith(_MapFilterState value, $Res Function(_MapFilterState) _then) = __$MapFilterStateCopyWithImpl;
-@override @useResult
-$Res call({
- Set<FilterCondition> selectedConditions, String searchQuery
-});
-
-
-
-
-}
-/// @nodoc
-class __$MapFilterStateCopyWithImpl<$Res>
-    implements _$MapFilterStateCopyWith<$Res> {
-  __$MapFilterStateCopyWithImpl(this._self, this._then);
-
-  final _MapFilterState _self;
-  final $Res Function(_MapFilterState) _then;
-
-/// Create a copy of MapFilterState
-/// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? selectedConditions = null,Object? searchQuery = null,}) {
-  return _then(_MapFilterState(
-selectedConditions: null == selectedConditions ? _self._selectedConditions : selectedConditions // ignore: cast_nullable_to_non_nullable
-as Set<FilterCondition>,searchQuery: null == searchQuery ? _self.searchQuery : searchQuery // ignore: cast_nullable_to_non_nullable
-as String,
-  ));
-}
-
-
-}
-
-// dart format on

@@ -6,475 +6,316 @@ part of 'fridge_list_controller.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-// GENERATED CODE - DO NOT MODIFY BY HAND
-// ignore_for_file: type=lint, type=warning
-/// Controller for managing the list of all fridges
-/// Uses real FridgeFinder API to fetch data
-
-@ProviderFor(fridgeList)
-const fridgeListProvider = FridgeListProvider._();
-
-/// Controller for managing the list of all fridges
-/// Uses real FridgeFinder API to fetch data
-
-final class FridgeListProvider
-    extends
-        $FunctionalProvider<
-          AsyncValue<List<FridgeDomain>>,
-          List<FridgeDomain>,
-          FutureOr<List<FridgeDomain>>
-        >
-    with
-        $FutureModifier<List<FridgeDomain>>,
-        $FutureProvider<List<FridgeDomain>> {
-  /// Controller for managing the list of all fridges
-  /// Uses real FridgeFinder API to fetch data
-  const FridgeListProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'fridgeListProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$fridgeListHash();
-
-  @$internal
-  @override
-  $FutureProviderElement<List<FridgeDomain>> $createElement(
-    $ProviderPointer pointer,
-  ) => $FutureProviderElement(pointer);
-
-  @override
-  FutureOr<List<FridgeDomain>> create(Ref ref) {
-    return fridgeList(ref);
-  }
-}
-
 String _$fridgeListHash() => r'e6d119460ce1c8543ecc9d96dede179778e2948d';
 
-/// Notifier for managing a single selected fridge ID
+/// Controller for managing the list of all fridges
+/// Uses real FridgeFinder API to fetch data
+///
+/// Copied from [fridgeList].
+@ProviderFor(fridgeList)
+final fridgeListProvider =
+    AutoDisposeFutureProvider<List<FridgeDomain>>.internal(
+  fridgeList,
+  name: r'fridgeListProvider',
+  debugGetCreateSourceHash:
+      const bool.fromEnvironment('dart.vm.product') ? null : _$fridgeListHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
 
-@ProviderFor(SelectedFridgeId)
-const selectedFridgeIdProvider = SelectedFridgeIdProvider._();
-
-/// Notifier for managing a single selected fridge ID
-final class SelectedFridgeIdProvider
-    extends $NotifierProvider<SelectedFridgeId, String?> {
-  /// Notifier for managing a single selected fridge ID
-  const SelectedFridgeIdProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'selectedFridgeIdProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$selectedFridgeIdHash();
-
-  @$internal
-  @override
-  SelectedFridgeId create() => SelectedFridgeId();
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(String? value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<String?>(value),
-    );
-  }
-}
-
-String _$selectedFridgeIdHash() => r'de033b1e9ded5e7e1ebaf7321983e4e1fae7e30c';
-
-/// Notifier for managing a single selected fridge ID
-
-abstract class _$SelectedFridgeId extends $Notifier<String?> {
-  String? build();
-  @$mustCallSuper
-  @override
-  void runBuild() {
-    final created = build();
-    final ref = this.ref as $Ref<String?, String?>;
-    final element =
-        ref.element
-            as $ClassProviderElement<
-              AnyNotifier<String?, String?>,
-              String?,
-              Object?,
-              Object?
-            >;
-    element.handleValue(ref, created);
-  }
-}
-
-/// Controller for getting the currently selected fridge data
-
-@ProviderFor(selectedFridge)
-const selectedFridgeProvider = SelectedFridgeProvider._();
-
-/// Controller for getting the currently selected fridge data
-
-final class SelectedFridgeProvider
-    extends $FunctionalProvider<FridgeDomain?, FridgeDomain?, FridgeDomain?>
-    with $Provider<FridgeDomain?> {
-  /// Controller for getting the currently selected fridge data
-  const SelectedFridgeProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'selectedFridgeProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$selectedFridgeHash();
-
-  @$internal
-  @override
-  $ProviderElement<FridgeDomain?> $createElement($ProviderPointer pointer) =>
-      $ProviderElement(pointer);
-
-  @override
-  FridgeDomain? create(Ref ref) {
-    return selectedFridge(ref);
-  }
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(FridgeDomain? value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<FridgeDomain?>(value),
-    );
-  }
-}
-
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef FridgeListRef = AutoDisposeFutureProviderRef<List<FridgeDomain>>;
 String _$selectedFridgeHash() => r'6d87e9801d6d6ed899edeba0110bf857ca02337e';
 
-/// Notifier for managing search query
+/// Controller for getting the currently selected fridge data
+///
+/// Copied from [selectedFridge].
+@ProviderFor(selectedFridge)
+final selectedFridgeProvider = AutoDisposeProvider<FridgeDomain?>.internal(
+  selectedFridge,
+  name: r'selectedFridgeProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$selectedFridgeHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
 
-@ProviderFor(SearchQuery)
-const searchQueryProvider = SearchQueryProvider._();
-
-/// Notifier for managing search query
-final class SearchQueryProvider extends $NotifierProvider<SearchQuery, String> {
-  /// Notifier for managing search query
-  const SearchQueryProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'searchQueryProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$searchQueryHash();
-
-  @$internal
-  @override
-  SearchQuery create() => SearchQuery();
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(String value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<String>(value),
-    );
-  }
-}
-
-String _$searchQueryHash() => r'b4834155c01e84bb2d3ee66ef85973a9458eb958';
-
-/// Notifier for managing search query
-
-abstract class _$SearchQuery extends $Notifier<String> {
-  String build();
-  @$mustCallSuper
-  @override
-  void runBuild() {
-    final created = build();
-    final ref = this.ref as $Ref<String, String>;
-    final element =
-        ref.element
-            as $ClassProviderElement<
-              AnyNotifier<String, String>,
-              String,
-              Object?,
-              Object?
-            >;
-    element.handleValue(ref, created);
-  }
-}
-
-/// Controller for filtered fridges based on search
-
-@ProviderFor(filteredFridges)
-const filteredFridgesProvider = FilteredFridgesProvider._();
-
-/// Controller for filtered fridges based on search
-
-final class FilteredFridgesProvider
-    extends
-        $FunctionalProvider<
-          List<FridgeDomain>,
-          List<FridgeDomain>,
-          List<FridgeDomain>
-        >
-    with $Provider<List<FridgeDomain>> {
-  /// Controller for filtered fridges based on search
-  const FilteredFridgesProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'filteredFridgesProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$filteredFridgesHash();
-
-  @$internal
-  @override
-  $ProviderElement<List<FridgeDomain>> $createElement(
-    $ProviderPointer pointer,
-  ) => $ProviderElement(pointer);
-
-  @override
-  List<FridgeDomain> create(Ref ref) {
-    return filteredFridges(ref);
-  }
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(List<FridgeDomain> value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<List<FridgeDomain>>(value),
-    );
-  }
-}
-
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef SelectedFridgeRef = AutoDisposeProviderRef<FridgeDomain?>;
 String _$filteredFridgesHash() => r'd0458cef32e9fb43e2ba42d8cdf9fc7281ddee46';
 
-/// Provider for getting a specific fridge
-/// Uses real FridgeFinder API to fetch specific fridge data
+/// Controller for filtered fridges based on search
+///
+/// Copied from [filteredFridges].
+@ProviderFor(filteredFridges)
+final filteredFridgesProvider =
+    AutoDisposeProvider<List<FridgeDomain>>.internal(
+  filteredFridges,
+  name: r'filteredFridgesProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$filteredFridgesHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
 
-@ProviderFor(singleFridge)
-const singleFridgeProvider = SingleFridgeFamily._();
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef FilteredFridgesRef = AutoDisposeProviderRef<List<FridgeDomain>>;
+String _$singleFridgeHash() => r'b2b1f601ece5543fb65f22d78e50390bbf7cef67';
 
-/// Provider for getting a specific fridge
-/// Uses real FridgeFinder API to fetch specific fridge data
+/// Copied from Dart SDK
+class _SystemHash {
+  _SystemHash._();
 
-final class SingleFridgeProvider
-    extends
-        $FunctionalProvider<
-          AsyncValue<FridgeDomain>,
-          FridgeDomain,
-          FutureOr<FridgeDomain>
-        >
-    with $FutureModifier<FridgeDomain>, $FutureProvider<FridgeDomain> {
-  /// Provider for getting a specific fridge
-  /// Uses real FridgeFinder API to fetch specific fridge data
-  const SingleFridgeProvider._({
-    required SingleFridgeFamily super.from,
-    required String super.argument,
-  }) : super(
-         retry: null,
-         name: r'singleFridgeProvider',
-         isAutoDispose: true,
-         dependencies: null,
-         $allTransitiveDependencies: null,
-       );
-
-  @override
-  String debugGetCreateSourceHash() => _$singleFridgeHash();
-
-  @override
-  String toString() {
-    return r'singleFridgeProvider'
-        ''
-        '($argument)';
+  static int combine(int hash, int value) {
+    // ignore: parameter_assignments
+    hash = 0x1fffffff & (hash + value);
+    // ignore: parameter_assignments
+    hash = 0x1fffffff & (hash + ((0x0007ffff & hash) << 10));
+    return hash ^ (hash >> 6);
   }
 
-  @$internal
-  @override
-  $FutureProviderElement<FridgeDomain> $createElement(
-    $ProviderPointer pointer,
-  ) => $FutureProviderElement(pointer);
+  static int finish(int hash) {
+    // ignore: parameter_assignments
+    hash = 0x1fffffff & (hash + ((0x03ffffff & hash) << 3));
+    // ignore: parameter_assignments
+    hash = hash ^ (hash >> 11);
+    return 0x1fffffff & (hash + ((0x00003fff & hash) << 15));
+  }
+}
+
+/// Provider for getting a specific fridge
+/// Uses real FridgeFinder API to fetch specific fridge data
+///
+/// Copied from [singleFridge].
+@ProviderFor(singleFridge)
+const singleFridgeProvider = SingleFridgeFamily();
+
+/// Provider for getting a specific fridge
+/// Uses real FridgeFinder API to fetch specific fridge data
+///
+/// Copied from [singleFridge].
+class SingleFridgeFamily extends Family<AsyncValue<FridgeDomain>> {
+  /// Provider for getting a specific fridge
+  /// Uses real FridgeFinder API to fetch specific fridge data
+  ///
+  /// Copied from [singleFridge].
+  const SingleFridgeFamily();
+
+  /// Provider for getting a specific fridge
+  /// Uses real FridgeFinder API to fetch specific fridge data
+  ///
+  /// Copied from [singleFridge].
+  SingleFridgeProvider call(
+    String fridgeId,
+  ) {
+    return SingleFridgeProvider(
+      fridgeId,
+    );
+  }
 
   @override
-  FutureOr<FridgeDomain> create(Ref ref) {
-    final argument = this.argument as String;
-    return singleFridge(ref, argument);
+  SingleFridgeProvider getProviderOverride(
+    covariant SingleFridgeProvider provider,
+  ) {
+    return call(
+      provider.fridgeId,
+    );
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'singleFridgeProvider';
+}
+
+/// Provider for getting a specific fridge
+/// Uses real FridgeFinder API to fetch specific fridge data
+///
+/// Copied from [singleFridge].
+class SingleFridgeProvider extends AutoDisposeFutureProvider<FridgeDomain> {
+  /// Provider for getting a specific fridge
+  /// Uses real FridgeFinder API to fetch specific fridge data
+  ///
+  /// Copied from [singleFridge].
+  SingleFridgeProvider(
+    String fridgeId,
+  ) : this._internal(
+          (ref) => singleFridge(
+            ref as SingleFridgeRef,
+            fridgeId,
+          ),
+          from: singleFridgeProvider,
+          name: r'singleFridgeProvider',
+          debugGetCreateSourceHash:
+              const bool.fromEnvironment('dart.vm.product')
+                  ? null
+                  : _$singleFridgeHash,
+          dependencies: SingleFridgeFamily._dependencies,
+          allTransitiveDependencies:
+              SingleFridgeFamily._allTransitiveDependencies,
+          fridgeId: fridgeId,
+        );
+
+  SingleFridgeProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.fridgeId,
+  }) : super.internal();
+
+  final String fridgeId;
+
+  @override
+  Override overrideWith(
+    FutureOr<FridgeDomain> Function(SingleFridgeRef provider) create,
+  ) {
+    return ProviderOverride(
+      origin: this,
+      override: SingleFridgeProvider._internal(
+        (ref) => create(ref as SingleFridgeRef),
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        fridgeId: fridgeId,
+      ),
+    );
+  }
+
+  @override
+  AutoDisposeFutureProviderElement<FridgeDomain> createElement() {
+    return _SingleFridgeProviderElement(this);
   }
 
   @override
   bool operator ==(Object other) {
-    return other is SingleFridgeProvider && other.argument == argument;
+    return other is SingleFridgeProvider && other.fridgeId == fridgeId;
   }
 
   @override
   int get hashCode {
-    return argument.hashCode;
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, fridgeId.hashCode);
+
+    return _SystemHash.finish(hash);
   }
 }
 
-String _$singleFridgeHash() => r'b2b1f601ece5543fb65f22d78e50390bbf7cef67';
-
-/// Provider for getting a specific fridge
-/// Uses real FridgeFinder API to fetch specific fridge data
-
-final class SingleFridgeFamily extends $Family
-    with $FunctionalFamilyOverride<FutureOr<FridgeDomain>, String> {
-  const SingleFridgeFamily._()
-    : super(
-        retry: null,
-        name: r'singleFridgeProvider',
-        dependencies: null,
-        $allTransitiveDependencies: null,
-        isAutoDispose: true,
-      );
-
-  /// Provider for getting a specific fridge
-  /// Uses real FridgeFinder API to fetch specific fridge data
-
-  SingleFridgeProvider call(String fridgeId) =>
-      SingleFridgeProvider._(argument: fridgeId, from: this);
-
-  @override
-  String toString() => r'singleFridgeProvider';
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+mixin SingleFridgeRef on AutoDisposeFutureProviderRef<FridgeDomain> {
+  /// The parameter `fridgeId` of this provider.
+  String get fridgeId;
 }
 
-/// Provider to get fridges sorted by distance from user
-/// Returns fridges sorted by distance (closest first) if location is available
-/// Otherwise returns fridges in original order
-/// Uses memoization to avoid recalculating distances on every rebuild
-
-@ProviderFor(fridgesSortedByDistance)
-const fridgesSortedByDistanceProvider = FridgesSortedByDistanceProvider._();
-
-/// Provider to get fridges sorted by distance from user
-/// Returns fridges sorted by distance (closest first) if location is available
-/// Otherwise returns fridges in original order
-/// Uses memoization to avoid recalculating distances on every rebuild
-
-final class FridgesSortedByDistanceProvider
-    extends
-        $FunctionalProvider<
-          List<FridgeWithDistance>,
-          List<FridgeWithDistance>,
-          List<FridgeWithDistance>
-        >
-    with $Provider<List<FridgeWithDistance>> {
-  /// Provider to get fridges sorted by distance from user
-  /// Returns fridges sorted by distance (closest first) if location is available
-  /// Otherwise returns fridges in original order
-  /// Uses memoization to avoid recalculating distances on every rebuild
-  const FridgesSortedByDistanceProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'fridgesSortedByDistanceProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
+class _SingleFridgeProviderElement
+    extends AutoDisposeFutureProviderElement<FridgeDomain>
+    with SingleFridgeRef {
+  _SingleFridgeProviderElement(super.provider);
 
   @override
-  String debugGetCreateSourceHash() => _$fridgesSortedByDistanceHash();
-
-  @$internal
-  @override
-  $ProviderElement<List<FridgeWithDistance>> $createElement(
-    $ProviderPointer pointer,
-  ) => $ProviderElement(pointer);
-
-  @override
-  List<FridgeWithDistance> create(Ref ref) {
-    return fridgesSortedByDistance(ref);
-  }
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(List<FridgeWithDistance> value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<List<FridgeWithDistance>>(value),
-    );
-  }
+  String get fridgeId => (origin as SingleFridgeProvider).fridgeId;
 }
 
 String _$fridgesSortedByDistanceHash() =>
     r'13ec2fb5e4a5950f8272bc3814bf2da83bf624e2';
 
-/// Provider for filtered fridges based on map filter state (pill filters + fuzzy search)
-/// Applies pill condition filters first, then fuzzy search on remaining fridges
+/// Provider to get fridges sorted by distance from user
+/// Returns fridges sorted by distance (closest first) if location is available
+/// Otherwise returns fridges in original order
+/// Uses memoization to avoid recalculating distances on every rebuild
+///
+/// Copied from [fridgesSortedByDistance].
+@ProviderFor(fridgesSortedByDistance)
+final fridgesSortedByDistanceProvider =
+    AutoDisposeProvider<List<FridgeWithDistance>>.internal(
+  fridgesSortedByDistance,
+  name: r'fridgesSortedByDistanceProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$fridgesSortedByDistanceHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
 
-@ProviderFor(mapFilteredFridges)
-const mapFilteredFridgesProvider = MapFilteredFridgesProvider._();
-
-/// Provider for filtered fridges based on map filter state (pill filters + fuzzy search)
-/// Applies pill condition filters first, then fuzzy search on remaining fridges
-
-final class MapFilteredFridgesProvider
-    extends
-        $FunctionalProvider<
-          List<FridgeDomain>,
-          List<FridgeDomain>,
-          List<FridgeDomain>
-        >
-    with $Provider<List<FridgeDomain>> {
-  /// Provider for filtered fridges based on map filter state (pill filters + fuzzy search)
-  /// Applies pill condition filters first, then fuzzy search on remaining fridges
-  const MapFilteredFridgesProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'mapFilteredFridgesProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$mapFilteredFridgesHash();
-
-  @$internal
-  @override
-  $ProviderElement<List<FridgeDomain>> $createElement(
-    $ProviderPointer pointer,
-  ) => $ProviderElement(pointer);
-
-  @override
-  List<FridgeDomain> create(Ref ref) {
-    return mapFilteredFridges(ref);
-  }
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(List<FridgeDomain> value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<List<FridgeDomain>>(value),
-    );
-  }
-}
-
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef FridgesSortedByDistanceRef
+    = AutoDisposeProviderRef<List<FridgeWithDistance>>;
 String _$mapFilteredFridgesHash() =>
     r'd06bbcc8830b26ed278237a0b85bccada8150993';
+
+/// Provider for filtered fridges based on map filter state (pill filters + fuzzy search)
+/// Applies pill condition filters first, then fuzzy search on remaining fridges
+///
+/// Copied from [mapFilteredFridges].
+@ProviderFor(mapFilteredFridges)
+final mapFilteredFridgesProvider =
+    AutoDisposeProvider<List<FridgeDomain>>.internal(
+  mapFilteredFridges,
+  name: r'mapFilteredFridgesProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$mapFilteredFridgesHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef MapFilteredFridgesRef = AutoDisposeProviderRef<List<FridgeDomain>>;
+String _$selectedFridgeIdHash() => r'de033b1e9ded5e7e1ebaf7321983e4e1fae7e30c';
+
+/// Notifier for managing a single selected fridge ID
+///
+/// Copied from [SelectedFridgeId].
+@ProviderFor(SelectedFridgeId)
+final selectedFridgeIdProvider =
+    AutoDisposeNotifierProvider<SelectedFridgeId, String?>.internal(
+  SelectedFridgeId.new,
+  name: r'selectedFridgeIdProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$selectedFridgeIdHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef _$SelectedFridgeId = AutoDisposeNotifier<String?>;
+String _$searchQueryHash() => r'b4834155c01e84bb2d3ee66ef85973a9458eb958';
+
+/// Notifier for managing search query
+///
+/// Copied from [SearchQuery].
+@ProviderFor(SearchQuery)
+final searchQueryProvider =
+    AutoDisposeNotifierProvider<SearchQuery, String>.internal(
+  SearchQuery.new,
+  name: r'searchQueryProvider',
+  debugGetCreateSourceHash:
+      const bool.fromEnvironment('dart.vm.product') ? null : _$searchQueryHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef _$SearchQuery = AutoDisposeNotifier<String>;
+// ignore_for_file: type=lint
+// ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package
