@@ -477,4 +477,4 @@ final class MapFilteredFridgesProvider
 }
 
 String _$mapFilteredFridgesHash() =>
-    r'd06bbcc8830b26ed278237a0b85bccada8150993';
+    r'a1e603ca9dc4a658b90f6e9ceaafb84db63f7744';

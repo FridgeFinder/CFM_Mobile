@@ -2,7 +2,7 @@
 
 > A community-driven mobile application for locating, managing, and reporting on community fridges. Built with Flutter using modern state management, clean architecture, and reactive programming patterns.
 
-**Status:** Active Development | **Version:** 1.0.0 | **Platform:** iOS & Android | **Language:** Dart/Flutter 3.8+
+**Status:** Active Development | **Version:** 1.0.0+5 | **Platform:** iOS & Android | **Language:** Dart/Flutter 3.8+
 
 ---
 
@@ -480,8 +480,10 @@ Interactive OpenStreetMap displaying community fridges with advanced filtering.
 
 **Filtering System:**
 
-- **Condition Filters:** Good (with/without food), Dirty, Out of Order, Ghost, Not at Location
-- **Search:** Real-time fuzzy matching on fridge names
+- **Food Level Filters:** Full (≥75%), Many Items (50-74%), Few Items (1-49%), Empty (0%)
+- **Condition Filters:** Needs Cleaning, Needs Servicing, Not at Location
+- **Filter Logic:** No filters selected = show all fridges
+- **Search:** Real-time fuzzy matching on fridge names + location search with geocoding
 - **Persistence:** Filters saved locally (restored on app reopen)
 
 **State Management:**
@@ -500,6 +502,7 @@ Scrollable list of community fridges with integrated filtering.
 
 - **Distance Sorting:** Ordered by proximity to user location
 - **Unified Filters:** Uses same filter pills as map view
+- **Location Search:** Search for a location, shows fridges within 1.5km with removable pill indicator
 - **Fridge Cards:** Visual cards showing name, status, distance, last report
 - **Responsive Design:** Adapts to different screen sizes
 - **Pull-to-Refresh:** Easy data refresh (via AsyncValue)
@@ -526,8 +529,9 @@ User preferences and fridge details.
 
 - Full fridge information (name, address, maintainer contact)
 - Latest status report (condition, food percentage, timestamp)
-- **Report Form:** Submit status updates (condition + notes + optional photo)
-- **Photo Upload:** Upload condition photos to server
+- **Report Form:** Submit status updates with radio button condition selection (Good, Dirty, Out of Order, Not at Location)
+- **Photo Upload:** Upload condition photos from camera or gallery
+- **Share & Directions:** Native share and map app chooser (Google Maps, Apple Maps, Waze)
 
 **State Management:**
 
@@ -776,7 +780,7 @@ test/
 └── helpers/                  # Test utilities (test_helpers.dart)
 ```
 
-**Test Status:** 267 tests passing, 5 navigation integration tests remaining (timing-related). New tests added for marker clustering (21 tests) and map caching (5 tests).
+**Test Status:** 271 tests passing, 5 navigation integration tests remaining (timing-related). New tests added for marker clustering (21 tests), map caching (5 tests), and filter improvements.
 
 ### Running Tests
 
@@ -1158,7 +1162,43 @@ Built with ❤️ by the Community Fridge Finder team and contributors.
 
 ---
 
-## Recent Updates (December 2025)
+## Recent Updates (January 2025 - v1.0.0+5)
+
+### UX/UI Improvements
+
+- ✅ **Filter System Redesign:**
+  - 7 filter categories: Full, Many Items, Few Items, Empty, Needs Cleaning, Needs Servicing, Not at Location
+  - Inverted filter logic: No filters selected = show all fridges
+  - Color coding based ONLY on food level (green/yellow/pink/white), conditions shown via icon decorations
+  - Filters always visible at top of map view
+  - Filter state persists with version tracking for migration
+  - Fixed "unknown food level" fridges appearing in filters
+
+- ✅ **Location Search:**
+  - Map view: Enter location and press Enter to move map, clears search bar automatically
+  - List view: Shows fridges within 1.5km of searched location with removable blue pill indicator
+  - Prevents location text from being used in fuzzy name search
+
+- ✅ **Map Interactions:**
+  - Map remains fully interactive while search bar is active
+  - Health bars now display for all fridge conditions (not just "good")
+  - Filter status indicator only shows when filters are active
+
+- ✅ **Status Reporting:**
+  - Radio button UI for condition selection (cleaner than segmented buttons)
+  - Removed "Ghost" option from user-facing reports
+  - Photo upload: "Camera" and "Gallery" buttons (compact text)
+  - Fixed dialog width issue for photo upload buttons
+
+- ✅ **Directions & Sharing:**
+  - Map app chooser shows available apps (Google Maps, Apple Maps, Waze)
+  - User selects preferred navigation app
+  - Native share functionality for fridge locations
+
+- ✅ **Dark Mode Improvements:**
+  - Location pill now clearly visible in dark mode (blue color)
+  - Semi-transparent backgrounds for map overlays (0.5 alpha)
+  - Better contrast for filter pills and search elements
 
 ### Architecture Improvements
 
@@ -1166,7 +1206,7 @@ Built with ❤️ by the Community Fridge Finder team and contributors.
 - ✅ **Riverpod Code Generation:** All providers converted to code generation with `@riverpod` annotation for type safety
 - ✅ **Marker Clustering:** Implemented `flutter_map_marker_cluster` for grouping nearby markers, improving map performance and UX
 - ✅ **Map Tile Caching:** Added `flutter_map_cache` with in-memory LRU cache (50MB) for faster map loading and reduced data usage
-- ✅ **Test Coverage:** Comprehensive test suite with 267 passing tests (21 new tests for marker clustering and map caching)
+- ✅ **Test Coverage:** Comprehensive test suite with 271 passing tests
 - ✅ **App Store Readiness:** Privacy policy created, navigation cleaned up, proper permissions configured, app icons generated
 
 ### Code Quality
@@ -1174,8 +1214,17 @@ Built with ❤️ by the Community Fridge Finder team and contributors.
 - ✅ **Const Optimization:** Applied `dart fix --apply` for performance improvements
 - ✅ **Navigation Cleanup:** Removed Favorites placeholder to ensure app store approval
 - ✅ **Provider Overrides:** Improved test helpers with proper provider mocking
-- ✅ **Marker Clustering Tests:** Added comprehensive widget tests (21 tests covering size, colors, theming)
-- ✅ **Map Caching Tests:** Added provider tests for tile caching functionality (5 tests)
+- ✅ **Comprehensive Testing:** Added tests for marker clustering (21), map caching (5), and filter improvements
+
+### Bug Fixes
+
+- ✅ Fixed filter initialization (v2 storage schema with automatic migration)
+- ✅ Fixed health bars not showing for dirty/out-of-order fridges
+- ✅ Fixed map overlay blocking interactions
+- ✅ Fixed "not showing" text appearing with no filters selected
+- ✅ Fixed list view showing no fridges by default
+- ✅ Fixed photo upload dialog width issue
+- ✅ Fixed unknown food level fridges matching filters
 
 ### App Store Preparation
 

@@ -18,10 +18,10 @@ abstract class MapFilterState with _$MapFilterState {
     @Default('') String searchQuery,
   }) = _MapFilterState;
 
-  /// Check if filter state is at default (all conditions selected, no search)
+  /// Check if filter state is at default (no conditions selected, no search)
+  /// Default state shows everything
   bool get isDefault {
-    return selectedConditions.length == FilterCondition.values.length &&
-        searchQuery.isEmpty;
+    return selectedConditions.isEmpty && searchQuery.isEmpty;
   }
 
   /// Get list of deselected filter conditions for display
@@ -38,6 +38,8 @@ class MapFilter extends _$MapFilter {
   static const String _boxName = 'map_filter_state';
   static const String _conditionsKey = 'selected_conditions';
   static const String _searchKey = 'search_query';
+  static const String _versionKey = 'storage_version';
+  static const int _currentVersion = 2; // Increment when filter logic changes
   static const Duration _searchDebounceDelay = Duration(milliseconds: 150);
 
   Timer? _searchDebounceTimer;
@@ -56,18 +58,31 @@ class MapFilter extends _$MapFilter {
     try {
       final box = await Hive.openBox(_boxName);
 
+      // Check storage version - if mismatch, reset to default and update version
+      final savedVersion = box.get(_versionKey) as int?;
+      if (savedVersion != _currentVersion) {
+        // Version mismatch or first run - reset to default and save new version
+        await box.put(_versionKey, _currentVersion);
+        await box.delete(_conditionsKey);
+        await box.delete(_searchKey);
+
+        return const MapFilterState(
+          selectedConditions: <FilterCondition>{}, // Default: none selected (shows everything)
+          searchQuery: '',
+        );
+      }
+
       // Load selected conditions
       final conditionStrings = box.get(_conditionsKey) as List?;
       final selectedConditions =
-          (conditionStrings == null || conditionStrings.isEmpty)
-          ? FilterCondition.values
-                .toSet() // Default: all selected
+          (conditionStrings == null)
+          ? <FilterCondition>{} // Default: none selected (shows everything)
           : conditionStrings
                 .cast<String>()
                 .map(
                   (str) => FilterCondition.values.firstWhere(
                     (c) => c.value == str,
-                    orElse: () => FilterCondition.goodWithFood,
+                    orElse: () => FilterCondition.full,
                   ),
                 )
                 .toSet();
@@ -80,9 +95,9 @@ class MapFilter extends _$MapFilter {
         searchQuery: searchQuery,
       );
     } catch (e) {
-      // If loading fails, return default state (all conditions selected)
-      return MapFilterState(
-        selectedConditions: FilterCondition.values.toSet(),
+      // If loading fails, return default state (no conditions selected = show all)
+      return const MapFilterState(
+        selectedConditions: <FilterCondition>{},
         searchQuery: '',
       );
     }
@@ -92,6 +107,7 @@ class MapFilter extends _$MapFilter {
   Future<void> _saveToStorage(MapFilterState state) async {
     try {
       final box = await Hive.openBox(_boxName);
+      await box.put(_versionKey, _currentVersion); // Always save current version
       await box.put(
         _conditionsKey,
         state.selectedConditions.map((c) => c.value).toList(),

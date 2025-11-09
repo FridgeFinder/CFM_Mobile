@@ -50,9 +50,11 @@ class FilterPillButton extends ConsumerWidget {
         ? Colors.grey.shade600
         : Colors.grey.shade300;
     final borderColor = isSelected ? color : unselectedBorderColor;
+    // Semi-transparent background for all pills to ensure legibility on map
+    final baseBackground = Colors.black.withValues(alpha: 0.5);
     final backgroundColor = isSelected
-        ? color.withValues(alpha: 0.15)
-        : Colors.transparent;
+        ? color.withValues(alpha: 0.25)
+        : baseBackground;
 
     return GestureDetector(
       onTap: onPressed,

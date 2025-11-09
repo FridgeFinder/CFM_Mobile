@@ -18,6 +18,7 @@ class FridgeRepository implements IFridgeRepository {
   /// Throws [NetworkException] on network errors
   /// Throws [ServerException] on server errors
   /// Based on real API: GET /v1/fridges
+  /// Filters out ghost fridges from the response
   @override
   Future<List<FridgeDomain>> getFridges() async {
     try {
@@ -35,6 +36,9 @@ class FridgeRepository implements IFridgeRepository {
 
       return data
           .map((json) => FridgeDomain.fromJson(json as Map<String, dynamic>))
+          // Filter out ghost fridges from the initial response
+          .where((fridge) =>
+              fridge.latestFridgeReport?.condition != FridgeCondition.ghost)
           .toList();
     } on DioException catch (e) {
       throw _handleDioError(e);
@@ -75,20 +79,35 @@ class FridgeRepository implements IFridgeRepository {
   /// Submit a condition report for a fridge
   /// Throws [NetworkException] on network errors
   /// Based on real API: POST /v1/fridges/{fridgeId}/reports
+  /// foodPercentage is in 0-1 range and will be converted to 0-3 API format
   @override
   Future<void> submitFridgeReport(
     String fridgeId,
     FridgeCondition condition,
     double foodPercentage,
     String? notes,
+    String? photoUrl,
   ) async {
     try {
+      // Convert foodPercentage from 0-1 range to 0-3 integer for API
+      final int foodLevel;
+      if (foodPercentage >= 0.75) {
+        foodLevel = 3; // Full
+      } else if (foodPercentage >= 0.5) {
+        foodLevel = 2; // Many items
+      } else if (foodPercentage > 0) {
+        foodLevel = 1; // Few items
+      } else {
+        foodLevel = 0; // Empty
+      }
+
       final response = await _dio.post(
         '/fridges/$fridgeId/reports',
         data: {
           'condition': condition.value,
-          'foodPercentage': foodPercentage,
-          if (notes != null) 'notes': notes,
+          'foodPercentage': foodLevel,
+          if (notes != null && notes.isNotEmpty) 'notes': notes,
+          if (photoUrl != null && photoUrl.isNotEmpty) 'photoUrl': photoUrl,
         },
       );
 

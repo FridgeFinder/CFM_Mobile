@@ -3,13 +3,16 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:geocoding/geocoding.dart';
 import '../../domain/models/fridge_domain.dart';
 import '../controllers/fridge_list_controller.dart';
+import '../controllers/map_filter_controller.dart';
 import '../widgets/fridge_marker.dart';
 import '../widgets/fridge_cluster_widget.dart';
 import '../widgets/user_location_indicator.dart';
-import '../widgets/map_filter_panel.dart';
+import '../widgets/map_search_panel.dart';
 import '../widgets/filter_status_indicator.dart';
+import '../widgets/filter_pills_row.dart';
 import '../../../profile/presentation/fridge_profile_sheet.dart';
 import '../../../../common_widgets/index.dart' as common_widgets;
 import '../../../../core/providers/location_provider.dart';
@@ -70,6 +73,54 @@ class _MapScreenState extends ConsumerState<MapScreen> {
         _searchFocusNode.unfocus();
       }
     });
+  }
+
+  Future<void> _searchLocation(String query) async {
+    if (query.trim().isEmpty) return;
+
+    try {
+      // Geocode the location query
+      final locations = await locationFromAddress(query);
+
+      if (locations.isEmpty) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Location not found: $query'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+
+      // Move map to first result
+      final location = locations.first;
+      _mapController.move(
+        LatLng(location.latitude, location.longitude),
+        14.0,
+      );
+
+      // Clear the search bar after successfully moving to location
+      // This prevents the location query from filtering fridge names
+      _searchController.clear();
+      ref.read(mapFilterProvider.notifier).clearSearch();
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Moved to: $query'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to search location: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   @override
@@ -183,24 +234,36 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                   ),
                 ],
               ),
-              // Invisible overlay to close panel when tapping outside
-              if (_isFilterPanelExpanded)
-                GestureDetector(
-                  onTap: () {
-                    _toggleFilterPanel();
-                  },
-                  child: Container(color: Colors.transparent),
-                ),
-              // Filter panel - overlays above map
+              // Always-visible filter pills at top of map
               Positioned(
                 top: 0,
                 left: 0,
                 right: 0,
-                child: MapFilterPanel(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.black.withValues(alpha: 0.3),
+                        Colors.transparent,
+                      ],
+                    ),
+                  ),
+                  child: const FilterPillsRow(),
+                ),
+              ),
+              // Search panel - overlays above map, below filter pills
+              Positioned(
+                top: 48, // Below the filter pills row (height 48)
+                left: 0,
+                right: 0,
+                child: MapSearchPanel(
                   searchController: _searchController,
                   searchFocusNode: _searchFocusNode,
                   isExpanded: _isFilterPanelExpanded,
                   onToggleExpanded: _toggleFilterPanel,
+                  onLocationSearch: _searchLocation,
                 ),
               ),
               // Center to user location button (above search button)

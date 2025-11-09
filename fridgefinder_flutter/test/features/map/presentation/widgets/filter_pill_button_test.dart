@@ -21,7 +21,7 @@ void main() {
           child: MaterialApp(
             home: Scaffold(
               body: FilterPillButton(
-                condition: FilterCondition.goodWithFood,
+                condition: FilterCondition.full,
                 isSelected: false,
                 onPressed: () {},
               ),
@@ -30,7 +30,7 @@ void main() {
         ),
       );
 
-      expect(find.text('Good (w/ Food)'), findsOneWidget);
+      expect(find.text('Full'), findsOneWidget);
     });
 
     testWidgets('shows green checkmark when selected', (
@@ -41,7 +41,7 @@ void main() {
           child: MaterialApp(
             home: Scaffold(
               body: FilterPillButton(
-                condition: FilterCondition.goodWithFood,
+                condition: FilterCondition.full,
                 isSelected: true,
                 onPressed: () {},
               ),
@@ -61,7 +61,7 @@ void main() {
           child: MaterialApp(
             home: Scaffold(
               body: FilterPillButton(
-                condition: FilterCondition.goodWithFood,
+                condition: FilterCondition.full,
                 isSelected: false,
                 onPressed: () {},
               ),
@@ -79,7 +79,7 @@ void main() {
           child: MaterialApp(
             home: Scaffold(
               body: FilterPillButton(
-                condition: FilterCondition.goodWithFood,
+                condition: FilterCondition.full,
                 isSelected: false,
                 onPressed: () {},
               ),
@@ -100,7 +100,7 @@ void main() {
           child: MaterialApp(
             home: Scaffold(
               body: FilterPillButton(
-                condition: FilterCondition.goodWithFood,
+                condition: FilterCondition.full,
                 isSelected: false,
                 onPressed: () {
                   tapped = true;
@@ -121,11 +121,11 @@ void main() {
       WidgetTester tester,
     ) async {
       final conditions = [
-        FilterCondition.goodWithFood,
-        FilterCondition.goodEmpty,
-        FilterCondition.dirty,
-        FilterCondition.outOfOrder,
-        FilterCondition.ghost,
+        FilterCondition.full,
+        FilterCondition.manyItems,
+        FilterCondition.fewItems,
+        FilterCondition.empty,
+        FilterCondition.needsCleaning,
         FilterCondition.notAtLocation,
       ];
 
@@ -159,7 +159,7 @@ void main() {
             home: Scaffold(
               body: FilterPillButton(
                 key: key,
-                condition: FilterCondition.goodWithFood,
+                condition: FilterCondition.full,
                 isSelected: false,
                 onPressed: () {},
               ),
@@ -178,7 +178,7 @@ void main() {
             home: Scaffold(
               body: FilterPillButton(
                 key: key,
-                condition: FilterCondition.goodWithFood,
+                condition: FilterCondition.full,
                 isSelected: true,
                 onPressed: () {},
               ),

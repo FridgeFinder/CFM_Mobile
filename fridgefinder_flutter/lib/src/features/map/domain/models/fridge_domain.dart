@@ -105,6 +105,43 @@ class _FridgeConditionConverter
   }
 }
 
+/// Converter for foodPercentage from API's 0-3 integer levels to 0-1 decimal
+/// API uses: 0 = empty, 1 = few items, 2 = many items, 3 = full
+class _FoodPercentageConverter implements JsonConverter<double, dynamic> {
+  const _FoodPercentageConverter();
+
+  @override
+  double fromJson(dynamic json) {
+    if (json == null) return 0.0;
+
+    final value = json is int ? json : (json as num).round();
+
+    // Convert from 0-3 integer levels to 0-1 decimal percentage
+    switch (value) {
+      case 0:
+        return 0.0; // Empty (0%)
+      case 1:
+        return 0.33; // Few items
+      case 2:
+        return 0.66; // Many items
+      case 3:
+        return 1.0;
+      default:
+        // Handle unexpected values by clamping to valid range
+        return (value / 3.0).clamp(0.0, 1.0);
+    }
+  }
+
+  @override
+  double toJson(double object) {
+    // Convert from 0-1 decimal percentage back to 0-3 integer levels for API
+    if (object >= 0.75) return 3; // Full
+    if (object >= 0.5) return 2; // Many items
+    if (object > 0) return 1; // Few items
+    return 0; // Empty
+  }
+}
+
 /// Status report for a fridge
 /// Matches the real FridgeFinder API report structure
 @freezed
@@ -114,8 +151,11 @@ abstract class FridgeReportDomain with _$FridgeReportDomain {
   const factory FridgeReportDomain({
     @Default('') String fridgeId,
     @_FridgeConditionConverter() required FridgeCondition condition,
-    @Default(0.0) double foodPercentage, // 0-1 range
+    @_FoodPercentageConverter()
+    @Default(0.0)
+    double foodPercentage, // 0-1 range, clamped
     String? notes,
+    String? photoUrl,
     String? epochTimestamp, // Unix epoch as string
     String? timestamp, // ISO8601 format
   }) = _FridgeReportDomain;
@@ -185,8 +225,10 @@ abstract class FridgeDomain with _$FridgeDomain {
           return Colors.yellow;
         case FridgeCondition.outOfOrder:
           return Colors.orange;
-        case FridgeCondition.ghost:
-          return Colors.red;
+        case FridgeCondition
+            .ghost: // Ghost fridges are filtered from API response
+          return Colors
+              .red; // Kept for exhaustive switch, but ghost fridges are filtered out
         case FridgeCondition.notAtLocation:
           return Colors.black;
       }
@@ -210,8 +252,9 @@ abstract class FridgeDomain with _$FridgeDomain {
         return 'Dirty';
       case FridgeCondition.outOfOrder:
         return 'Out of Order';
-      case FridgeCondition.ghost:
-        return 'Ghost Fridge';
+      case FridgeCondition
+          .ghost: // Ghost fridges are filtered from API response
+        return 'Ghost Fridge'; // Kept for exhaustive switch, but ghost fridges are filtered out
       case FridgeCondition.notAtLocation:
         return 'Not at Location';
     }

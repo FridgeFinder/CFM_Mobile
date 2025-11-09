@@ -167,14 +167,17 @@ List<FridgeDomain> mapFilteredFridges(Ref ref) {
           return fridgesAsync.whenOrNull(
                 data: (fridges) {
                   // First, filter by selected conditions (pill filters)
-                  var filtered = fridges.where((fridge) {
-                    // Check if any of the selected filter conditions match this fridge
-                    return filterState.selectedConditions.any((
-                      filterCondition,
-                    ) {
-                      return filterCondition.matches(fridge);
-                    });
-                  }).toList();
+                  // If no conditions selected, show all fridges
+                  var filtered = filterState.selectedConditions.isEmpty
+                      ? fridges
+                      : fridges.where((fridge) {
+                          // Check if any of the selected filter conditions match this fridge
+                          return filterState.selectedConditions.any((
+                            filterCondition,
+                          ) {
+                            return filterCondition.matches(fridge);
+                          });
+                        }).toList();
 
                   // Then apply fuzzy search
                   if (filterState.searchQuery.isEmpty) {

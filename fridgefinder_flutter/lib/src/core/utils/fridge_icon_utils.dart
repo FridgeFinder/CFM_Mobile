@@ -77,25 +77,28 @@ class FridgeIconUtils {
     final report = fridge.latestFridgeReport;
 
     // Handle special conditions when report exists
+    // Color is ALWAYS based on food level, decorations show condition
     if (report != null) {
+      // Get color from food level (not condition!)
+      final foodColor = colorFromFoodLevel[_getFoodLevelIndex(report.foodPercentage)]!;
+
       switch (report.condition) {
         case FridgeCondition.notAtLocation:
           return _buildPinIcon(
-            color:
-                colorFromFoodLevel[_getFoodLevelIndex(report.foodPercentage)]!,
+            color: foodColor,
             size: size,
-            isSmileFace: false,
+            isSmileFace: false, // X face for not at location
             hasDecoration: false,
             decoration: '',
           );
 
+        // Ghost fridges are filtered from API response, but kept for exhaustive switch
         case FridgeCondition.ghost:
-          return _buildGhostIcon(size);
+          return _buildGhostIcon(size); // Kept for compatibility, but ghost fridges are filtered out
 
         case FridgeCondition.good:
           return _buildPinIcon(
-            color:
-                colorFromFoodLevel[_getFoodLevelIndex(report.foodPercentage)]!,
+            color: foodColor,
             size: size,
             isSmileFace: true,
             hasDecoration: false,
@@ -103,9 +106,9 @@ class FridgeIconUtils {
           );
 
         case FridgeCondition.dirty:
-          // Dirty fridges always use yellow color (#FFE55C) regardless of food level
+          // Dirty: food level color + dirty decoration overlay
           return _buildPinIcon(
-            color: colorFromFoodLevel[2]!, // itemsMany - yellow
+            color: foodColor,
             size: size,
             isSmileFace: true,
             hasDecoration: true,
@@ -113,9 +116,9 @@ class FridgeIconUtils {
           );
 
         case FridgeCondition.outOfOrder:
-          // Out of order fridges always use pink color (#FFD4FF) regardless of food level
+          // Out of order: food level color + servicing decoration overlay
           return _buildPinIcon(
-            color: colorFromFoodLevel[1]!, // itemsFew - pink
+            color: foodColor,
             size: size,
             isSmileFace: true,
             hasDecoration: true,
@@ -174,6 +177,7 @@ class FridgeIconUtils {
 
   /// Build ghost icon - matches CFM_Frontend svgUrlPinGhost style
   /// Ghost has a wavy outline and semi-transparent styling
+  /// NOTE: Ghost fridges are filtered from API response, this is kept for compatibility
   static Widget _buildGhostIcon(double size) {
     // Ghost SVG from CFM_Frontend/src/theme/icons.js svgUrlPinGhost
     // Uses #e3f2fd99 fill (light blue with 60% opacity) and #22222299 stroke
@@ -201,8 +205,8 @@ class FridgeIconUtils {
         return Icons.cleaning_services;
       case FridgeCondition.outOfOrder:
         return Icons.build_circle;
-      case FridgeCondition.ghost:
-        return Icons.announcement;
+      case FridgeCondition.ghost: // Ghost fridges are filtered from API response
+        return Icons.announcement; // Kept for exhaustive switch, but ghost fridges are filtered out
       case FridgeCondition.notAtLocation:
         return Icons.location_off;
     }
@@ -217,28 +221,32 @@ class FridgeIconUtils {
         return Colors.orange;
       case FridgeCondition.outOfOrder:
         return Colors.red;
-      case FridgeCondition.ghost:
-        return Colors.purple;
+      case FridgeCondition.ghost: // Ghost fridges are filtered from API response
+        return Colors.purple; // Kept for exhaustive switch, but ghost fridges are filtered out
       case FridgeCondition.notAtLocation:
         return Colors.black;
     }
   }
 
-  /// Get status color for filter condition
+  /// Get status color for filter condition matching the map key
+  /// Colors are based on food level only, not condition
   static Color getStatusColorForFilterCondition(FilterCondition condition) {
     switch (condition) {
-      case FilterCondition.goodWithFood:
-        return Colors.green;
-      case FilterCondition.goodEmpty:
+      case FilterCondition.full:
+        return colorFromFoodLevel[3]!; // Green - #97ED7D
+      case FilterCondition.manyItems:
+        return colorFromFoodLevel[2]!; // Yellow - #FFE55C
+      case FilterCondition.fewItems:
+        return colorFromFoodLevel[1]!; // Pink - #FFD4FF
+      case FilterCondition.empty:
+        return colorFromFoodLevel[0]!; // White - #FFFFFF
+      case FilterCondition.needsCleaning:
+      case FilterCondition.needsServicing:
+        // These show food level colors, not special colors
+        // Default to gray since we don't know food level in filter context
         return Colors.grey;
-      case FilterCondition.dirty:
-        return Colors.orange;
-      case FilterCondition.outOfOrder:
-        return Colors.red;
-      case FilterCondition.ghost:
-        return Colors.purple;
       case FilterCondition.notAtLocation:
-        return Colors.black;
+        return Colors.grey;
     }
   }
 
@@ -252,56 +260,64 @@ class FridgeIconUtils {
   /// Generate small SVG representation for each filter condition type
   static String _generateConditionPillSvg(FilterCondition condition) {
     switch (condition) {
-      case FilterCondition.goodWithFood:
-        // Green pin with smile (full food)
+      case FilterCondition.full:
+        // Green pin with smile (full food >= 75%)
         return generatePinSvg(
-          pinColor: const Color(0xFF97ED7D), // green - full food
+          pinColor: const Color(0xFF97ED7D), // green
           isSmileFace: true,
           hasDecoration: false,
           decorationSvg: '',
         );
 
-      case FilterCondition.goodEmpty:
-        // White pin with smile (empty food)
-        return generatePinSvg(
-          pinColor: const Color(0xFFFFFFFF), // white - no food
-          isSmileFace: true,
-          hasDecoration: false,
-          decorationSvg: '',
-        );
-
-      case FilterCondition.dirty:
-        // Yellow pin with smile + dirty decoration
+      case FilterCondition.manyItems:
+        // Yellow pin with smile (many items 50-74%)
         return generatePinSvg(
           pinColor: const Color(0xFFFFE55C), // yellow
+          isSmileFace: true,
+          hasDecoration: false,
+          decorationSvg: '',
+        );
+
+      case FilterCondition.fewItems:
+        // Pink pin with smile (few items 1-49%)
+        return generatePinSvg(
+          pinColor: const Color(0xFFFFD4FF), // pink
+          isSmileFace: true,
+          hasDecoration: false,
+          decorationSvg: '',
+        );
+
+      case FilterCondition.empty:
+        // White pin with smile (empty 0%)
+        return generatePinSvg(
+          pinColor: const Color(0xFFFFFFFF), // white
+          isSmileFace: true,
+          hasDecoration: false,
+          decorationSvg: '',
+        );
+
+      case FilterCondition.needsCleaning:
+        // Gray pin with dirty decoration (color comes from food level)
+        return generatePinSvg(
+          pinColor: Colors.grey.shade300,
           isSmileFace: true,
           hasDecoration: true,
           decorationSvg: _svgDecorationDirty,
         );
 
-      case FilterCondition.outOfOrder:
-        // Orange pin with smile + X decoration
+      case FilterCondition.needsServicing:
+        // Gray pin with servicing decoration (color comes from food level)
         return generatePinSvg(
-          pinColor: const Color(0xFFFFD4FF), // pink/orange area
+          pinColor: Colors.grey.shade300,
           isSmileFace: true,
           hasDecoration: true,
           decorationSvg: _svgDecorationOutOfOrder,
         );
 
-      case FilterCondition.ghost:
-        // Ghost icon - special case
-        const ghostSvg =
-            '''<svg fill="#e3f2fd99" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <path stroke="#22222299" stroke-width="1.358" d="M4.979 3.152C3.117 4.735 2.07 6.882 2.07 9.12c0 9.136.447 9.545 0 12.194-.45 2.674 4.063 2.674 4.063 0 0-2.523 3.611-2.523 3.611 0 0 2.292 4.514 2.292 4.514 0 0-2.523 3.611-2.523 3.611 0 0 2.292 4.514 2.292 4.063 0-.452-2.293 0-4.204 0-12.194 0-2.239-1.047-4.386-2.91-5.97-1.86-1.58-4.386-2.47-7.02-2.47-2.634 0-5.16.89-7.022 2.473z" />
-          <circle cx="13.444" cy="9.389" r=".794" fill="#222" />
-          <circle cx="10.303" cy="9.389" r=".794" fill="#222" />
-        </svg>''';
-        return ghostSvg;
-
       case FilterCondition.notAtLocation:
-        // Black pin with X face
+        // Gray pin with X face
         return generatePinSvg(
-          pinColor: Colors.white70, // black for not at location
+          pinColor: Colors.white70, // gray for not at location
           isSmileFace: false, // X face instead of smile
           hasDecoration: false,
           decorationSvg: '',

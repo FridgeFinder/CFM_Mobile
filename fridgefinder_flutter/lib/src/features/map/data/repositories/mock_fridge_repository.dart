@@ -179,6 +179,7 @@ class MockFridgeRepository implements IFridgeRepository {
     FridgeCondition condition,
     double foodPercentage,
     String? notes,
+    String? photoUrl,
   ) async {
     _checkShouldFail();
     await _simulateNetworkDelay();
@@ -195,6 +196,7 @@ class MockFridgeRepository implements IFridgeRepository {
       condition: condition,
       foodPercentage: foodPercentage,
       notes: notes,
+      photoUrl: photoUrl,
       epochTimestamp: (now.millisecondsSinceEpoch ~/ 1000).toString(),
       timestamp: now.toIso8601String(),
     );

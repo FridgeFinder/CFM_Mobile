@@ -574,8 +574,8 @@ as String?,
 /// @nodoc
 mixin _$FridgeReportDomain {
 
- String get fridgeId;@_FridgeConditionConverter() FridgeCondition get condition; double get foodPercentage;// 0-1 range
- String? get notes; String? get epochTimestamp;// Unix epoch as string
+ String get fridgeId;@_FridgeConditionConverter() FridgeCondition get condition;@_FoodPercentageConverter() double get foodPercentage;// 0-1 range, clamped
+ String? get notes; String? get photoUrl; String? get epochTimestamp;// Unix epoch as string
  String? get timestamp;
 /// Create a copy of FridgeReportDomain
 /// with the given fields replaced by the non-null parameter values.
@@ -589,16 +589,16 @@ $FridgeReportDomainCopyWith<FridgeReportDomain> get copyWith => _$FridgeReportDo
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is FridgeReportDomain&&(identical(other.fridgeId, fridgeId) || other.fridgeId == fridgeId)&&(identical(other.condition, condition) || other.condition == condition)&&(identical(other.foodPercentage, foodPercentage) || other.foodPercentage == foodPercentage)&&(identical(other.notes, notes) || other.notes == notes)&&(identical(other.epochTimestamp, epochTimestamp) || other.epochTimestamp == epochTimestamp)&&(identical(other.timestamp, timestamp) || other.timestamp == timestamp));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is FridgeReportDomain&&(identical(other.fridgeId, fridgeId) || other.fridgeId == fridgeId)&&(identical(other.condition, condition) || other.condition == condition)&&(identical(other.foodPercentage, foodPercentage) || other.foodPercentage == foodPercentage)&&(identical(other.notes, notes) || other.notes == notes)&&(identical(other.photoUrl, photoUrl) || other.photoUrl == photoUrl)&&(identical(other.epochTimestamp, epochTimestamp) || other.epochTimestamp == epochTimestamp)&&(identical(other.timestamp, timestamp) || other.timestamp == timestamp));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,fridgeId,condition,foodPercentage,notes,epochTimestamp,timestamp);
+int get hashCode => Object.hash(runtimeType,fridgeId,condition,foodPercentage,notes,photoUrl,epochTimestamp,timestamp);
 
 @override
 String toString() {
-  return 'FridgeReportDomain(fridgeId: $fridgeId, condition: $condition, foodPercentage: $foodPercentage, notes: $notes, epochTimestamp: $epochTimestamp, timestamp: $timestamp)';
+  return 'FridgeReportDomain(fridgeId: $fridgeId, condition: $condition, foodPercentage: $foodPercentage, notes: $notes, photoUrl: $photoUrl, epochTimestamp: $epochTimestamp, timestamp: $timestamp)';
 }
 
 
@@ -609,7 +609,7 @@ abstract mixin class $FridgeReportDomainCopyWith<$Res>  {
   factory $FridgeReportDomainCopyWith(FridgeReportDomain value, $Res Function(FridgeReportDomain) _then) = _$FridgeReportDomainCopyWithImpl;
 @useResult
 $Res call({
- String fridgeId,@_FridgeConditionConverter() FridgeCondition condition, double foodPercentage, String? notes, String? epochTimestamp, String? timestamp
+ String fridgeId,@_FridgeConditionConverter() FridgeCondition condition,@_FoodPercentageConverter() double foodPercentage, String? notes, String? photoUrl, String? epochTimestamp, String? timestamp
 });
 
 
@@ -626,12 +626,13 @@ class _$FridgeReportDomainCopyWithImpl<$Res>
 
 /// Create a copy of FridgeReportDomain
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? fridgeId = null,Object? condition = null,Object? foodPercentage = null,Object? notes = freezed,Object? epochTimestamp = freezed,Object? timestamp = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? fridgeId = null,Object? condition = null,Object? foodPercentage = null,Object? notes = freezed,Object? photoUrl = freezed,Object? epochTimestamp = freezed,Object? timestamp = freezed,}) {
   return _then(_self.copyWith(
 fridgeId: null == fridgeId ? _self.fridgeId : fridgeId // ignore: cast_nullable_to_non_nullable
 as String,condition: null == condition ? _self.condition : condition // ignore: cast_nullable_to_non_nullable
 as FridgeCondition,foodPercentage: null == foodPercentage ? _self.foodPercentage : foodPercentage // ignore: cast_nullable_to_non_nullable
 as double,notes: freezed == notes ? _self.notes : notes // ignore: cast_nullable_to_non_nullable
+as String?,photoUrl: freezed == photoUrl ? _self.photoUrl : photoUrl // ignore: cast_nullable_to_non_nullable
 as String?,epochTimestamp: freezed == epochTimestamp ? _self.epochTimestamp : epochTimestamp // ignore: cast_nullable_to_non_nullable
 as String?,timestamp: freezed == timestamp ? _self.timestamp : timestamp // ignore: cast_nullable_to_non_nullable
 as String?,
@@ -719,10 +720,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String fridgeId, @_FridgeConditionConverter()  FridgeCondition condition,  double foodPercentage,  String? notes,  String? epochTimestamp,  String? timestamp)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String fridgeId, @_FridgeConditionConverter()  FridgeCondition condition, @_FoodPercentageConverter()  double foodPercentage,  String? notes,  String? photoUrl,  String? epochTimestamp,  String? timestamp)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _FridgeReportDomain() when $default != null:
-return $default(_that.fridgeId,_that.condition,_that.foodPercentage,_that.notes,_that.epochTimestamp,_that.timestamp);case _:
+return $default(_that.fridgeId,_that.condition,_that.foodPercentage,_that.notes,_that.photoUrl,_that.epochTimestamp,_that.timestamp);case _:
   return orElse();
 
 }
@@ -740,10 +741,10 @@ return $default(_that.fridgeId,_that.condition,_that.foodPercentage,_that.notes,
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String fridgeId, @_FridgeConditionConverter()  FridgeCondition condition,  double foodPercentage,  String? notes,  String? epochTimestamp,  String? timestamp)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String fridgeId, @_FridgeConditionConverter()  FridgeCondition condition, @_FoodPercentageConverter()  double foodPercentage,  String? notes,  String? photoUrl,  String? epochTimestamp,  String? timestamp)  $default,) {final _that = this;
 switch (_that) {
 case _FridgeReportDomain():
-return $default(_that.fridgeId,_that.condition,_that.foodPercentage,_that.notes,_that.epochTimestamp,_that.timestamp);case _:
+return $default(_that.fridgeId,_that.condition,_that.foodPercentage,_that.notes,_that.photoUrl,_that.epochTimestamp,_that.timestamp);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -760,10 +761,10 @@ return $default(_that.fridgeId,_that.condition,_that.foodPercentage,_that.notes,
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String fridgeId, @_FridgeConditionConverter()  FridgeCondition condition,  double foodPercentage,  String? notes,  String? epochTimestamp,  String? timestamp)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String fridgeId, @_FridgeConditionConverter()  FridgeCondition condition, @_FoodPercentageConverter()  double foodPercentage,  String? notes,  String? photoUrl,  String? epochTimestamp,  String? timestamp)?  $default,) {final _that = this;
 switch (_that) {
 case _FridgeReportDomain() when $default != null:
-return $default(_that.fridgeId,_that.condition,_that.foodPercentage,_that.notes,_that.epochTimestamp,_that.timestamp);case _:
+return $default(_that.fridgeId,_that.condition,_that.foodPercentage,_that.notes,_that.photoUrl,_that.epochTimestamp,_that.timestamp);case _:
   return null;
 
 }
@@ -775,14 +776,15 @@ return $default(_that.fridgeId,_that.condition,_that.foodPercentage,_that.notes,
 @JsonSerializable()
 
 class _FridgeReportDomain extends FridgeReportDomain {
-  const _FridgeReportDomain({this.fridgeId = '', @_FridgeConditionConverter() required this.condition, this.foodPercentage = 0.0, this.notes, this.epochTimestamp, this.timestamp}): super._();
+  const _FridgeReportDomain({this.fridgeId = '', @_FridgeConditionConverter() required this.condition, @_FoodPercentageConverter() this.foodPercentage = 0.0, this.notes, this.photoUrl, this.epochTimestamp, this.timestamp}): super._();
   factory _FridgeReportDomain.fromJson(Map<String, dynamic> json) => _$FridgeReportDomainFromJson(json);
 
 @override@JsonKey() final  String fridgeId;
 @override@_FridgeConditionConverter() final  FridgeCondition condition;
-@override@JsonKey() final  double foodPercentage;
-// 0-1 range
+@override@JsonKey()@_FoodPercentageConverter() final  double foodPercentage;
+// 0-1 range, clamped
 @override final  String? notes;
+@override final  String? photoUrl;
 @override final  String? epochTimestamp;
 // Unix epoch as string
 @override final  String? timestamp;
@@ -800,16 +802,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _FridgeReportDomain&&(identical(other.fridgeId, fridgeId) || other.fridgeId == fridgeId)&&(identical(other.condition, condition) || other.condition == condition)&&(identical(other.foodPercentage, foodPercentage) || other.foodPercentage == foodPercentage)&&(identical(other.notes, notes) || other.notes == notes)&&(identical(other.epochTimestamp, epochTimestamp) || other.epochTimestamp == epochTimestamp)&&(identical(other.timestamp, timestamp) || other.timestamp == timestamp));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _FridgeReportDomain&&(identical(other.fridgeId, fridgeId) || other.fridgeId == fridgeId)&&(identical(other.condition, condition) || other.condition == condition)&&(identical(other.foodPercentage, foodPercentage) || other.foodPercentage == foodPercentage)&&(identical(other.notes, notes) || other.notes == notes)&&(identical(other.photoUrl, photoUrl) || other.photoUrl == photoUrl)&&(identical(other.epochTimestamp, epochTimestamp) || other.epochTimestamp == epochTimestamp)&&(identical(other.timestamp, timestamp) || other.timestamp == timestamp));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,fridgeId,condition,foodPercentage,notes,epochTimestamp,timestamp);
+int get hashCode => Object.hash(runtimeType,fridgeId,condition,foodPercentage,notes,photoUrl,epochTimestamp,timestamp);
 
 @override
 String toString() {
-  return 'FridgeReportDomain(fridgeId: $fridgeId, condition: $condition, foodPercentage: $foodPercentage, notes: $notes, epochTimestamp: $epochTimestamp, timestamp: $timestamp)';
+  return 'FridgeReportDomain(fridgeId: $fridgeId, condition: $condition, foodPercentage: $foodPercentage, notes: $notes, photoUrl: $photoUrl, epochTimestamp: $epochTimestamp, timestamp: $timestamp)';
 }
 
 
@@ -820,7 +822,7 @@ abstract mixin class _$FridgeReportDomainCopyWith<$Res> implements $FridgeReport
   factory _$FridgeReportDomainCopyWith(_FridgeReportDomain value, $Res Function(_FridgeReportDomain) _then) = __$FridgeReportDomainCopyWithImpl;
 @override @useResult
 $Res call({
- String fridgeId,@_FridgeConditionConverter() FridgeCondition condition, double foodPercentage, String? notes, String? epochTimestamp, String? timestamp
+ String fridgeId,@_FridgeConditionConverter() FridgeCondition condition,@_FoodPercentageConverter() double foodPercentage, String? notes, String? photoUrl, String? epochTimestamp, String? timestamp
 });
 
 
@@ -837,12 +839,13 @@ class __$FridgeReportDomainCopyWithImpl<$Res>
 
 /// Create a copy of FridgeReportDomain
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? fridgeId = null,Object? condition = null,Object? foodPercentage = null,Object? notes = freezed,Object? epochTimestamp = freezed,Object? timestamp = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? fridgeId = null,Object? condition = null,Object? foodPercentage = null,Object? notes = freezed,Object? photoUrl = freezed,Object? epochTimestamp = freezed,Object? timestamp = freezed,}) {
   return _then(_FridgeReportDomain(
 fridgeId: null == fridgeId ? _self.fridgeId : fridgeId // ignore: cast_nullable_to_non_nullable
 as String,condition: null == condition ? _self.condition : condition // ignore: cast_nullable_to_non_nullable
 as FridgeCondition,foodPercentage: null == foodPercentage ? _self.foodPercentage : foodPercentage // ignore: cast_nullable_to_non_nullable
 as double,notes: freezed == notes ? _self.notes : notes // ignore: cast_nullable_to_non_nullable
+as String?,photoUrl: freezed == photoUrl ? _self.photoUrl : photoUrl // ignore: cast_nullable_to_non_nullable
 as String?,epochTimestamp: freezed == epochTimestamp ? _self.epochTimestamp : epochTimestamp // ignore: cast_nullable_to_non_nullable
 as String?,timestamp: freezed == timestamp ? _self.timestamp : timestamp // ignore: cast_nullable_to_non_nullable
 as String?,

@@ -58,8 +58,11 @@ _FridgeReportDomain _$FridgeReportDomainFromJson(Map<String, dynamic> json) =>
       condition: const _FridgeConditionConverter().fromJson(
         json['condition'] as String,
       ),
-      foodPercentage: (json['foodPercentage'] as num?)?.toDouble() ?? 0.0,
+      foodPercentage: json['foodPercentage'] == null
+          ? 0.0
+          : const _FoodPercentageConverter().fromJson(json['foodPercentage']),
       notes: json['notes'] as String?,
+      photoUrl: json['photoUrl'] as String?,
       epochTimestamp: json['epochTimestamp'] as String?,
       timestamp: json['timestamp'] as String?,
     );
@@ -68,8 +71,11 @@ Map<String, dynamic> _$FridgeReportDomainToJson(_FridgeReportDomain instance) =>
     <String, dynamic>{
       'fridgeId': instance.fridgeId,
       'condition': const _FridgeConditionConverter().toJson(instance.condition),
-      'foodPercentage': instance.foodPercentage,
+      'foodPercentage': const _FoodPercentageConverter().toJson(
+        instance.foodPercentage,
+      ),
       'notes': instance.notes,
+      'photoUrl': instance.photoUrl,
       'epochTimestamp': instance.epochTimestamp,
       'timestamp': instance.timestamp,
     };

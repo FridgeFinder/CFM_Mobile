@@ -1,11 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../map/domain/models/fridge_domain.dart';
 import './widgets/status_update_form.dart';
 import '../../../core/providers/location_provider.dart';
 import '../../../core/utils/distance_calculator.dart' as distance_utils;
 import '../../../core/utils/fridge_icon_utils.dart';
+
+/// Model for map app options in the direction chooser
+class MapAppOption {
+  final String name;
+  final IconData icon;
+  final Uri? url; // Web URL fallback
+  final Uri appUrl; // App-specific URL scheme
+
+  const MapAppOption({
+    required this.name,
+    required this.icon,
+    required this.url,
+    required this.appUrl,
+  });
+}
 
 /// Bottom sheet modal displaying detailed fridge information
 class FridgeProfileSheet extends ConsumerWidget {
@@ -387,6 +405,18 @@ class FridgeProfileSheet extends ConsumerWidget {
 
               const SizedBox(height: 16),
 
+              // Directions Button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () => _openDirections(context),
+                  icon: const Icon(Icons.directions),
+                  label: const Text('Get Directions'),
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
               // Share Button
               SizedBox(
                 width: double.infinity,
@@ -433,7 +463,10 @@ class FridgeProfileSheet extends ConsumerWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Report Status Update'),
-        content: StatusUpdateForm(fridge: fridge),
+        content: SizedBox(
+          width: MediaQuery.of(context).size.width * 0.9,
+          child: StatusUpdateForm(fridge: fridge),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -444,9 +477,119 @@ class FridgeProfileSheet extends ConsumerWidget {
     );
   }
 
-  void _share(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Share feature coming soon for ${fridge.name}')),
+  Future<void> _share(BuildContext context) async {
+    // Create slug from fridge name (lowercase, no spaces)
+    final slug = fridge.name.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '');
+    final fridgeUrl = 'https://www.fridgefinder.app/fridge/$slug';
+
+    try {
+      // Copy to clipboard
+      await Clipboard.setData(ClipboardData(text: fridgeUrl));
+
+      // Show native share dialog
+      await Share.share(
+        '${fridge.name}\n${fridge.location.fullAddress}\n\nView on FridgeFinder: $fridgeUrl',
+        subject: 'Check out this community fridge: ${fridge.name}',
+      );
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to share: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _openDirections(BuildContext context) async {
+    final lat = fridge.location.geoLat;
+    final lng = fridge.location.geoLng;
+    final address = Uri.encodeComponent(fridge.location.fullAddress);
+
+    // Define map app options with their URLs
+    final mapOptions = <MapAppOption>[
+      MapAppOption(
+        name: 'Google Maps',
+        icon: Icons.map,
+        url: Uri.parse('https://www.google.com/maps/search/?api=1&query=$lat,$lng'),
+        appUrl: Uri.parse('comgooglemaps://?q=$lat,$lng'),
+      ),
+      MapAppOption(
+        name: 'Apple Maps',
+        icon: Icons.map,
+        url: Uri.parse('https://maps.apple.com/?q=$address&ll=$lat,$lng'),
+        appUrl: Uri.parse('maps://?q=$address&ll=$lat,$lng'),
+      ),
+      MapAppOption(
+        name: 'Waze',
+        icon: Icons.navigation,
+        url: null, // Waze doesn't have a web fallback
+        appUrl: Uri.parse('waze://?ll=$lat,$lng&navigate=yes'),
+      ),
+    ];
+
+    // Check which apps are available
+    final availableOptions = <MapAppOption>[];
+    for (final option in mapOptions) {
+      // Try app URL first, then web URL
+      if (await canLaunchUrl(option.appUrl)) {
+        availableOptions.add(option);
+      } else if (option.url != null && await canLaunchUrl(option.url!)) {
+        availableOptions.add(option);
+      }
+    }
+
+    if (!context.mounted) return;
+
+    if (availableOptions.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No map apps available'),
+        ),
+      );
+      return;
+    }
+
+    // Show bottom sheet with available options
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                'Choose a map app',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ),
+            ...availableOptions.map((option) => ListTile(
+              leading: Icon(option.icon),
+              title: Text(option.name),
+              onTap: () async {
+                Navigator.pop(context);
+                try {
+                  // Try app URL first
+                  if (await canLaunchUrl(option.appUrl)) {
+                    await launchUrl(option.appUrl, mode: LaunchMode.externalApplication);
+                  } else if (option.url != null) {
+                    // Fall back to web URL
+                    await launchUrl(option.url!, mode: LaunchMode.externalApplication);
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Failed to open ${option.name}'),
+                      ),
+                    );
+                  }
+                }
+              },
+            )),
+          ],
+        ),
+      ),
     );
   }
 

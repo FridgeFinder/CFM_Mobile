@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/theme_provider.dart';
@@ -66,56 +67,58 @@ class ProfileScreen extends ConsumerWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
-              // API Environment Settings Section
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'API Environment',
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Current: ${environment.name.toUpperCase()}',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+              // API Environment Settings Section - Only show in debug mode
+              if (kDebugMode) ...[
+                const SizedBox(height: 16),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'API Environment',
+                          style: Theme.of(context).textTheme.titleLarge,
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Select API environment',
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                      const SizedBox(height: 16),
-                      // Environment Options
-                      _buildEnvironmentOption(
-                        context: context,
-                        ref: ref,
-                        title: 'Production',
-                        subtitle: 'api-prod.communityfridgefinder.com',
-                        environment: ApiEnvironment.prod,
-                        isSelected: environment == ApiEnvironment.prod,
-                        icon: Icons.cloud,
-                      ),
-                      const SizedBox(height: 12),
-                      _buildEnvironmentOption(
-                        context: context,
-                        ref: ref,
-                        title: 'Development',
-                        subtitle: 'api-dev.communityfridgefinder.com',
-                        environment: ApiEnvironment.dev,
-                        isSelected: environment == ApiEnvironment.dev,
-                        icon: Icons.construction,
-                      ),
-                    ],
+                        const SizedBox(height: 8),
+                        Text(
+                          'Current: ${environment.name.toUpperCase()}',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Select API environment',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                        const SizedBox(height: 16),
+                        // Environment Options
+                        _buildEnvironmentOption(
+                          context: context,
+                          ref: ref,
+                          title: 'Production',
+                          subtitle: 'api-prod.communityfridgefinder.com',
+                          environment: ApiEnvironment.prod,
+                          isSelected: environment == ApiEnvironment.prod,
+                          icon: Icons.cloud,
+                        ),
+                        const SizedBox(height: 12),
+                        _buildEnvironmentOption(
+                          context: context,
+                          ref: ref,
+                          title: 'Development',
+                          subtitle: 'api-dev.communityfridgefinder.com',
+                          environment: ApiEnvironment.dev,
+                          isSelected: environment == ApiEnvironment.dev,
+                          icon: Icons.construction,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 16),
+                const SizedBox(height: 16),
+              ],
               // Theme Settings Section
               Card(
                 child: Padding(

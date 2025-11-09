@@ -21,8 +21,10 @@ class FilterStatusIndicator extends ConsumerWidget {
 
         final statusParts = <String>[];
 
-        // Add deselected conditions info
-        if (filterState.deselectedConditions.isNotEmpty) {
+        // Add deselected conditions info (only if some filters are actually selected)
+        // Don't show "not showing" if no filters are selected (which means showing everything)
+        if (filterState.selectedConditions.isNotEmpty &&
+            filterState.deselectedConditions.isNotEmpty) {
           final deselectedLabels = filterState.deselectedConditions
               .map((c) => c.label.toLowerCase())
               .join(', ');

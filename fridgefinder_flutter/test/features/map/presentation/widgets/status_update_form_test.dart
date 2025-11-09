@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fridgefinder_app/src/features/profile/presentation/widgets/status_update_form.dart';
+import 'package:fridgefinder_app/src/features/map/domain/models/fridge_domain.dart';
 import '../../../../fixtures/fridge_fixtures.dart';
 
 void main() {
@@ -38,7 +39,7 @@ void main() {
       expect(find.byType(Slider), findsOneWidget);
     });
 
-    testWidgets('displays food level percentage', (WidgetTester tester) async {
+    testWidgets('displays food level label', (WidgetTester tester) async {
       await tester.pumpWidget(
         ProviderScope(
           child: MaterialApp(
@@ -51,7 +52,8 @@ void main() {
         ),
       );
 
-      expect(find.textContaining('%'), findsWidgets);
+      // Check for food level labels (Full, Many Items, Few Items, Empty)
+      expect(find.textContaining('Food Level:'), findsOneWidget);
     });
 
     testWidgets('displays notes field', (WidgetTester tester) async {
@@ -107,7 +109,7 @@ void main() {
       expect(find.text('Good - Operational'), findsOneWidget);
     });
 
-    testWidgets('has segmented button for condition selection', (
+    testWidgets('has radio buttons for condition selection', (
       WidgetTester tester,
     ) async {
       await tester.pumpWidget(
@@ -122,7 +124,8 @@ void main() {
         ),
       );
 
-      // Check for condition selection widgets
+      // Check for radio button widgets
+      expect(find.byType(RadioListTile<FridgeCondition>), findsWidgets);
       // The condition label is "Good - Operational" not "Working - Fully Functional"
       expect(find.text('Good - Operational'), findsOneWidget);
     });
@@ -163,7 +166,7 @@ void main() {
       final slider = find.byType(Slider);
       final sliderWidget = slider.evaluate().single.widget as Slider;
 
-      expect(sliderWidget.divisions, 10);
+      expect(sliderWidget.divisions, 3);
     });
 
     testWidgets('shows all condition options', (WidgetTester tester) async {
@@ -179,11 +182,10 @@ void main() {
         ),
       );
 
-      // Check for actual condition labels used in the form
+      // Check for actual condition labels used in the form (ghost option excluded)
       expect(find.text('Good - Operational'), findsOneWidget);
       expect(find.text('Dirty - Needs Cleaning'), findsOneWidget);
       expect(find.text('Out of Order'), findsOneWidget);
-      expect(find.text('Ghost - No Longer There'), findsOneWidget);
       expect(find.text('Not at Location'), findsOneWidget);
     });
 

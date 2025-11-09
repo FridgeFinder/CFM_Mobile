@@ -19,6 +19,7 @@ abstract class IFridgeRepository {
     FridgeCondition condition,
     double foodPercentage,
     String? notes,
+    String? photoUrl,
   );
 
   /// Upload a fridge photo
