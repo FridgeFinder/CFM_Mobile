@@ -1,0 +1,11 @@
+{
+  "name": "fridgefinder-flutter",
+  "version": "1.0.0",
+  "description": "FridgeFinder Flutter App - Beta Distribution Scripts",
+  "scripts": {
+    "beta": "npm run beta:android && npm run beta:ios",
+    "beta:android": "cd android && bundle exec fastlane beta",
+    "beta:ios": "cd ios && bundle exec fastlane beta",
+    "beta:both": "npm run beta:android && npm run beta:ios"
+  }
+}

@@ -6,9 +6,26 @@ plugins {
     // START: FlutterFire Configuration
     id("com.google.gms.google-services")
     // END: FlutterFire Configuration
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+}
+
+dependencies {
+  // Import the Firebase BoM
+  implementation(platform("com.google.firebase:firebase-bom:34.5.0"))
+
+  // Firebase dependencies (versions inherited from BoM)
+  implementation("com.google.firebase:firebase-analytics")
+
+  // Play Core modular dependencies for split compatibility
+  implementation("com.google.android.play:app-update:2.1.0")
+  implementation("com.google.android.play:feature-delivery:2.1.0")
+
+  // Flutter embedding dependency (required for MainActivity)
+  debugImplementation("io.flutter:flutter_embedding_debug:1.0.0-035316565ad77281a75305515e4682e6c4c6f7ca")
+  profileImplementation("io.flutter:flutter_embedding_profile:1.0.0-035316565ad77281a75305515e4682e6c4c6f7ca")
+  releaseImplementation("io.flutter:flutter_embedding_release:1.0.0-035316565ad77281a75305515e4682e6c4c6f7ca")
 }
 
 // Load keystore properties for release signing
@@ -20,24 +37,24 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.fridgefinder.fridgefinder_flutter"
+    namespace = "com.fridgefinder.fridgefinderapp"
 
     // Explicit SDK versions (CRITICAL for Play Store submission)
-    compileSdk = 34  // Android 14 (required for 2025)
+    compileSdk = 36  // Android 15 (required for newer androidx libraries and plugins)
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
-        // Updated to Java 17 (required for AGP 8.0+)
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        // Updated to Java 21
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
 
     kotlinOptions {
-        jvmTarget = "17"  // Match compileOptions
+        jvmTarget = "21"  // Match compileOptions
     }
 
     defaultConfig {
-        applicationId = "com.fridgefinder.fridgefinder_flutter"
+        applicationId = "com.fridgefinder.fridgefinderapp"
 
         // Explicit SDK versions for Play Store compliance
         minSdk = 24      // Android 7.0 (Flutter 3.35+ requirement)
@@ -71,13 +88,14 @@ android {
                 signingConfig = signingConfigs.getByName("debug")
             }
 
-            // Enable code shrinking and obfuscation for smaller APK
-            isMinifyEnabled = true
-            isShrinkResources = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
+            // Disable minification for beta builds to avoid Play Core issues
+            // TODO: Re-enable with proper ProGuard rules for production
+            isMinifyEnabled = false
+            isShrinkResources = false
+            // proguardFiles(
+            //     getDefaultProguardFile("proguard-android-optimize.txt"),
+            //     "proguard-rules.pro"
+            // )
         }
     }
 }

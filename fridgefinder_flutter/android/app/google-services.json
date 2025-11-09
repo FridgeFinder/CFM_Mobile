@@ -7,9 +7,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:576156648133:android:f0333612c00607a18666ac",
+        "mobilesdk_app_id": "1:576156648133:android:dc792b961a19310e8666ac",
         "android_client_info": {
-          "package_name": "com.fridgefinder.fridgefinder_flutter"
+          "package_name": "com.fridgefinder.fridgefinderapp"
         }
       },
       "oauth_client": [],

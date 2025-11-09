@@ -13,7 +13,7 @@
 -keep class com.google.gson.** { *; }
 
 # Keep model classes (for JSON serialization)
--keep class com.fridgefinder.fridgefinder_flutter.** { *; }
+-keep class com.fridgefinder.fridgefinderapp.** { *; }
 
 # Keep native methods
 -keepclasseswithmembernames class * {

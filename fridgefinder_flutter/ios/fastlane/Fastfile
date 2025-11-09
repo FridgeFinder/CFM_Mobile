@@ -55,19 +55,24 @@ platform :ios do
       )
     end
     
-    # Flutter will automatically run pod install during the build process
-    # Even if it detects CocoaPods as "broken", it usually still works
-    # Build the app using Flutter
-    sh("cd .. && flutter build ipa --release")
+    # Build the app using Flutter with manual signing
+    # Flutter will run pod install automatically during the build
+    # Even if it shows a CocoaPods warning, the build still succeeds
+    export_options_path = File.expand_path("../ExportOptions.plist", __dir__)
+    sh("cd .. && flutter build ipa --release --export-options-plist=#{export_options_path}")
     
     # Upload to Firebase App Distribution
-    firebase_app_distribution(
-      app: ENV["FIREBASE_APP_ID_IOS"],
-      groups: ENV["FIREBASE_DISTRIBUTION_GROUPS"] || "testers",
+    # Build parameters hash - only include app ID if explicitly set, otherwise use plist
+    firebase_params = {
+      googleservice_info_plist_path: "Runner/GoogleService-Info.plist",
+      groups: ENV["FIREBASE_DISTRIBUTION_GROUPS"] || "dev-testers",
       release_notes: ENV["RELEASE_NOTES"] || "Beta build from Fastlane",
       firebase_cli_token: ENV["FIREBASE_CLI_TOKEN"],
       ipa_path: "../build/ios/ipa/FridgeFinder.ipa"
-    )
+    }
+    firebase_params[:app] = ENV["FIREBASE_APP_ID_IOS"] if ENV["FIREBASE_APP_ID_IOS"]
+
+    firebase_app_distribution(firebase_params)
   end
 
   desc "Build and upload to App Store Connect"

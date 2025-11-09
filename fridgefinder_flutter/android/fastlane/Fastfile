@@ -20,25 +20,25 @@ platform :android do
   desc "Build and upload to Firebase App Distribution"
   lane :beta do
     # Ensure we're on the correct branch/tag
-    ensure_git_status_clean
-    
-    # Build the app bundle using Flutter
-    sh("cd .. && flutter build appbundle --release")
-    
+    # ensure_git_status_clean
+
+    # Build the APK using Flutter (use APK instead of AAB for direct distribution)
+    sh("cd .. && flutter build apk --release")
+
     # Upload to Firebase App Distribution
     firebase_app_distribution(
       app: ENV["FIREBASE_APP_ID_ANDROID"],
       groups: ENV["FIREBASE_DISTRIBUTION_GROUPS"] || "testers",
       release_notes: ENV["RELEASE_NOTES"] || "Beta build from Fastlane",
       firebase_cli_token: ENV["FIREBASE_CLI_TOKEN"],
-      app_path: "../build/app/outputs/bundle/release/app-release.aab"
+      android_artifact_path: "../build/app/outputs/flutter-apk/app-release.apk"
     )
   end
 
   desc "Build and upload to Google Play Console"
   lane :release do
     # Ensure we're on the correct branch/tag
-    ensure_git_status_clean
+    # ensure_git_status_clean
     
     # Build the app bundle using Flutter
     sh("cd .. && flutter build appbundle --release")
