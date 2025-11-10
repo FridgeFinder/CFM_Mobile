@@ -3,13 +3,13 @@
 <plist version="1.0">
 <dict>
 	<key>method</key>
-	<string>development</string>
+	<string>ad-hoc</string>
 	<key>teamID</key>
 	<string>3U525G584M</string>
 	<key>provisioningProfiles</key>
 	<dict>
 		<key>com.fridgefinder.fridgefinderFlutterApp</key>
-		<string>a87db3ed-842f-41b1-af92-d1f6f59cf9f1</string>
+		<string>626e3a6c-e65c-4303-bad7-5fd756c2e9fe</string>
 	</dict>
 	<key>signingStyle</key>
 	<string>manual</string>

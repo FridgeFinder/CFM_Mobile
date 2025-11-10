@@ -34,6 +34,21 @@ platform :ios do
     )
   end
 
+  desc "Upload existing IPA to Firebase App Distribution"
+  lane :upload_beta do
+    # Upload to Firebase App Distribution (IPA must already be built)
+    firebase_params = {
+      googleservice_info_plist_path: "Runner/GoogleService-Info.plist",
+      groups: ENV["FIREBASE_DISTRIBUTION_GROUPS"] || "dev-testers",
+      release_notes: ENV["RELEASE_NOTES"] || "Beta build from Fastlane",
+      firebase_cli_token: ENV["FIREBASE_CLI_TOKEN"],
+      ipa_path: "../build/ios/ipa/FridgeFinder.ipa"
+    }
+    firebase_params[:app] = ENV["FIREBASE_APP_ID_IOS"] if ENV["FIREBASE_APP_ID_IOS"]
+
+    firebase_app_distribution(firebase_params)
+  end
+
   desc "Build and upload to Firebase App Distribution"
   lane :beta do
     # Ensure we're on the correct branch/tag
