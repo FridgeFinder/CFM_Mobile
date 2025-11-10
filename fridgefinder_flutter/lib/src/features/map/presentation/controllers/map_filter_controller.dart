@@ -16,12 +16,13 @@ abstract class MapFilterState with _$MapFilterState {
   const factory MapFilterState({
     required Set<FilterCondition> selectedConditions,
     @Default('') String searchQuery,
+    @Default(false) bool subscribedOnly,
   }) = _MapFilterState;
 
-  /// Check if filter state is at default (no conditions selected, no search)
+  /// Check if filter state is at default (no conditions selected, no search, no subscribed filter)
   /// Default state shows everything
   bool get isDefault {
-    return selectedConditions.isEmpty && searchQuery.isEmpty;
+    return selectedConditions.isEmpty && searchQuery.isEmpty && !subscribedOnly;
   }
 
   /// Get list of deselected filter conditions for display
@@ -38,8 +39,9 @@ class MapFilter extends _$MapFilter {
   static const String _boxName = 'map_filter_state';
   static const String _conditionsKey = 'selected_conditions';
   static const String _searchKey = 'search_query';
+  static const String _subscribedOnlyKey = 'subscribed_only';
   static const String _versionKey = 'storage_version';
-  static const int _currentVersion = 2; // Increment when filter logic changes
+  static const int _currentVersion = 3; // Increment when filter logic changes (v3: added subscribedOnly)
   static const Duration _searchDebounceDelay = Duration(milliseconds: 150);
 
   Timer? _searchDebounceTimer;
@@ -65,10 +67,12 @@ class MapFilter extends _$MapFilter {
         await box.put(_versionKey, _currentVersion);
         await box.delete(_conditionsKey);
         await box.delete(_searchKey);
+        await box.delete(_subscribedOnlyKey);
 
         return const MapFilterState(
           selectedConditions: <FilterCondition>{}, // Default: none selected (shows everything)
           searchQuery: '',
+          subscribedOnly: false,
         );
       }
 
@@ -90,15 +94,20 @@ class MapFilter extends _$MapFilter {
       // Load search query
       final searchQuery = box.get(_searchKey, defaultValue: '') as String;
 
+      // Load subscribed only filter
+      final subscribedOnly = box.get(_subscribedOnlyKey, defaultValue: false) as bool;
+
       return MapFilterState(
         selectedConditions: selectedConditions,
         searchQuery: searchQuery,
+        subscribedOnly: subscribedOnly,
       );
     } catch (e) {
       // If loading fails, return default state (no conditions selected = show all)
       return const MapFilterState(
         selectedConditions: <FilterCondition>{},
         searchQuery: '',
+        subscribedOnly: false,
       );
     }
   }
@@ -113,6 +122,7 @@ class MapFilter extends _$MapFilter {
         state.selectedConditions.map((c) => c.value).toList(),
       );
       await box.put(_searchKey, state.searchQuery);
+      await box.put(_subscribedOnlyKey, state.subscribedOnly);
     } catch (e) {
       // Silently fail - storage is not critical
     }
@@ -182,6 +192,18 @@ class MapFilter extends _$MapFilter {
 
     final newState = currentState.copyWith(
       selectedConditions: <FilterCondition>{},
+    );
+    state = AsyncValue.data(newState);
+    await _saveToStorage(newState);
+  }
+
+  /// Toggle subscribed only filter
+  Future<void> toggleSubscribedOnly() async {
+    final currentState = state.whenOrNull(data: (d) => d);
+    if (currentState == null) return;
+
+    final newState = currentState.copyWith(
+      subscribedOnly: !currentState.subscribedOnly,
     );
     state = AsyncValue.data(newState);
     await _saveToStorage(newState);

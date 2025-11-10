@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CLIENT_ID</key>
+	<string>576156648133-iok9kg4ln8u6okgr477n9ut6et9o0sdf.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.576156648133-iok9kg4ln8u6okgr477n9ut6et9o0sdf</string>
 	<key>API_KEY</key>
 	<string>AIzaSyDhs2T-ez7iNKce4ITLkm-e1gMaQIpOWgA</string>
 	<key>GCM_SENDER_ID</key>
@@ -26,5 +30,7 @@
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
 	<string>1:576156648133:ios:a8bcb9f2c07d53688666ac</string>
+	<key>DATABASE_URL</key>
+	<string>https://fridgefinder-app-default-rtdb.firebaseio.com</string>
 </dict>
 </plist>

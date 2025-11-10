@@ -4,9 +4,23 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'firebase_options.dart';
 import 'app.dart';
 import 'src/core/utils/app_logger.dart';
+
+/// Top-level function for handling background messages (must be top-level)
+@pragma('vm:entry-point')
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+  logger.i('Handling background message: ${message.messageId}');
+
+  // Background messages are handled automatically by FCM
+  // Local notifications will be shown by the system
+  if (message.notification != null) {
+    logger.i('Background notification: ${message.notification?.title}');
+  }
+}
 
 void main() async {
   // Ensure Flutter is initialized
@@ -14,6 +28,9 @@ void main() async {
 
   // Initialize Firebase
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Set up background message handler (must be called before runApp)
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
   // Initialize Hive for local storage
   await Hive.initFlutter();

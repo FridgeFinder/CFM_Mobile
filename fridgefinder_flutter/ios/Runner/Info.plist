@@ -46,6 +46,19 @@
 		<string>comgooglemaps</string>
 		<string>applemaps</string>
 		<string>maps</string>
+		<string>googlegmail</string>
+		<string>comgoogleusercontent.apps.576156648133-iok9kg4ln8u6okgr477n9ut6et9o0sdf</string>
+	</array>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.576156648133-iok9kg4ln8u6okgr477n9ut6et9o0sdf</string>
+			</array>
+		</dict>
 	</array>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>

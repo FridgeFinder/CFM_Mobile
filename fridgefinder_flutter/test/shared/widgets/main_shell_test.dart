@@ -67,18 +67,17 @@ void main() {
         ProviderScope(
           child: MaterialApp(
             home: MainShell(
-              currentRoute: '/favorites',
+              currentRoute: '/my-fridges',
               child: const Scaffold(
-                body: Center(child: Text('Favorites Screen')),
+                body: Center(child: Text('My Fridges Screen')),
               ),
             ),
           ),
         ),
       );
 
-      // Favorites route was removed - should default to "FridgeFinder" title
-      // The route doesn't exist, so it may show default title
-      expect(find.text('FridgeFinder'), findsWidgets);
+      // Check for My Fridges text
+      expect(find.text('My Fridges'), findsWidgets);
     });
 
     testWidgets('displays correct page title for profile route', (
@@ -121,11 +120,11 @@ void main() {
       await tester.tap(find.byIcon(Icons.menu));
       await tester.pumpAndSettle();
 
-      // Verify all menu items are displayed (Favorites was removed)
+      // Verify all menu items are displayed
       expect(find.text('Fridge Map'), findsWidgets); // In appbar and drawer
       expect(find.text('Fridge List'), findsOneWidget);
+      expect(find.text('My Fridges'), findsOneWidget);
       expect(find.text('Profile'), findsWidgets);
-      // Favorites was removed - will be added in v1.1
     });
 
     testWidgets('drawer has close button', (WidgetTester tester) async {

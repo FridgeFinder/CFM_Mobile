@@ -33,12 +33,11 @@ class AppBottomNavBar extends ConsumerWidget {
           activeIcon: Icon(Icons.list, color: primaryColor, size: 28),
           label: 'List',
         ),
-        // TODO: Re-enable Favorites nav item in v1.1 after implementing user accounts
-        // BottomNavigationBarItem(
-        //   icon: Icon(Icons.favorite, color: onSurfaceVariant),
-        //   activeIcon: Icon(Icons.favorite, color: primaryColor, size: 28),
-        //   label: 'Favorites',
-        // ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.favorite, color: onSurfaceVariant),
+          activeIcon: Icon(Icons.favorite, color: primaryColor, size: 28),
+          label: 'My Fridges',
+        ),
         BottomNavigationBarItem(
           icon: Icon(Icons.person, color: onSurfaceVariant),
           activeIcon: Icon(Icons.person, color: primaryColor, size: 28),
@@ -53,8 +52,7 @@ class AppBottomNavBar extends ConsumerWidget {
       elevation: 8.0,
       enableFeedback: true,
       onTap: (index) {
-        // Updated routes array - removed '/favorites'
-        final routes = ['/', '/list', '/profile'];
+        final routes = ['/', '/list', '/my-fridges', '/profile'];
         _navigate(context, routes[index]);
       },
     );
@@ -66,9 +64,10 @@ class AppBottomNavBar extends ConsumerWidget {
         return 0;
       case '/list':
         return 1;
-      // Removed '/favorites' route - will be added in v1.1
-      case '/profile':
+      case '/my-fridges':
         return 2;
+      case '/profile':
+        return 3;
       default:
         return 0;
     }

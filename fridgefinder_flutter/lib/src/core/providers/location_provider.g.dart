@@ -180,7 +180,7 @@ final class LocationAccessProvider
   }
 }
 
-String _$locationAccessHash() => r'c228a20cd4cc3c448dd0403f6720c73f446a49b3';
+String _$locationAccessHash() => r'd520721b6fc488537fe352de0efc42e16e3557f5';
 
 /// Notifier for managing location access permission toggle
 

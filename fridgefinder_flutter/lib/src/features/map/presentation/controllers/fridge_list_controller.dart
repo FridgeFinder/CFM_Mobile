@@ -3,6 +3,7 @@ import 'package:latlong2/latlong.dart';
 import '../../data/repositories/fridge_repository.dart';
 import '../../domain/models/fridge_domain.dart';
 import '../../../../core/providers/location_provider.dart';
+import '../../../../core/providers/subscriptions_provider.dart';
 import '../../../../core/utils/distance_calculator.dart' as distance_utils;
 import '../../../../core/utils/fuzzy_search.dart';
 import 'map_filter_controller.dart'; // Provides mapFilterProvider
@@ -155,12 +156,13 @@ List<FridgeWithDistance> fridgesSortedByDistance(Ref ref) {
       [];
 }
 
-/// Provider for filtered fridges based on map filter state (pill filters + fuzzy search)
-/// Applies pill condition filters first, then fuzzy search on remaining fridges
+/// Provider for filtered fridges based on map filter state (pill filters + subscribed filter + fuzzy search)
+/// Applies pill condition filters first, then subscribed filter, then fuzzy search on remaining fridges
 @riverpod
 List<FridgeDomain> mapFilteredFridges(Ref ref) {
   final fridgesAsync = ref.watch(fridgeListProvider);
   final filterStateAsync = ref.watch(mapFilterProvider);
+  final subscriptionsAsync = ref.watch(subscribedFridgesProvider);
 
   return filterStateAsync.whenOrNull(
         data: (filterState) {
@@ -178,6 +180,17 @@ List<FridgeDomain> mapFilteredFridges(Ref ref) {
                             return filterCondition.matches(fridge);
                           });
                         }).toList();
+
+                  // Then apply subscribed filter if active
+                  if (filterState.subscribedOnly) {
+                    final subscribedFridgeIds = subscriptionsAsync.whenOrNull(
+                      data: (subs) => subs.map((s) => s.fridgeId).toSet(),
+                    ) ?? <String>{};
+
+                    filtered = filtered.where((fridge) {
+                      return subscribedFridgeIds.contains(fridge.id);
+                    }).toList();
+                  }
 
                   // Then apply fuzzy search
                   if (filterState.searchQuery.isEmpty) {

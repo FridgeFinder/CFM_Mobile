@@ -4,20 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../features/map/presentation/screens/map_screen.dart';
 import '../features/list/presentation/list_screen.dart';
 import '../features/profile/presentation/profile_screen.dart';
+import '../features/auth/presentation/screens/my_fridges_screen.dart';
 import '../common_widgets/main_shell.dart';
-
-// Placeholder screens for unimplemented features
-// TODO: Implement Favorites feature in v1.1 after user accounts are added
-// class FavoritesScreen extends StatelessWidget {
-//   const FavoritesScreen({super.key});
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       body: const Center(child: Text('Favorites Screen - Coming Soon')),
-//     );
-//   }
-// }
 
 /// Custom page transition that prevents default transition and lets MainShell handle it
 CustomTransitionPage<void> _buildPageWithTransition(
@@ -39,6 +27,31 @@ CustomTransitionPage<void> _buildPageWithTransition(
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/',
+    redirect: (context, state) {
+      // Handle Firebase Auth deep links - redirect to home
+      final uri = state.uri;
+      if (uri.toString().contains('firebaseauth') || 
+          uri.toString().contains('fridgefinder-app.firebaseapp.com')) {
+        // This is a Firebase Auth callback - ignore it and go to home
+        // The auth state will be handled by Firebase Auth automatically
+        return '/';
+      }
+      return null; // No redirect needed
+    },
+    errorBuilder: (context, state) {
+      // Handle unknown routes - redirect to home instead of showing error
+      // This handles Firebase Auth deep links that don't match our routes
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (context.mounted) {
+          GoRouter.of(context).go('/');
+        }
+      });
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    },
     routes: [
       ShellRoute(
         builder: (context, state, child) {
@@ -55,12 +68,11 @@ final routerProvider = Provider<GoRouter>((ref) {
             pageBuilder: (context, state) =>
                 _buildPageWithTransition('/list', const ListScreen()),
           ),
-          // TODO: Re-enable Favorites route in v1.1 after implementing user accounts
-          // GoRoute(
-          //   path: '/favorites',
-          //   pageBuilder: (context, state) =>
-          //       _buildPageWithTransition('/favorites', const FavoritesScreen()),
-          // ),
+          GoRoute(
+            path: '/my-fridges',
+            pageBuilder: (context, state) =>
+                _buildPageWithTransition('/my-fridges', const MyFridgesScreen()),
+          ),
           GoRoute(
             path: '/profile',
             pageBuilder: (context, state) =>

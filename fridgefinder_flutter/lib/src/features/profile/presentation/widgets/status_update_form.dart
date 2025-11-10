@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../map/domain/models/fridge_domain.dart';
 import '../../../map/data/repositories/fridge_repository.dart';
+import '../../../../core/providers/auth_provider.dart';
+import '../../../../core/providers/points_provider.dart';
 
 /// Form for reporting fridge status updates
 class StatusUpdateForm extends ConsumerStatefulWidget {
@@ -28,7 +30,8 @@ class _StatusUpdateFormState extends ConsumerState<StatusUpdateForm> {
     super.initState();
     final currentCondition = widget.fridge.latestFridgeReport?.condition;
     // Default to 'good', and skip ghost condition if somehow present
-    _selectedCondition = (currentCondition == null || currentCondition == FridgeCondition.ghost)
+    _selectedCondition =
+        (currentCondition == null || currentCondition == FridgeCondition.ghost)
         ? FridgeCondition.good
         : currentCondition;
     _foodPercentage = widget.fridge.latestFridgeReport?.foodPercentage ?? 0.5;
@@ -89,9 +92,28 @@ class _StatusUpdateFormState extends ConsumerState<StatusUpdateForm> {
         widget.fridge.id,
         _selectedCondition,
         _foodPercentage,
-        _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
+        _notesController.text.trim().isEmpty
+            ? null
+            : _notesController.text.trim(),
         photoUrl,
       );
+
+      // Award points if user is a volunteer
+      final userProfile = ref.read(userProfileProvider).value;
+      if (userProfile?.isVolunteer == true) {
+        final previousCondition = widget.fridge.latestFridgeReport?.condition;
+        final previousFoodPercentage =
+            widget.fridge.latestFridgeReport?.foodPercentage ?? 0.0;
+
+        final pointsManager = ref.read(pointsManagerProvider.notifier);
+        await pointsManager.awardPointsForStatusReport(
+          wasDirty: previousCondition == FridgeCondition.dirty,
+          isNowGood: _selectedCondition == FridgeCondition.good,
+          previousFoodPercentage: previousFoodPercentage,
+          newFoodPercentage: _foodPercentage,
+          isVolunteer: true,
+        );
+      }
 
       if (!mounted) return;
 

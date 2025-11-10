@@ -5,10 +5,18 @@ import 'package:latlong2/latlong.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../map/domain/models/fridge_domain.dart';
+import '../../map/presentation/widgets/fridge_marker.dart';
 import './widgets/status_update_form.dart';
 import '../../../core/providers/location_provider.dart';
+import '../../../core/providers/auth_provider.dart';
+import '../../../core/providers/subscriptions_provider.dart';
+import '../../../core/providers/drawer_provider.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/utils/distance_calculator.dart' as distance_utils;
 import '../../../core/utils/fridge_icon_utils.dart';
+import '../../auth/presentation/widgets/subscription_dialog.dart';
+import '../../auth/presentation/widgets/sign_in_widget.dart';
+import '../../auth/presentation/widgets/edit_notification_preferences_dialog.dart';
 
 /// Model for map app options in the direction chooser
 class MapAppOption {
@@ -26,22 +34,82 @@ class MapAppOption {
 }
 
 /// Bottom sheet modal displaying detailed fridge information
-class FridgeProfileSheet extends ConsumerWidget {
+class FridgeProfileSheet extends ConsumerStatefulWidget {
   final FridgeDomain fridge;
 
   const FridgeProfileSheet({super.key, required this.fridge});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<FridgeProfileSheet> createState() => _FridgeProfileSheetState();
+}
+
+class _FridgeProfileSheetState extends ConsumerState<FridgeProfileSheet>
+    with SingleTickerProviderStateMixin {
+  String? _lastRoute;
+  int _lastCloseTrigger = 0;
+  late AnimationController _glowController;
+  late Animation<double> _glowAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize animation controller
+    _glowController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    )..repeat(reverse: true);
+    _glowAnimation = Tween<double>(begin: 0.3, end: 0.7).animate(
+      CurvedAnimation(parent: _glowController, curve: Curves.easeInOut),
+    );
+    // Store initial route
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        final router = GoRouter.of(context);
+        _lastRoute = router.routerDelegate.currentConfiguration.uri.toString();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _glowController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final userLocationAsync = ref.watch(userLocationProvider);
+    final drawerOpen = ref.watch(drawerStateProvider);
+    final closeTrigger = ref.watch(bottomSheetCloseTriggerProvider);
+
+    // Check for route changes, drawer open, or close trigger
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+
+      final router = GoRouter.of(context);
+      final currentRoute = router.routerDelegate.currentConfiguration.uri
+          .toString();
+
+      // Close if route changed, drawer opened, or close trigger fired
+      if ((_lastRoute != null && _lastRoute != currentRoute) ||
+          (drawerOpen) ||
+          (closeTrigger > _lastCloseTrigger)) {
+        Navigator.of(context).pop();
+        return;
+      }
+
+      // Update state
+      _lastRoute = currentRoute;
+      _lastCloseTrigger = closeTrigger;
+    });
 
     // Calculate distance if user location is available
     double? distance;
     if (userLocationAsync.value != null) {
       final userLocation = userLocationAsync.value!.position;
       final fridgeLocation = LatLng(
-        fridge.location.geoLat,
-        fridge.location.geoLng,
+        widget.fridge.location.geoLat,
+        widget.fridge.location.geoLng,
       );
       distance = distance_utils.DistanceCalculator.calculateDistanceInKm(
         userLocation,
@@ -64,13 +132,62 @@ class FridgeProfileSheet extends ConsumerWidget {
               // Header
               Row(
                 children: [
-                  SizedBox(
-                    width: 48,
-                    height: 48,
-                    child: FridgeIconUtils.getFridgeIcon(
-                      fridge: fridge,
-                      size: 48,
-                    ),
+                  Consumer(
+                    builder: (context, ref, child) {
+                      final isSubscribedAsync = ref.watch(
+                        isFridgeSubscribedProvider(widget.fridge.id),
+                      );
+                      final isSubscribed =
+                          isSubscribedAsync.whenOrNull(
+                            data: (subscribed) => subscribed,
+                          ) ??
+                          false;
+
+                      final iconWidget = SizedBox(
+                        width: 48,
+                        height: 48,
+                        child: FridgeIconUtils.getFridgeIcon(
+                          fridge: widget.fridge,
+                          size: 48,
+                        ),
+                      );
+
+                      // Add green glow if subscribed
+                      if (isSubscribed) {
+                        return AnimatedBuilder(
+                          animation: _glowAnimation,
+                          builder: (context, child) {
+                            return Container(
+                              width: 48,
+                              height: 48,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: FridgeMarker.subscribedGreen
+                                        .withValues(
+                                          alpha: _glowAnimation.value * 0.6,
+                                        ),
+                                    blurRadius: 8,
+                                    spreadRadius: 1,
+                                  ),
+                                  BoxShadow(
+                                    color: FridgeMarker.subscribedGreen
+                                        .withValues(
+                                          alpha: _glowAnimation.value * 0.4,
+                                        ),
+                                    blurRadius: 12,
+                                    spreadRadius: 2,
+                                  ),
+                                ],
+                              ),
+                              child: iconWidget,
+                            );
+                          },
+                        );
+                      }
+                      return iconWidget;
+                    },
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -78,25 +195,26 @@ class FridgeProfileSheet extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          fridge.name,
+                          widget.fridge.name,
                           style: Theme.of(context).textTheme.titleLarge,
                         ),
-                        Row(
+                        Wrap(
+                          spacing: 4,
+                          runSpacing: 2,
+                          crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
-                            if (fridge.latestFridgeReport != null) ...[
+                            if (widget.fridge.latestFridgeReport != null)
                               Icon(
                                 FridgeIconUtils.getStatusIcon(
-                                  fridge.latestFridgeReport!.condition,
+                                  widget.fridge.latestFridgeReport!.condition,
                                 ),
                                 size: 14,
                                 color: FridgeIconUtils.getStatusColor(
-                                  fridge.latestFridgeReport!.condition,
+                                  widget.fridge.latestFridgeReport!.condition,
                                 ),
                               ),
-                              const SizedBox(width: 4),
-                            ],
                             Text(
-                              fridge.statusText,
+                              widget.fridge.statusText,
                               style: Theme.of(context).textTheme.bodySmall
                                   ?.copyWith(
                                     color: Theme.of(
@@ -106,7 +224,7 @@ class FridgeProfileSheet extends ConsumerWidget {
                             ),
                             if (distance != null) ...[
                               Text(
-                                ' • ',
+                                '•',
                                 style: Theme.of(context).textTheme.bodySmall
                                     ?.copyWith(
                                       color: Theme.of(
@@ -129,14 +247,124 @@ class FridgeProfileSheet extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  if (!fridge.verified)
-                    Tooltip(
-                      message: 'Not yet verified',
-                      child: Icon(
-                        Icons.help_outline,
-                        color: Theme.of(context).colorScheme.error,
-                      ),
-                    ),
+                  // Subscribe/Unsubscribe Button (in header)
+                  Consumer(
+                    builder: (context, ref, child) {
+                      final isAuthenticated = ref.watch(
+                        isAuthenticatedProvider,
+                      );
+                      final isSubscribedAsync = ref.watch(
+                        isFridgeSubscribedProvider(widget.fridge.id),
+                      );
+
+                      // If not authenticated, show subscribe button
+                      if (!isAuthenticated) {
+                        return FilledButton.icon(
+                          onPressed: () =>
+                              _showSignInAndSubscribeDialog(context, ref),
+                          icon: const Icon(Icons.favorite_border, size: 18),
+                          label: const Text('Subscribe'),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: FridgeMarker.subscribedGreen,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                            textStyle: const TextStyle(fontSize: 14),
+                          ),
+                        );
+                      }
+
+                      return isSubscribedAsync.when(
+                        loading: () => const SizedBox(
+                          width: 80,
+                          height: 60,
+                          child: Center(
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        ),
+                        error: (_, _) => const SizedBox(width: 80, height: 60),
+                        data: (isSubscribed) {
+                          return isSubscribed
+                              ? Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    OutlinedButton.icon(
+                                      onPressed: () =>
+                                          _showEditNotificationsDialog(
+                                            context,
+                                            ref,
+                                          ),
+                                      icon: const Icon(
+                                        Icons.notifications,
+                                        size: 14,
+                                      ),
+                                      label: const Text('Edit'),
+                                      style: OutlinedButton.styleFrom(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 6,
+                                        ),
+                                        textStyle: const TextStyle(
+                                          fontSize: 12,
+                                        ),
+                                        minimumSize: const Size(0, 28),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    OutlinedButton.icon(
+                                      onPressed: () =>
+                                          _showUnsubscribeDialog(context, ref),
+                                      icon: const Icon(
+                                        Icons.favorite,
+                                        size: 14,
+                                        color: Colors.red,
+                                      ),
+                                      label: const Text(
+                                        'Unsub',
+                                        style: TextStyle(color: Colors.red),
+                                      ),
+                                      style: OutlinedButton.styleFrom(
+                                        side: const BorderSide(
+                                          color: Colors.red,
+                                        ),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 6,
+                                        ),
+                                        textStyle: const TextStyle(
+                                          fontSize: 12,
+                                        ),
+                                        minimumSize: const Size(0, 28),
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              : FilledButton.icon(
+                                  onPressed: () =>
+                                      _showSubscribeDialog(context, ref),
+                                  icon: const Icon(
+                                    Icons.favorite_border,
+                                    size: 16,
+                                  ),
+                                  label: const Text('Subscribe'),
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor:
+                                        FridgeMarker.subscribedGreen,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 6,
+                                    ),
+                                    textStyle: const TextStyle(fontSize: 12),
+                                    minimumSize: const Size(0, 28),
+                                  ),
+                                );
+                        },
+                      );
+                    },
+                  ),
                 ],
               ),
               const SizedBox(height: 24),
@@ -150,7 +378,7 @@ class FridgeProfileSheet extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      fridge.location.fullAddress,
+                      widget.fridge.location.fullAddress,
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                   ],
@@ -158,7 +386,7 @@ class FridgeProfileSheet extends ConsumerWidget {
               ),
 
               // Fridge Photo
-              if (fridge.photoUrl != null)
+              if (widget.fridge.photoUrl != null)
                 _buildSection(
                   context: context,
                   icon: Icons.image,
@@ -167,7 +395,7 @@ class FridgeProfileSheet extends ConsumerWidget {
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(12),
                       child: Image.network(
-                        fridge.photoUrl!,
+                        widget.fridge.photoUrl!,
                         width: double.infinity,
                         height: 250,
                         fit: BoxFit.cover,
@@ -206,7 +434,7 @@ class FridgeProfileSheet extends ConsumerWidget {
                 ),
 
               // Latest Report Section
-              if (fridge.latestFridgeReport != null)
+              if (widget.fridge.latestFridgeReport != null)
                 _buildSection(
                   context: context,
                   icon: Icons.report,
@@ -233,23 +461,34 @@ class FridgeProfileSheet extends ConsumerWidget {
                                 children: [
                                   Icon(
                                     FridgeIconUtils.getStatusIcon(
-                                      fridge.latestFridgeReport!.condition,
+                                      widget
+                                          .fridge
+                                          .latestFridgeReport!
+                                          .condition,
                                     ),
                                     size: 18,
                                     color: FridgeIconUtils.getStatusColor(
-                                      fridge.latestFridgeReport!.condition,
+                                      widget
+                                          .fridge
+                                          .latestFridgeReport!
+                                          .condition,
                                     ),
                                   ),
                                   const SizedBox(width: 6),
                                   Text(
-                                    fridge.latestFridgeReport!.condition.value,
+                                    widget
+                                        .fridge
+                                        .latestFridgeReport!
+                                        .condition
+                                        .value,
                                     style: Theme.of(context)
                                         .textTheme
                                         .titleMedium
                                         ?.copyWith(
                                           fontWeight: FontWeight.bold,
                                           color: FridgeIconUtils.getStatusColor(
-                                            fridge
+                                            widget
+                                                .fridge
                                                 .latestFridgeReport!
                                                 .condition,
                                           ),
@@ -272,7 +511,7 @@ class FridgeProfileSheet extends ConsumerWidget {
                                     ),
                               ),
                               Text(
-                                '${fridge.latestFridgeReport!.foodPercentageInt}%',
+                                '${widget.fridge.latestFridgeReport!.foodPercentageInt}%',
                                 style: Theme.of(context).textTheme.titleMedium
                                     ?.copyWith(fontWeight: FontWeight.bold),
                               ),
@@ -281,7 +520,7 @@ class FridgeProfileSheet extends ConsumerWidget {
                         ],
                       ),
                       const SizedBox(height: 12),
-                      if (fridge.latestFridgeReport!.notes != null)
+                      if (widget.fridge.latestFridgeReport!.notes != null)
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -296,16 +535,16 @@ class FridgeProfileSheet extends ConsumerWidget {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              fridge.latestFridgeReport!.notes!,
+                              widget.fridge.latestFridgeReport!.notes!,
                               style: Theme.of(context).textTheme.bodyMedium,
                             ),
                           ],
                         ),
-                      if (fridge.latestFridgeReport!.reportDate != null)
+                      if (widget.fridge.latestFridgeReport!.reportDate != null)
                         Padding(
                           padding: const EdgeInsets.only(top: 8.0),
                           child: Text(
-                            'Last updated: ${_formatDate(fridge.latestFridgeReport!.reportDate!)}',
+                            'Last updated: ${_formatDate(widget.fridge.latestFridgeReport!.reportDate!)}',
                             style: Theme.of(context).textTheme.bodySmall
                                 ?.copyWith(
                                   color: Theme.of(
@@ -319,7 +558,7 @@ class FridgeProfileSheet extends ConsumerWidget {
                 ),
 
               // Status Section (simplified)
-              if (fridge.latestFridgeReport == null)
+              if (widget.fridge.latestFridgeReport == null)
                 _buildSection(
                   context: context,
                   icon: Icons.info_outline,
@@ -335,7 +574,7 @@ class FridgeProfileSheet extends ConsumerWidget {
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
                           Text(
-                            fridge.statusText,
+                            widget.fridge.statusText,
                             style: Theme.of(context).textTheme.bodyMedium
                                 ?.copyWith(
                                   fontWeight: FontWeight.bold,
@@ -352,7 +591,7 @@ class FridgeProfileSheet extends ConsumerWidget {
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
                           Text(
-                            fridge.foodLevelText,
+                            widget.fridge.foodLevelText,
                             style: Theme.of(context).textTheme.bodyMedium
                                 ?.copyWith(fontWeight: FontWeight.bold),
                           ),
@@ -363,11 +602,11 @@ class FridgeProfileSheet extends ConsumerWidget {
                 ),
 
               // Maintainer Section
-              if (fridge.maintainer != null &&
-                  (fridge.maintainer!.organization != null ||
-                      fridge.maintainer!.email != null ||
-                      fridge.maintainer!.phone != null ||
-                      fridge.maintainer!.name != null))
+              if (widget.fridge.maintainer != null &&
+                  (widget.fridge.maintainer!.organization != null ||
+                      widget.fridge.maintainer!.email != null ||
+                      widget.fridge.maintainer!.phone != null ||
+                      widget.fridge.maintainer!.name != null))
                 _buildSection(
                   context: context,
                   icon: Icons.person,
@@ -375,18 +614,18 @@ class FridgeProfileSheet extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      if (fridge.maintainer?.name != null)
-                        Text(fridge.maintainer!.name!),
-                      if (fridge.maintainer?.organization != null)
-                        Text(fridge.maintainer!.organization!),
-                      if (fridge.maintainer?.email != null)
-                        Text(fridge.maintainer!.email!),
-                      if (fridge.maintainer?.phone != null)
-                        Text(fridge.maintainer!.phone!),
-                      if (fridge.maintainer?.instagram != null)
-                        Text(fridge.maintainer!.instagram!),
-                      if (fridge.maintainer?.website != null)
-                        Text(fridge.maintainer!.website!),
+                      if (widget.fridge.maintainer?.name != null)
+                        Text(widget.fridge.maintainer!.name!),
+                      if (widget.fridge.maintainer?.organization != null)
+                        Text(widget.fridge.maintainer!.organization!),
+                      if (widget.fridge.maintainer?.email != null)
+                        Text(widget.fridge.maintainer!.email!),
+                      if (widget.fridge.maintainer?.phone != null)
+                        Text(widget.fridge.maintainer!.phone!),
+                      if (widget.fridge.maintainer?.instagram != null)
+                        Text(widget.fridge.maintainer!.instagram!),
+                      if (widget.fridge.maintainer?.website != null)
+                        Text(widget.fridge.maintainer!.website!),
                     ],
                   ),
                 ),
@@ -465,7 +704,7 @@ class FridgeProfileSheet extends ConsumerWidget {
         title: const Text('Report Status Update'),
         content: SizedBox(
           width: MediaQuery.of(context).size.width * 0.9,
-          child: StatusUpdateForm(fridge: fridge),
+          child: StatusUpdateForm(fridge: widget.fridge),
         ),
         actions: [
           TextButton(
@@ -479,7 +718,10 @@ class FridgeProfileSheet extends ConsumerWidget {
 
   Future<void> _share(BuildContext context) async {
     // Create slug from fridge name (lowercase, no spaces)
-    final slug = fridge.name.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '');
+    final slug = widget.fridge.name.toLowerCase().replaceAll(
+      RegExp(r'[^a-z0-9]+'),
+      '',
+    );
     final fridgeUrl = 'https://www.fridgefinder.app/fridge/$slug';
 
     try {
@@ -488,29 +730,31 @@ class FridgeProfileSheet extends ConsumerWidget {
 
       // Show native share dialog
       await Share.share(
-        '${fridge.name}\n${fridge.location.fullAddress}\n\nView on FridgeFinder: $fridgeUrl',
-        subject: 'Check out this community fridge: ${fridge.name}',
+        '${widget.fridge.name}\n${widget.fridge.location.fullAddress}\n\nView on FridgeFinder: $fridgeUrl',
+        subject: 'Check out this community fridge: ${widget.fridge.name}',
       );
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to share: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to share: $e')));
       }
     }
   }
 
   Future<void> _openDirections(BuildContext context) async {
-    final lat = fridge.location.geoLat;
-    final lng = fridge.location.geoLng;
-    final address = Uri.encodeComponent(fridge.location.fullAddress);
+    final lat = widget.fridge.location.geoLat;
+    final lng = widget.fridge.location.geoLng;
+    final address = Uri.encodeComponent(widget.fridge.location.fullAddress);
 
     // Define map app options with their URLs
     final mapOptions = <MapAppOption>[
       MapAppOption(
         name: 'Google Maps',
         icon: Icons.map,
-        url: Uri.parse('https://www.google.com/maps/search/?api=1&query=$lat,$lng'),
+        url: Uri.parse(
+          'https://www.google.com/maps/search/?api=1&query=$lat,$lng',
+        ),
         appUrl: Uri.parse('comgooglemaps://?q=$lat,$lng'),
       ),
       MapAppOption(
@@ -541,11 +785,9 @@ class FridgeProfileSheet extends ConsumerWidget {
     if (!context.mounted) return;
 
     if (availableOptions.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('No map apps available'),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('No map apps available')));
       return;
     }
 
@@ -563,30 +805,38 @@ class FridgeProfileSheet extends ConsumerWidget {
                 style: Theme.of(context).textTheme.titleMedium,
               ),
             ),
-            ...availableOptions.map((option) => ListTile(
-              leading: Icon(option.icon),
-              title: Text(option.name),
-              onTap: () async {
-                Navigator.pop(context);
-                try {
-                  // Try app URL first
-                  if (await canLaunchUrl(option.appUrl)) {
-                    await launchUrl(option.appUrl, mode: LaunchMode.externalApplication);
-                  } else if (option.url != null) {
-                    // Fall back to web URL
-                    await launchUrl(option.url!, mode: LaunchMode.externalApplication);
+            ...availableOptions.map(
+              (option) => ListTile(
+                leading: Icon(option.icon),
+                title: Text(option.name),
+                onTap: () async {
+                  Navigator.pop(context);
+                  try {
+                    // Try app URL first
+                    if (await canLaunchUrl(option.appUrl)) {
+                      await launchUrl(
+                        option.appUrl,
+                        mode: LaunchMode.externalApplication,
+                      );
+                    } else if (option.url != null) {
+                      // Fall back to web URL
+                      await launchUrl(
+                        option.url!,
+                        mode: LaunchMode.externalApplication,
+                      );
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Failed to open ${option.name}'),
+                        ),
+                      );
+                    }
                   }
-                } catch (e) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Failed to open ${option.name}'),
-                      ),
-                    );
-                  }
-                }
-              },
-            )),
+                },
+              ),
+            ),
           ],
         ),
       ),
@@ -606,5 +856,210 @@ class FridgeProfileSheet extends ConsumerWidget {
     } else {
       return '${date.month}/${date.day}/${date.year}';
     }
+  }
+
+  Future<void> _showSubscribeDialog(BuildContext context, WidgetRef ref) async {
+    try {
+      // Check if user is authenticated
+      final isAuthenticated = ref.read(isAuthenticatedProvider);
+      if (!isAuthenticated) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Please sign in to subscribe')),
+          );
+        }
+        return;
+      }
+
+      // Wait for user profile and subscription data
+      final userProfileAsync = await ref.read(userProfileProvider.future);
+
+      if (userProfileAsync == null) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Please complete your profile first')),
+          );
+        }
+        return;
+      }
+
+      final subscriptionAsync = await ref.read(
+        fridgeSubscriptionPreferencesProvider(widget.fridge.id).future,
+      );
+
+      if (!context.mounted) return;
+
+      await showDialog(
+        context: context,
+        builder: (dialogContext) => SubscriptionDialog(
+          fridgeId: widget.fridge.id,
+          isVolunteer: userProfileAsync.isVolunteer,
+          existingSubscription: subscriptionAsync,
+        ),
+      );
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error loading subscription: $e')),
+        );
+      }
+    }
+  }
+
+  void _showSignInAndSubscribeDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogContext) => Dialog(
+        child: Stack(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Sign In to Subscribe',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Sign in to subscribe to this fridge and receive notifications.',
+                  ),
+                  const SizedBox(height: 24),
+                  SignInWidget(
+                    onSignInSuccess: () {
+                      // Close sign-in dialog
+                      Navigator.of(dialogContext).pop();
+                      // Show subscribe dialog
+                      if (context.mounted) {
+                        _showSubscribeDialog(context, ref);
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ),
+            Positioned(
+              top: 8,
+              right: 8,
+              child: IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                tooltip: 'Close',
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showEditNotificationsDialog(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    try {
+      // Show loading dialog using root navigator to ensure proper stacking
+      // ignore: unawaited_futures
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        useRootNavigator: true,
+        builder: (dialogContext) =>
+            const Center(child: CircularProgressIndicator()),
+      );
+
+      // Get current notification preferences
+      final subscription = await ref.read(
+        fridgeSubscriptionPreferencesProvider(widget.fridge.id).future,
+      );
+
+      // Close loading dialog using root navigator - CRITICAL: must match how it was shown
+      if (context.mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+
+      // Small delay to ensure loading dialog is fully dismissed before showing next dialog
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      if (subscription == null) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Not subscribed to this fridge')),
+          );
+        }
+        return;
+      }
+
+      // Show the edit dialog (also using root navigator for consistency)
+      if (context.mounted) {
+        await showDialog<bool>(
+          context: context,
+          useRootNavigator: true,
+          builder: (context) => EditNotificationPreferencesDialog(
+            fridgeId: widget.fridge.id,
+            fridgeName: widget.fridge.name,
+            initialPreferences: subscription.notificationPreferences,
+          ),
+        );
+      }
+    } catch (error) {
+      // Close loading dialog if it's still open
+      if (context.mounted) {
+        // Try to pop using root navigator, but catch any errors if there's nothing to pop
+        try {
+          Navigator.of(context, rootNavigator: true).pop();
+        } catch (_) {
+          // Dialog might already be closed
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error loading preferences: $error')),
+        );
+      }
+    }
+  }
+
+  void _showUnsubscribeDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Unsubscribe?'),
+        content: const Text(
+          'Are you sure you want to unsubscribe from this fridge? You will no longer receive notifications about it.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              try {
+                final manager = ref.read(subscriptionManagerProvider.notifier);
+                await manager.unsubscribeFromFridge(widget.fridge.id);
+                if (context.mounted) {
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Unsubscribed from fridge')),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text('Error: $e')));
+                }
+              }
+            },
+            child: const Text(
+              'Unsubscribe',
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

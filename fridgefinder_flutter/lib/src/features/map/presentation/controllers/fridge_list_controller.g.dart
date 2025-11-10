@@ -423,14 +423,14 @@ final class FridgesSortedByDistanceProvider
 String _$fridgesSortedByDistanceHash() =>
     r'13ec2fb5e4a5950f8272bc3814bf2da83bf624e2';
 
-/// Provider for filtered fridges based on map filter state (pill filters + fuzzy search)
-/// Applies pill condition filters first, then fuzzy search on remaining fridges
+/// Provider for filtered fridges based on map filter state (pill filters + subscribed filter + fuzzy search)
+/// Applies pill condition filters first, then subscribed filter, then fuzzy search on remaining fridges
 
 @ProviderFor(mapFilteredFridges)
 const mapFilteredFridgesProvider = MapFilteredFridgesProvider._();
 
-/// Provider for filtered fridges based on map filter state (pill filters + fuzzy search)
-/// Applies pill condition filters first, then fuzzy search on remaining fridges
+/// Provider for filtered fridges based on map filter state (pill filters + subscribed filter + fuzzy search)
+/// Applies pill condition filters first, then subscribed filter, then fuzzy search on remaining fridges
 
 final class MapFilteredFridgesProvider
     extends
@@ -440,8 +440,8 @@ final class MapFilteredFridgesProvider
           List<FridgeDomain>
         >
     with $Provider<List<FridgeDomain>> {
-  /// Provider for filtered fridges based on map filter state (pill filters + fuzzy search)
-  /// Applies pill condition filters first, then fuzzy search on remaining fridges
+  /// Provider for filtered fridges based on map filter state (pill filters + subscribed filter + fuzzy search)
+  /// Applies pill condition filters first, then subscribed filter, then fuzzy search on remaining fridges
   const MapFilteredFridgesProvider._()
     : super(
         from: null,
@@ -477,4 +477,4 @@ final class MapFilteredFridgesProvider
 }
 
 String _$mapFilteredFridgesHash() =>
-    r'a1e603ca9dc4a658b90f6e9ceaafb84db63f7744';
+    r'ed9492623cacfceae47b5c88f108b827274d2c46';

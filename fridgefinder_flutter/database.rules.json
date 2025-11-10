@@ -1,0 +1,12 @@
+{
+  "rules": {
+    "users": {
+      "$userId": {
+        ".read": "$userId === auth.uid || auth != null",
+        ".write": "$userId === auth.uid"
+      },
+      ".read": "auth != null",
+      ".indexOn": ["username"]
+    }
+  }
+}

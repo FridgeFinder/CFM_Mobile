@@ -4,6 +4,8 @@ import '../../../map/domain/models/fridge_domain.dart';
 import '../../../map/domain/repositories/i_fridge_repository.dart';
 import '../../../../core/exceptions/app_exception.dart';
 import '../../../../core/providers/dio_provider.dart';
+import '../../../../core/providers/database_provider.dart';
+import '../../../../core/utils/app_logger.dart';
 
 part 'fridge_repository.g.dart';
 
@@ -37,8 +39,10 @@ class FridgeRepository implements IFridgeRepository {
       return data
           .map((json) => FridgeDomain.fromJson(json as Map<String, dynamic>))
           // Filter out ghost fridges from the initial response
-          .where((fridge) =>
-              fridge.latestFridgeReport?.condition != FridgeCondition.ghost)
+          .where(
+            (fridge) =>
+                fridge.latestFridgeReport?.condition != FridgeCondition.ghost,
+          )
           .toList();
     } on DioException catch (e) {
       throw _handleDioError(e);
@@ -80,6 +84,7 @@ class FridgeRepository implements IFridgeRepository {
   /// Throws [NetworkException] on network errors
   /// Based on real API: POST /v1/fridges/{fridgeId}/reports
   /// foodPercentage is in 0-1 range and will be converted to 0-3 API format
+  /// Also writes to Realtime Database to trigger Cloud Functions
   @override
   Future<void> submitFridgeReport(
     String fridgeId,
@@ -117,10 +122,65 @@ class FridgeRepository implements IFridgeRepository {
           statusCode: response.statusCode,
         );
       }
+
+      // Write to Realtime Database to trigger Cloud Functions
+      // Include fridge name for better notifications
+      FridgeDomain? fridge;
+      try {
+        fridge = await getFridge(fridgeId);
+      } catch (e) {
+        // If we can't get fridge, continue without name
+        logger.w('Could not fetch fridge name for notification: $e');
+      }
+
+      await _writeStatusReportToDatabase(
+        fridgeId: fridgeId,
+        condition: condition.value,
+        foodPercentage: foodPercentage,
+        notes: notes,
+        photoUrl: photoUrl,
+        fridgeName: fridge?.name,
+      );
+
+      logger.i(
+        'Status report submitted and written to database for fridge $fridgeId',
+      );
     } on DioException catch (e) {
       throw _handleDioError(e);
     } catch (e) {
       throw AppException('Failed to submit fridge report: $e');
+    }
+  }
+
+  /// Write status report to Realtime Database for Cloud Functions triggers
+  Future<void> _writeStatusReportToDatabase({
+    required String fridgeId,
+    required String condition,
+    required double foodPercentage,
+    String? notes,
+    String? photoUrl,
+    String? fridgeName,
+  }) async {
+    try {
+      final database = DatabaseProvider.databaseRef;
+      final reportRef = database.child('statusReports').push();
+
+      final reportData = {
+        'fridgeId': fridgeId,
+        'fridgeName': fridgeName, // Include fridge name for notifications
+        'condition': condition,
+        'foodPercentage': foodPercentage,
+        'notes': notes,
+        'photoUrl': photoUrl,
+        'reportDate': DateTime.now().toIso8601String(),
+        'createdAt': DateTime.now().toIso8601String(),
+      };
+
+      await reportRef.set(reportData);
+      logger.d('Status report written to Realtime Database');
+    } catch (e) {
+      // Don't throw - this is supplementary to the API call
+      logger.w('Failed to write status report to database: $e');
     }
   }
 

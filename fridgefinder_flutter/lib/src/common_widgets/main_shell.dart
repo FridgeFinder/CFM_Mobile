@@ -1,20 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import './bottom_nav_bar.dart';
+import '../core/providers/auth_provider.dart';
+import '../core/providers/drawer_provider.dart';
+import '../core/providers/subscriptions_provider.dart';
+import '../features/auth/presentation/widgets/sign_in_widget.dart';
 
 /// Main shell layout that keeps the bottom navigation bar constant
 /// while allowing the page content to transition with directional slides
-class MainShell extends StatefulWidget {
+class MainShell extends ConsumerStatefulWidget {
   final Widget child;
   final String currentRoute;
 
   const MainShell({super.key, required this.child, required this.currentRoute});
 
   @override
-  State<MainShell> createState() => _MainShellState();
+  ConsumerState<MainShell> createState() => _MainShellState();
 }
 
-class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
+class _MainShellState extends ConsumerState<MainShell> with TickerProviderStateMixin {
   late int _currentIndex;
   late int _previousIndex;
   late AnimationController _animationController;
@@ -85,9 +90,10 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
         return 0;
       case '/list':
         return 1;
-      // Removed '/favorites' route - will be added in v1.1
-      case '/profile':
+      case '/my-fridges':
         return 2;
+      case '/profile':
+        return 3;
       default:
         return 0;
     }
@@ -99,7 +105,8 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
         return 'Fridge Map';
       case '/list':
         return 'Fridge List';
-      // Removed '/favorites' route - will be added in v1.1
+      case '/my-fridges':
+        return 'My Fridges';
       case '/profile':
         return 'Profile';
       default:
@@ -111,6 +118,8 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
     setState(() {
       _isDrawerOpen = !_isDrawerOpen;
     });
+    // Update drawer state provider immediately
+    ref.read(drawerStateProvider.notifier).setOpen(_isDrawerOpen);
     if (_isDrawerOpen) {
       _drawerAnimationController.forward();
     } else {
@@ -260,19 +269,18 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                                 GoRouter.of(context).go('/list');
                               },
                             ),
-                            // TODO: Re-enable Favorites menu item in v1.1 after implementing user accounts
-                            // _buildMenuTile(
-                            //   context: context,
-                            //   icon: Icons.favorite,
-                            //   title: 'Favorites',
-                            //   subtitle: 'Your saved fridges',
-                            //   isSelected: widget.currentRoute == '/favorites',
-                            //   route: '/favorites',
-                            //   onTap: () {
-                            //     _toggleDrawer();
-                            //     GoRouter.of(context).go('/favorites');
-                            //   },
-                            // ),
+                            _buildMenuTile(
+                              context: context,
+                              icon: Icons.favorite,
+                              title: 'My Fridges',
+                              subtitle: 'Your subscribed fridges',
+                              isSelected: widget.currentRoute == '/my-fridges',
+                              route: '/my-fridges',
+                              onTap: () {
+                                _toggleDrawer();
+                                GoRouter.of(context).go('/my-fridges');
+                              },
+                            ),
                             _buildMenuTile(
                               context: context,
                               icon: Icons.person,
@@ -288,7 +296,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                           ],
                         ),
                       ),
-                      // Footer
+                      // Footer with auth widget
                       Padding(
                         padding: const EdgeInsets.all(16.0),
                         child: Column(
@@ -296,6 +304,106 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                           children: [
                             Divider(color: Theme.of(context).dividerColor),
                             const SizedBox(height: 12),
+                            Consumer(
+                              builder: (context, ref, child) {
+                                final isAuthenticated = ref.watch(isAuthenticatedProvider);
+                                final userProfileAsync = ref.watch(userProfileProvider);
+                                
+                                if (!isAuthenticated) {
+                                  return Column(
+                                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                                    children: [
+                                      OutlinedButton.icon(
+                                        onPressed: () {
+                                          _toggleDrawer();
+                                          showDialog(
+                                            context: context,
+                                            builder: (context) => Dialog(
+                                              child: Padding(
+                                                padding: const EdgeInsets.all(24.0),
+                                                child: SignInWidget(),
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                        icon: const Icon(Icons.login),
+                                        label: const Text('Sign In'),
+                                      ),
+                                      const SizedBox(height: 12),
+                                    ],
+                                  );
+                                }
+                                
+                                return userProfileAsync.when(
+                                  loading: () => const SizedBox.shrink(),
+                                  error: (_, _) => const SizedBox.shrink(),
+                                  data: (profile) {
+                                    if (profile == null) return const SizedBox.shrink();
+                                    
+                                    return Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            CircleAvatar(
+                                              radius: 16,
+                                              child: Text(
+                                                profile.username.substring(0, 1).toUpperCase(),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    profile.username,
+                                                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                                      fontWeight: FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                  if (profile.isVolunteer)
+                                                    Text(
+                                                      'Volunteer',
+                                                      style: Theme.of(context).textTheme.bodySmall,
+                                                    ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 8),
+                                        OutlinedButton.icon(
+                                          onPressed: () async {
+                                            try {
+                                              final repository = ref.read(authRepositoryProvider);
+                                              await repository.signOut();
+
+                                              // Invalidate providers to update UI
+                                              ref.invalidate(authUserProvider);
+                                              ref.invalidate(userProfileProvider);
+                                              ref.invalidate(isAuthenticatedProvider);
+                                              ref.invalidate(subscribedFridgesProvider);
+
+                                              _toggleDrawer();
+                                            } catch (e) {
+                                              if (context.mounted) {
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  SnackBar(content: Text('Error signing out: $e')),
+                                                );
+                                              }
+                                            }
+                                          },
+                                          icon: const Icon(Icons.logout),
+                                          label: const Text('Sign Out'),
+                                        ),
+                                        const SizedBox(height: 12),
+                                      ],
+                                    );
+                                  },
+                                );
+                              },
+                            ),
                             Text(
                               'About FridgeFinder',
                               style: Theme.of(context).textTheme.bodySmall,

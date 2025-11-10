@@ -17,10 +17,17 @@ dependencies {
 
   // Firebase dependencies (versions inherited from BoM)
   implementation("com.google.firebase:firebase-analytics")
+  implementation("com.google.firebase:firebase-auth")
+  implementation("com.google.firebase:firebase-database")
+  implementation("com.google.firebase:firebase-messaging")
+  implementation("com.google.firebase:firebase-firestore") // Optional, if needed
 
   // Play Core modular dependencies for split compatibility
   implementation("com.google.android.play:app-update:2.1.0")
   implementation("com.google.android.play:feature-delivery:2.1.0")
+
+  // Core library desugaring (required for flutter_local_notifications)
+  coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 
   // Flutter embedding dependency (required for MainActivity)
   debugImplementation("io.flutter:flutter_embedding_debug:1.0.0-035316565ad77281a75305515e4682e6c4c6f7ca")
@@ -47,6 +54,8 @@ android {
         // Updated to Java 21
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
+        // Enable core library desugaring
+        isCoreLibraryDesugaringEnabled = true
     }
 
     kotlinOptions {

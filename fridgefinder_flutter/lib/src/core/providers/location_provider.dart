@@ -115,26 +115,37 @@ class LocationAccess extends _$LocationAccess {
 
   /// Set location access - if enabling, requests permissions
   /// If disabling, just turns off the toggle
-  Future<bool> setAccessWithPermission(bool value) async {
+  /// Returns a map with 'success' and optional 'openSettings' flags
+  Future<Map<String, dynamic>> setAccessWithPermission(bool value) async {
     if (value) {
-      // Enabling location access - request permissions
-      final permission = await Geolocator.requestPermission();
+      // Enabling location access - check and request permissions
+      LocationPermission permission = await Geolocator.checkPermission();
+
+      // If denied or not determined, try to request
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+
       final isGranted =
           permission == LocationPermission.whileInUse ||
           permission == LocationPermission.always;
 
       if (isGranted) {
         state = true;
-        return true;
+        return {'success': true};
+      } else if (permission == LocationPermission.deniedForever) {
+        // Permission permanently denied, need to guide to settings
+        state = false;
+        return {'success': false, 'openSettings': true};
       } else {
         // Permission denied, keep state as false
         state = false;
-        return false;
+        return {'success': false, 'openSettings': false};
       }
     } else {
       // Disabling location access - just turn off
       state = false;
-      return true;
+      return {'success': true, 'disabled': true};
     }
   }
 

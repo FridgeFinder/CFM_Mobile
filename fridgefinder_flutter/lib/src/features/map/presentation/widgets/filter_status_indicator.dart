@@ -21,6 +21,11 @@ class FilterStatusIndicator extends ConsumerWidget {
 
         final statusParts = <String>[];
 
+        // Add subscribed filter info
+        if (filterState.subscribedOnly) {
+          statusParts.add('showing only subscribed fridges');
+        }
+
         // Add deselected conditions info (only if some filters are actually selected)
         // Don't show "not showing" if no filters are selected (which means showing everything)
         if (filterState.selectedConditions.isNotEmpty &&

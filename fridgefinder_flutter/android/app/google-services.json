@@ -1,6 +1,7 @@
 {
   "project_info": {
     "project_number": "576156648133",
+    "firebase_url": "https://fridgefinder-app-default-rtdb.firebaseio.com",
     "project_id": "fridgefinder-app",
     "storage_bucket": "fridgefinder-app.firebasestorage.app"
   },
@@ -12,7 +13,12 @@
           "package_name": "com.fridgefinder.fridgefinderapp"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "576156648133-hblomed2tqvj6rbjok4d0rpa6jfj9t9h.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBkojMiASYv7sH0W7FimcNATZ7piPhKVCQ"
@@ -20,7 +26,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "576156648133-hblomed2tqvj6rbjok4d0rpa6jfj9t9h.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "576156648133-iok9kg4ln8u6okgr477n9ut6et9o0sdf.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.fridgefinder.fridgefinderFlutterApp"
+              }
+            }
+          ]
         }
       }
     }

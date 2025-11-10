@@ -5,13 +5,48 @@ import '../../../../core/utils/fridge_icon_utils.dart';
 /// Custom marker widget for displaying fridge on map
 /// Uses SVG icons that match the web app design system
 /// Includes health bar showing food level percentage
-class FridgeMarker extends StatelessWidget {
+class FridgeMarker extends StatefulWidget {
   final FridgeDomain fridge;
+  final bool isSubscribed;
   static const double markerSize = 40;
-  static const double healthBarHeight = 4;
+  static const double healthBarHeight = 6;
   static const double healthBarSpacing = 2;
 
-  const FridgeMarker({super.key, required this.fridge});
+  /// Green color for subscribed fridges
+  static const Color subscribedGreen = Color(0xFF4CAF50);
+
+  const FridgeMarker({
+    super.key,
+    required this.fridge,
+    this.isSubscribed = false,
+  });
+
+  @override
+  State<FridgeMarker> createState() => _FridgeMarkerState();
+}
+
+class _FridgeMarkerState extends State<FridgeMarker>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    )..repeat(reverse: true);
+    _animation = Tween<double>(begin: 0.3, end: 0.7).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   Color _getHealthBarColor(double foodPercentage) {
     // Match the pill filter colors based on food level
@@ -28,27 +63,32 @@ class FridgeMarker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final report = fridge.latestFridgeReport;
-    final foodPercentage = report?.foodPercentage ?? 1.0; // Default to full if no report
+    final report = widget.fridge.latestFridgeReport;
+    final foodPercentage =
+        report?.foodPercentage ?? 1.0; // Default to full if no report
     // Clamp food percentage between 0 and 1
     final clampedPercentage = foodPercentage.clamp(0.0, 1.0);
     // Show health bar for all fridges with a report (food level is independent of condition)
     final showHealthBar = report != null;
 
     // Calculate icon size to account for health bar if shown
-    final iconSize = showHealthBar ? markerSize - healthBarHeight - healthBarSpacing : markerSize;
+    final iconSize = showHealthBar
+        ? FridgeMarker.markerSize -
+            FridgeMarker.healthBarHeight -
+            FridgeMarker.healthBarSpacing
+        : FridgeMarker.markerSize;
 
-    return SizedBox(
-      width: markerSize,
-      height: markerSize,
+    final markerContent = SizedBox(
+      width: FridgeMarker.markerSize,
+      height: FridgeMarker.markerSize,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           // Health bar - video game style
           if (showHealthBar)
             Container(
-              width: markerSize,
-              height: healthBarHeight,
+              width: FridgeMarker.markerSize,
+              height: FridgeMarker.healthBarHeight,
               decoration: BoxDecoration(
                 border: Border.all(color: Colors.black, width: 0.5),
                 color: Colors.grey.shade800, // Dark background
@@ -60,20 +100,54 @@ class FridgeMarker extends StatelessWidget {
                 child: Container(
                   decoration: BoxDecoration(
                     color: _getHealthBarColor(clampedPercentage),
-                    borderRadius: BorderRadius.circular(1.5),
+                    borderRadius: BorderRadius.circular(3),
                   ),
                 ),
               ),
             ),
-          if (showHealthBar) SizedBox(height: healthBarSpacing),
+          if (showHealthBar) SizedBox(height: FridgeMarker.healthBarSpacing),
           // Fridge icon
           SizedBox(
-            width: markerSize,
+            width: FridgeMarker.markerSize,
             height: iconSize,
-            child: FridgeIconUtils.getFridgeIcon(fridge: fridge, size: iconSize),
+            child: FridgeIconUtils.getFridgeIcon(
+              fridge: widget.fridge,
+              size: iconSize,
+            ),
           ),
         ],
       ),
     );
+
+    // Add thin pulsing green glow for subscribed fridges
+    if (widget.isSubscribed) {
+      return AnimatedBuilder(
+        animation: _animation,
+        builder: (context, child) {
+          return Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: FridgeMarker.subscribedGreen
+                      .withValues(alpha: _animation.value * 0.6),
+                  blurRadius: 8,
+                  spreadRadius: 1,
+                ),
+                BoxShadow(
+                  color: FridgeMarker.subscribedGreen
+                      .withValues(alpha: _animation.value * 0.4),
+                  blurRadius: 12,
+                  spreadRadius: 2,
+                ),
+              ],
+            ),
+            child: markerContent,
+          );
+        },
+      );
+    }
+
+    return markerContent;
   }
 }

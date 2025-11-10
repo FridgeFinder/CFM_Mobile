@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:permission_handler/permission_handler.dart';
+import '../../../../core/providers/subscriptions_provider.dart';
 import '../../domain/models/fridge_domain.dart';
 import '../controllers/fridge_list_controller.dart';
 import '../controllers/map_filter_controller.dart';
@@ -17,6 +20,8 @@ import '../../../profile/presentation/fridge_profile_sheet.dart';
 import '../../../../common_widgets/index.dart' as common_widgets;
 import '../../../../core/providers/location_provider.dart';
 import '../../../../core/providers/map_cache_provider.dart';
+import '../../../../core/providers/notification_navigation_provider.dart';
+import '../../../../core/providers/drawer_provider.dart';
 
 /// Map screen showing all community fridges on a map
 class MapScreen extends ConsumerStatefulWidget {
@@ -31,6 +36,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   late TextEditingController _searchController;
   late FocusNode _searchFocusNode;
   bool _isFilterPanelExpanded = false;
+  String? _currentRoute;
 
   @override
   void initState() {
@@ -58,7 +64,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     );
   }
 
-  void _toggleFilterPanel() {
+void _toggleFilterPanel() {
     setState(() {
       _isFilterPanelExpanded = !_isFilterPanelExpanded;
       if (_isFilterPanelExpanded) {
@@ -95,10 +101,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
 
       // Move map to first result
       final location = locations.first;
-      _mapController.move(
-        LatLng(location.latitude, location.longitude),
-        14.0,
-      );
+      _mapController.move(LatLng(location.latitude, location.longitude), 14.0);
 
       // Clear the search bar after successfully moving to location
       // This prevents the location query from filtering fridge names
@@ -130,6 +133,42 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     final userLocationStream = ref.watch(userLocationStreamProvider);
     final locationAccessEnabled = ref.watch(locationAccessProvider);
     final filteredFridges = ref.watch(mapFilteredFridgesProvider);
+    final subscriptionsAsync = ref.watch(subscribedFridgesProvider);
+    final router = GoRouter.of(context);
+    final currentRoute = router.routerDelegate.currentConfiguration.uri.toString();
+
+    // Listen for route changes and trigger bottom sheet close
+    if (_currentRoute != null && _currentRoute != currentRoute) {
+      _currentRoute = currentRoute;
+      // Trigger bottom sheet to close itself
+      ref.read(bottomSheetCloseTriggerProvider.notifier).triggerClose();
+    } else {
+      _currentRoute ??= currentRoute;
+    }
+
+    // Listen for drawer open and trigger bottom sheet close
+    ref.listen(drawerStateProvider, (previous, next) {
+      if (next && previous != next && mounted) {
+        // Trigger bottom sheet to close itself
+        ref.read(bottomSheetCloseTriggerProvider.notifier).triggerClose();
+      }
+    });
+
+    // Listen for notification navigation (must be in build method)
+    ref.listen(notificationNavigationProvider, (previous, next) {
+      if (next != null && mounted) {
+        // Wait a bit for the fridge list to load, then get the fridge
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (!mounted) return;
+          final fridge = ref.read(selectedFridgeProvider);
+          if (fridge != null) {
+            _showFridgeProfile(fridge);
+            // Clear the notification navigation state
+            ref.read(notificationNavigationProvider.notifier).clear();
+          }
+        });
+      }
+    });
 
     return Scaffold(
       body: fridgesAsync.when(
@@ -200,19 +239,31 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                     options: MarkerClusterLayerOptions(
                       maxClusterRadius: 40,
                       size: const Size(50, 50),
-                      markers: filteredFridges
-                          .map(
-                            (fridge) => Marker(
-                              point: LatLng(
-                                fridge.location.geoLat,
-                                fridge.location.geoLng,
+                      markers: () {
+                        // Create set of subscribed fridge IDs for O(1) lookup
+                        final subscribedFridgeIds = subscriptionsAsync.when(
+                          data: (subscriptions) => subscriptions.map((s) => s.fridgeId).toSet(),
+                          loading: () => <String>{},
+                          error: (_, _) => <String>{},
+                        );
+
+                        return filteredFridges
+                            .map(
+                              (fridge) => Marker(
+                                point: LatLng(
+                                  fridge.location.geoLat,
+                                  fridge.location.geoLng,
+                                ),
+                                width: FridgeMarker.markerSize,
+                                height: FridgeMarker.markerSize,
+                                child: FridgeMarker(
+                                  fridge: fridge,
+                                  isSubscribed: subscribedFridgeIds.contains(fridge.id),
+                                ),
                               ),
-                              width: FridgeMarker.markerSize,
-                              height: FridgeMarker.markerSize,
-                              child: FridgeMarker(fridge: fridge),
-                            ),
-                          )
-                          .toList(),
+                            )
+                            .toList();
+                      }(),
                       builder: (context, markers) {
                         return FridgeClusterWidget(
                           markerCount: markers.length,
@@ -275,20 +326,48 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                   onPressed: () async {
                     // If location access is disabled, request permission first
                     if (!locationAccessEnabled) {
-                      final permissionGranted = await ref
+                      final result = await ref
                           .read(locationAccessProvider.notifier)
                           .setAccessWithPermission(true);
 
-                      if (!permissionGranted) {
+                      if (result['success'] != true) {
                         if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Location permission denied. Enable in settings to use this feature.',
+                          if (result['openSettings'] == true) {
+                            // Guide user to settings
+                            final shouldOpenSettings = await showDialog<bool>(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: const Text('Location Permission Required'),
+                                content: const Text(
+                                  'Location access is disabled. '
+                                  'Please enable it in Settings to center the map on your location.',
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.of(context).pop(false),
+                                    child: const Text('Cancel'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () => Navigator.of(context).pop(true),
+                                    child: const Text('Open Settings'),
+                                  ),
+                                ],
                               ),
-                              duration: Duration(seconds: 3),
-                            ),
-                          );
+                            );
+
+                            if (shouldOpenSettings == true) {
+                              await openAppSettings();
+                            }
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Location permission denied. Enable in settings to use this feature.',
+                                ),
+                                duration: Duration(seconds: 3),
+                              ),
+                            );
+                          }
                         }
                         return;
                       }

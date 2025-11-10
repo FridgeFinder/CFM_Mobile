@@ -10,6 +10,7 @@ import './widgets/fridge_card.dart';
 import '../../profile/presentation/fridge_profile_sheet.dart';
 import '../../../common_widgets/index.dart' as common_widgets;
 import '../../../core/utils/distance_calculator.dart' as distance_utils;
+import '../../../core/providers/subscriptions_provider.dart';
 
 /// List screen showing all community fridges in a scrollable list
 /// Shares filter state with map view through mapFilterProvider
@@ -119,6 +120,8 @@ class _ListScreenState extends ConsumerState<ListScreen> {
     );
     // Also watch the original fridges to check for loading/error states
     final fridgesAsync = ref.watch(fridgeListProvider);
+    // Watch subscriptions for green glow
+    final subscriptionsAsync = ref.watch(subscribedFridgesProvider);
 
     return Scaffold(
       body: fridgesAsync.when(
@@ -141,7 +144,14 @@ class _ListScreenState extends ConsumerState<ListScreen> {
                 );
               }
 
-              // Apply filter conditions first, then location proximity, then fuzzy search
+              // Compute subscribedFridgeIds ONCE at the beginning to use for both filtering and green glow
+              final subscribedFridgeIds = subscriptionsAsync.when(
+                data: (subs) => subs.map((s) => s.fridgeId).toSet(),
+                loading: () => <String>{},
+                error: (_, _) => <String>{},
+              );
+
+              // Apply filter conditions first, then subscribed filter, then location proximity, then fuzzy search
               // If no conditions selected, show all fridges (same as map view)
               var filtered = filterState.selectedConditions.isEmpty
                   ? fridgesWithDistance
@@ -154,6 +164,13 @@ class _ListScreenState extends ConsumerState<ListScreen> {
                         );
                       });
                     }).toList();
+
+              // Apply subscribed filter if active
+              if (filterState.subscribedOnly) {
+                filtered = filtered.where((fridgeWithDistance) {
+                  return subscribedFridgeIds.contains(fridgeWithDistance.fridge.id);
+                }).toList();
+              }
 
               // Apply location proximity filter if location is selected
               if (_selectedLocation != null) {
@@ -311,9 +328,12 @@ class _ListScreenState extends ConsumerState<ListScreen> {
                             itemCount: filtered.length,
                             itemBuilder: (context, index) {
                               final fridgeWithDistance = filtered[index];
+                              // Use the pre-computed subscribedFridgeIds for green glow
                               return FridgeCard(
                                 fridge: fridgeWithDistance.fridge,
                                 distanceKm: fridgeWithDistance.distanceKm,
+                                isSubscribed: subscribedFridgeIds
+                                    .contains(fridgeWithDistance.fridge.id),
                                 onTap: () => _showFridgeProfile(
                                   context,
                                   ref,

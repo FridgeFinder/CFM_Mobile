@@ -226,7 +226,7 @@ void main() {
       final bottomNav = navBar.evaluate().last.widget as BottomNavigationBar;
       expect(bottomNav.currentIndex, 1);
 
-      // Navigate to profile (index 2, since Favorites was removed)
+      // Navigate to profile (index 3, since My Fridges is index 2)
       await tester.tap(find.byIcon(Icons.person).last, warnIfMissed: false);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 200));
@@ -234,7 +234,7 @@ void main() {
 
       final navBar2 = find.byType(BottomNavigationBar);
       final bottomNav2 = navBar2.evaluate().last.widget as BottomNavigationBar;
-      expect(bottomNav2.currentIndex, 2);
+      expect(bottomNav2.currentIndex, 3);
     });
 
     testWidgets('app loads data and displays map', (WidgetTester tester) async {
@@ -265,11 +265,12 @@ void main() {
       final navBar = find.byType(BottomNavigationBar);
       final bottomNav = navBar.evaluate().last.widget as BottomNavigationBar;
 
-      // Should have 3 items now (Map, List, Profile) - Favorites was removed
-      expect(bottomNav.items.length, 3);
+      // Should have 4 items now (Map, List, My Fridges, Profile)
+      expect(bottomNav.items.length, 4);
       expect(bottomNav.items[0].label, 'Map');
       expect(bottomNav.items[1].label, 'List');
-      expect(bottomNav.items[2].label, 'Profile');
+      expect(bottomNav.items[2].label, 'My Fridges');
+      expect(bottomNav.items[3].label, 'Profile');
     });
   });
 }
