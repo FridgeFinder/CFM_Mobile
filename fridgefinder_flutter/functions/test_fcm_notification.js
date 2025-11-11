@@ -1,12 +1,12 @@
 /**
  * Test script for sending FCM notifications directly
- * 
+ *
  * Usage:
  *   node test_fcm_notification.js <fcm-token> <fridge-id> [title] [body]
- * 
+ *
  * Example:
  *   node test_fcm_notification.js "your-fcm-token-here" "fridge-123" "Test Title" "Test Body"
- * 
+ *
  * Prerequisites:
  *   1. Install dependencies: npm install firebase-admin
  *   2. Set GOOGLE_APPLICATION_CREDENTIALS environment variable to your service account key
@@ -65,13 +65,13 @@ async function sendTestNotification(fcmToken, fridgeId, title, body) {
     return response;
   } catch (error) {
     console.error('❌ Error sending notification:', error);
-    
+
     // Handle specific error cases
     if (error.code === 'messaging/invalid-registration-token' ||
         error.code === 'messaging/registration-token-not-registered') {
       console.error('Invalid or expired FCM token. Please get a new token from the app.');
     }
-    
+
     throw error;
   }
 }

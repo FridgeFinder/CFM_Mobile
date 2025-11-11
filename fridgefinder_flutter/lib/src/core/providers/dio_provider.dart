@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import '../constants/api_constants.dart';
@@ -90,7 +91,7 @@ Dio dio(Ref ref) {
   );
 
   // Add Dio's built-in logging interceptor in debug mode for detailed logs
-  if (ApiConstants.isDevelopment) {
+  if (kDebugMode) {
     dioInstance.interceptors.add(
       LogInterceptor(
         requestBody: true,

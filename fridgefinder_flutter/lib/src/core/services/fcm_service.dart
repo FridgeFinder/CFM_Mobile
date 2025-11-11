@@ -10,6 +10,10 @@ import 'local_notification_service.dart';
 /// This is declared in main.dart but kept here for reference
 
 /// Service for managing Firebase Cloud Messaging
+///
+/// PRODUCTION ENVIRONMENT ONLY
+/// This always uses production FCM (FirebaseMessaging.instance).
+/// Not affected by fridge data API environment setting.
 class FCMService {
   final FirebaseMessaging _messaging;
   final AuthRepository _authRepository;

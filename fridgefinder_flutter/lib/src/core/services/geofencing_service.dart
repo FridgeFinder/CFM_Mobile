@@ -1,7 +1,7 @@
 import 'dart:async';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:geolocator/geolocator.dart';
 import '../utils/app_logger.dart';
-import '../providers/database_provider.dart';
 import '../../features/auth/data/repositories/auth_repository.dart';
 import '../../features/map/domain/models/fridge_domain.dart';
 import '../../features/map/domain/repositories/i_fridge_repository.dart';
@@ -12,14 +12,18 @@ class GeofencingService {
   final AuthRepository _authRepository;
   final IFridgeRepository _fridgeRepository;
   final LocalNotificationService _localNotifications;
+  final FirebaseFunctions _functions;
 
   StreamSubscription<Position>? _locationSubscription;
   bool _isMonitoring = false;
   Timer? _checkTimer;
 
-  // Track recently notified fridges to avoid spam
-  final Set<String> _recentlyNotifiedFridges = {};
-  static const Duration _notificationCooldown = Duration(minutes: 30);
+  // Track last notification date per fridge to enforce once-per-day limit
+  // Key format: "fridgeId_notificationType" -> DateTime of last notification
+  final Map<String, DateTime> _lastNotificationDates = {};
+
+  // Daily cleanup timer to prevent memory buildup
+  Timer? _cleanupTimer;
 
   // 4 blocks radius ≈ 400 meters (roughly)
   static const double _geofenceRadiusMeters = 400.0;
@@ -28,9 +32,13 @@ class GeofencingService {
     AuthRepository? authRepository,
     required IFridgeRepository fridgeRepository,
     LocalNotificationService? localNotifications,
+    FirebaseFunctions? functions,
   }) : _authRepository = authRepository ?? AuthRepository(),
        _fridgeRepository = fridgeRepository,
-       _localNotifications = localNotifications ?? LocalNotificationService();
+       _localNotifications = localNotifications ?? LocalNotificationService(),
+       // Firebase Cloud Functions always uses PRODUCTION instance
+       // (not affected by fridge API environment setting)
+       _functions = functions ?? FirebaseFunctions.instance;
 
   /// Start monitoring location for geofencing
   Future<void> startMonitoring() async {
@@ -38,6 +46,12 @@ class GeofencingService {
       logger.w('Geofencing already monitoring');
       return;
     }
+
+    // Start daily cleanup timer (runs every 24 hours)
+    _cleanupTimer?.cancel();
+    _cleanupTimer = Timer.periodic(const Duration(hours: 24), (_) {
+      _cleanupOldNotifications();
+    });
 
     try {
       final currentUser = _authRepository.currentUser;
@@ -104,7 +118,9 @@ class GeofencingService {
     _locationSubscription = null;
     _checkTimer?.cancel();
     _checkTimer = null;
-    _recentlyNotifiedFridges.clear(); // Clear notification tracking
+    _cleanupTimer?.cancel();
+    _cleanupTimer = null;
+    // Keep notification history even when stopped (persists across sessions)
     logger.i('Geofencing monitoring stopped');
   }
 
@@ -120,35 +136,10 @@ class GeofencingService {
         return;
       }
 
-      // Get user's subscribed fridges for notification preferences
-      final database = DatabaseProvider.databaseRef;
-      final subscriptionsSnapshot = await database
-          .child('users')
-          .child(currentUser.uid)
-          .child('subscribedFridges')
-          .get();
-
-      // Create a map of subscribed fridge IDs to their notification preferences
-      final Map<String, Map<Object?, Object?>> subscriptions = {};
-      if (subscriptionsSnapshot.exists) {
-        final subscriptionsData =
-            subscriptionsSnapshot.value as Map<Object?, Object?>;
-        for (final entry in subscriptionsData.entries) {
-          final fridgeId = entry.key as String;
-          final subscriptionData = entry.value as Map<Object?, Object?>;
-          final notificationPrefs =
-              subscriptionData['notificationPreferences']
-                  as Map<Object?, Object?>?;
-          if (notificationPrefs != null) {
-            subscriptions[fridgeId] = notificationPrefs;
-          }
-        }
-      }
-
-      // Get all fridges (not just subscribed ones)
+      // Get all fridges
       final fridges = await _fridgeRepository.getFridges();
 
-      // Check proximity to all fridges
+      // Check proximity to ALL fridges (not just subscribed ones)
       for (final fridge in fridges) {
         // Calculate distance to this fridge
         final distance = Geolocator.distanceBetween(
@@ -160,16 +151,8 @@ class GeofencingService {
 
         // Check if within geofence radius
         if (distance <= _geofenceRadiusMeters) {
-          // Only send notifications for subscribed fridges
-          final notificationPrefs = subscriptions[fridge.id];
-          if (notificationPrefs != null) {
-            await _checkAndNotifyFridgeNeeds(fridge, notificationPrefs);
-          } else {
-            // Log that user is near a non-subscribed fridge (for potential future features)
-            logger.d(
-              'User near non-subscribed fridge: ${fridge.name} (${distance.toStringAsFixed(0)}m away)',
-            );
-          }
+          // Check and notify for ANY fridge that needs attention
+          await _checkAndNotifyFridgeNeeds(fridge, distance);
         }
       }
     } catch (e) {
@@ -180,73 +163,86 @@ class GeofencingService {
   /// Check if fridge needs attention and send notification
   Future<void> _checkAndNotifyFridgeNeeds(
     FridgeDomain fridge,
-    Map<Object?, Object?> notificationPrefs,
+    double distanceMeters,
   ) async {
     try {
       final latestReport = fridge.latestFridgeReport;
       if (latestReport == null) return;
 
-      final needs = <String>[];
+      // Convert meters to feet
+      final distanceFeet = (distanceMeters * 3.28084).round();
 
-      // Check notification preferences
-      if (notificationPrefs['runningLow'] == true &&
-          latestReport.foodPercentage < 0.25) {
-        needs.add('running low on food');
+      // Determine the type of notification needed (prioritize in this order)
+      String? notificationType;
+      String? notificationMessage;
+
+      // 1. Check if needs cleaning
+      if (latestReport.condition == FridgeCondition.dirty) {
+        notificationType = 'cleaning';
+        notificationMessage =
+            'This fridge $distanceFeet feet away needs cleaning! Earn 20-50 points by heading there and taking care of it';
       }
-
-      if (notificationPrefs['empty'] == true &&
-          latestReport.foodPercentage == 0.0) {
-        needs.add('empty');
+      // 2. Check if empty (needs stocking)
+      else if (latestReport.foodPercentage == 0.0) {
+        notificationType = 'stocking';
+        notificationMessage =
+            'This fridge $distanceFeet feet away could use some food- be a hero and earn 30-60 points by stocking it and posting a status update';
       }
-
-      if (notificationPrefs['needsCleaning'] == true &&
-          latestReport.condition == FridgeCondition.dirty) {
-        needs.add('needs cleaning');
-      }
-
-      if (notificationPrefs['needsServicing'] == true &&
-          latestReport.condition == FridgeCondition.outOfOrder) {
-        needs.add('needs servicing');
-      }
-
-      // Check routine validation (more than 2 days since last update)
-      if (notificationPrefs['routineValidation'] == true &&
-          latestReport.reportDate != null) {
+      // 3. Check routine validation (more than 2 days since last update)
+      else if (latestReport.reportDate != null) {
         final daysSinceUpdate = DateTime.now()
             .difference(latestReport.reportDate!)
             .inDays;
         if (daysSinceUpdate > 2) {
-          needs.add('routine validation ($daysSinceUpdate days since update)');
+          notificationType = 'routine';
+          notificationMessage =
+              'This fridge super closeby hasn\'t been updated recently- snap a quick pic and send a status report to keep the neighborhood informed and fed :) Earn 10 points!';
         }
       }
 
-      if (needs.isNotEmpty) {
-        await _sendGeofenceNotification(fridge, needs);
+      if (notificationType != null && notificationMessage != null) {
+        await _sendGeofenceNotification(
+          fridge,
+          notificationType,
+          notificationMessage,
+          distanceFeet,
+        );
       }
     } catch (e) {
       logger.e('Error checking fridge needs: $e');
     }
   }
 
-  /// Send geofence notification
+  /// Send geofence notification via FCM backend and local notification
   Future<void> _sendGeofenceNotification(
     FridgeDomain fridge,
-    List<String> needs,
+    String notificationType,
+    String notificationMessage,
+    int distanceFeet,
   ) async {
     try {
       final currentUser = _authRepository.currentUser;
       if (currentUser == null) return;
 
-      // Check if we've notified about this fridge recently
-      final notificationKey = '${fridge.id}_${needs.join("_")}';
-      if (_recentlyNotifiedFridges.contains(notificationKey)) {
-        logger.d(
-          'Skipping geofence notification - recently notified about ${fridge.name}',
-        );
-        return;
+      // Check if we've already notified about this fridge today
+      final notificationKey = '${fridge.id}_$notificationType';
+      final now = DateTime.now();
+      final lastNotification = _lastNotificationDates[notificationKey];
+
+      if (lastNotification != null) {
+        final isSameDay = lastNotification.year == now.year &&
+                          lastNotification.month == now.month &&
+                          lastNotification.day == now.day;
+
+        if (isSameDay) {
+          logger.d(
+            'Skipping geofence notification - already notified about ${fridge.name} ($notificationType) today',
+          );
+          return;
+        }
       }
 
-      // Get user's FCM token (for future backend integration)
+      // Get user profile to check settings
       final profile = await _authRepository.getUserProfile(currentUser.uid);
       if (profile == null) return;
 
@@ -258,38 +254,69 @@ class GeofencingService {
         return;
       }
 
-      // Send local notification
-      final needsText = needs.join(', ');
-      final notificationId = fridge.id.hashCode;
-
-      await _localNotifications.showNotification(
-        id: notificationId,
-        title: '${fridge.name} needs attention',
-        body: 'You\'re near a fridge that $needsText',
-        payload: {
+      // Send notification via FCM Cloud Function (production backend)
+      // This ensures notifications work even when app is closed/killed
+      try {
+        final callable = _functions.httpsCallable('sendGeofencingNotification');
+        final result = await callable.call({
           'fridgeId': fridge.id,
-          'type': 'geofence',
-          'needs': needs.join(','),
-        },
+          'fridgeName': fridge.name,
+          'notificationType': notificationType,
+          'notificationMessage': notificationMessage,
+          'distanceFeet': distanceFeet,
+        });
+
+        if (result.data['success'] == true) {
+          logger.i(
+            'FCM geofence notification sent via backend: ${fridge.name} needs $notificationType ($distanceFeet ft away)',
+          );
+        } else {
+          logger.w(
+            'FCM notification not sent: ${result.data['reason']}',
+          );
+        }
+      } catch (fcmError) {
+        logger.e('Error sending FCM notification: $fcmError');
+
+        // Fallback to local notification if FCM fails
+        final notificationId = fridge.id.hashCode + notificationType.hashCode;
+        await _localNotifications.showNotification(
+          id: notificationId,
+          title: '${fridge.name} needs help!',
+          body: notificationMessage,
+          payload: {
+            'fridgeId': fridge.id,
+            'type': 'geofence',
+            'needType': notificationType,
+            'distanceFeet': distanceFeet.toString(),
+          },
+        );
+        logger.i('Local notification sent as fallback');
+      }
+
+      // Mark notification as sent for today
+      _lastNotificationDates[notificationKey] = now;
+
+      logger.d(
+        'Recorded notification for ${fridge.name} ($notificationType) at ${now.toString()}',
       );
-
-      // Mark as recently notified
-      _recentlyNotifiedFridges.add(notificationKey);
-
-      // Remove from recently notified set after cooldown period
-      Timer(_notificationCooldown, () {
-        _recentlyNotifiedFridges.remove(notificationKey);
-      });
-
-      logger.i(
-        'Geofence notification sent: ${fridge.name} needs ${needs.join(", ")}',
-      );
-
-      // In a production app, you would also send this via your backend FCM server
-      // to ensure delivery even if the app is closed
     } catch (e) {
       logger.e('Error sending geofence notification: $e');
     }
+  }
+
+  /// Clean up notification records older than 7 days to prevent memory buildup
+  void _cleanupOldNotifications() {
+    final now = DateTime.now();
+    final sevenDaysAgo = now.subtract(const Duration(days: 7));
+
+    _lastNotificationDates.removeWhere((key, date) {
+      return date.isBefore(sevenDaysAgo);
+    });
+
+    logger.d(
+      'Cleaned up old notification records. Remaining: ${_lastNotificationDates.length}',
+    );
   }
 
   /// Dispose resources

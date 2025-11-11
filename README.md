@@ -2,7 +2,7 @@
 
 > A community-driven mobile application for locating, managing, and reporting on community fridges. Built with Flutter using modern state management, clean architecture, and reactive programming patterns.
 
-**Status:** Active Development | **Version:** 1.0.0+5 | **Platform:** iOS & Android | **Language:** Dart/Flutter 3.8+
+**Status:** Active Development | **Version:** 1.0.0+10 | **Platform:** iOS & Android | **Language:** Dart/Flutter 3.8+
 
 ---
 
@@ -123,13 +123,20 @@ Run this after modifying any:
 
 ### 4. Configure Environment (Optional)
 
-By default, the app uses the **dev API environment**. To switch:
+The app uses a **dual environment configuration**:
+
+- **Fridge Data API:** DEV environment by default (`api-dev.communityfridgefinder.com`)
+- **Firebase Services:** PRODUCTION environment (always)
+
+To switch fridge API environment:
 
 1. Open the app
 2. Go to **Profile** → **Settings**
 3. Toggle **API Environment** between Dev/Prod
 
 This persists to local storage via Hive.
+
+**Note:** Firebase services (Auth, Messaging, Database, Cloud Functions) always use production. See `ENVIRONMENT_CONFIGURATION.md` for details.
 
 ### 5. Run the App
 
@@ -630,37 +637,66 @@ Complete notification system with Firebase Cloud Messaging and geofencing.
 
 ### 📍 Geofencing & Location Services
 
-**Path:** `lib/src/core/services/geofencing_service.dart`
+**Path:** `lib/src/core/services/geofencing_service.dart` + Cloud Functions
 
-Background location monitoring and proximity notifications.
+Production-grade background location monitoring with Firebase Cloud Messaging integration.
+
+**🎯 VOLUNTEER-ONLY FEATURE:** Geofencing is exclusively for volunteer users. Regular users (food finders) never see geofencing options or prompts and only need "While Using" location permission for map features.
 
 **Key Features:**
 
 - **Background Location Monitoring:**
-  - Automatic monitoring when enabled
-  - Battery-optimized location tracking
-  - 2-block radius geofencing (~200m)
-  - Checks proximity to all fridges in the system
-  - Notification when near subscribed fridges needing attention
+  - Automatic monitoring when enabled (volunteers only)
+  - Battery-optimized location tracking (2-minute intervals)
+  - 4-block radius geofencing (~400m)
+  - **Checks proximity to ALL fridges** (not just subscribed ones)
+  - Notifications sent for ANY nearby fridge needing attention
+
+- **Production FCM Integration:**
+  - **Dual notification system:**
+    - Primary: FCM via Cloud Function (works when app is closed/killed)
+    - Fallback: Local notification (if FCM fails)
+  - Cloud Function: `sendGeofencingNotification`
+  - User authentication and settings verification
+  - Reliable delivery even in background
+
+- **Smart Proximity Detection:**
+  - Three notification types (prioritized):
+    1. **Cleaning:** Fridge needs cleaning (20-50 points)
+    2. **Stocking:** Fridge is empty (30-60 points)
+    3. **Routine:** >2 days since last update (10 points)
+  - **Personalized messages** with distance in feet and point ranges
+  - **Once-per-day limit:** Maximum one notification per fridge per day (prevents spam)
+  - Notification history tracked both client-side and server-side
 
 - **Permission Management:**
-  - Location permission requests with explanation
-  - Always-allow permission for background monitoring
+  - **Volunteer users:** Prompted for "Always Allow" permission on first subscription (opt-in)
+  - **Regular users:** Only need "While Using" permission (never prompted for background access)
+  - Hybrid Geolocator + permission_handler approach for iOS compatibility
+  - Automatic upgrade prompt from "While Using" to "Always Allow"
+  - Fallback "Open Settings" dialog with direct link when iOS blocks automatic upgrade
   - Permission status tracking in user profile
-  - Toggle geofencing in profile settings
+  - Toggle geofencing in profile settings (volunteers only)
 
-- **Smart Notifications:**
-  - Checks proximity to ALL fridges in the system
-  - Only sends notifications for fridges user is subscribed to
-  - Respects user notification preferences per subscription
-  - Prevents notification spam with cooldown
-  - Notification frequency settings (immediate/daily/weekly)
-  - Logs proximity to non-subscribed fridges for potential future features
+- **Notification Examples:**
+  - **Cleaning:** "This fridge 328 feet away needs cleaning! Earn 20-50 points by heading there and taking care of it"
+  - **Stocking:** "This fridge 142 feet away could use some food- be a hero and earn 30-60 points by stocking it and posting a status update"
+  - **Routine:** "This fridge super closeby hasn't been updated recently- snap a quick pic and send a status report to keep the neighborhood informed and fed :) Earn 10 points!"
+
+- **Daily Notification Policy:**
+  - Each fridge can trigger at most one notification per day
+  - Separate tracking for each notification type (cleaning, stocking, routine)
+  - Example: If you get a "cleaning" notification at 9 AM, you won't get another "cleaning" notification for that fridge until tomorrow
+  - Different notification types can still trigger (e.g., "cleaning" in morning, "stocking" in evening if fridge becomes empty)
+  - History persists across app restarts and is synced to Firebase backend
+  - Automatic cleanup of notification records older than 7 days
 
 **State Management:**
 
 - `geofencingServiceProvider` - Service lifecycle
 - User profile `settings.geofencingEnabled` - Toggle state
+- Cloud Function `sendGeofencingNotification` - Backend FCM delivery + daily limit enforcement
+- Firebase database path: `users/{userId}/geofencing/lastNotifications`
 
 ### 🔐 Firebase Integration Architecture
 
@@ -1362,11 +1398,137 @@ Built with ❤️ by the Community Fridge Finder team and contributors.
 
 ---
 
-**Last Updated:** January 2025 | **Version:** 1.1.1 | **Maintainers:** [Your Team]
+**Last Updated:** January 2025 | **Version:** 1.0.0+10 | **Maintainers:** [Your Team]
 
 ---
 
 ## Recent Updates
+
+### January 2025 - v1.0.0+10 (Daily Notification Limits)
+
+#### 🔔 Once-Per-Day Notification Policy
+
+- ✅ **Daily Notification Limits:**
+  - Maximum one notification per fridge per day (prevents spam)
+  - Separate tracking for each notification type (cleaning, stocking, routine)
+  - Client-side tracking with Map<String, DateTime> (in-memory)
+  - Server-side enforcement in Cloud Function (persists to Firebase)
+  - Automatic cleanup of records older than 7 days
+  - Daily cleanup timer runs every 24 hours
+
+- ✅ **Database Structure:**
+  - Firebase path: `users/{userId}/geofencing/lastNotifications/{fridgeId}_{type}`
+  - Stores ISO 8601 timestamp of last notification
+  - Cloud Function checks date before sending
+  - Returns `already_notified_today` if same-day notification exists
+
+### January 2025 - v1.0.0+9 (Production FCM & Environment Configuration)
+
+#### 🚀 Production-Ready Geofencing Notifications
+
+- ✅ **Firebase Cloud Functions Integration:**
+  - New Cloud Function: `sendGeofencingNotification` (callable)
+  - Backend FCM notification delivery (works when app closed/killed)
+  - Dual notification system: FCM primary, local fallback
+  - User authentication and settings verification in backend
+  - Production-grade error handling and logging
+  - Daily notification limit enforcement in backend
+
+- ✅ **Enhanced Geofencing Logic:**
+  - **Notifies for ALL fridges** within 400m radius (not just subscribed)
+  - **Personalized notification messages:**
+    - Distance displayed in feet (converted from meters)
+    - Point ranges shown (20-50, 30-60, or 10 points)
+    - Encouraging, specific call-to-action text
+  - Three notification types (prioritized):
+    1. Cleaning (if dirty)
+    2. Stocking (if empty only, not "running low")
+    3. Routine (if >2 days since update)
+
+- ✅ **Dual Environment Configuration:**
+  - **Fridge Data API:** DEV by default (`api-dev.communityfridgefinder.com`)
+  - **Firebase Services:** PRODUCTION always
+  - Comprehensive documentation: `ENVIRONMENT_CONFIGURATION.md`
+  - Clear separation in codebase with comments
+  - No emulator mode active in production builds
+
+- ✅ **Dependencies:**
+  - Added `cloud_functions: ^6.0.3` package
+  - All Firebase services verified to use production
+
+#### 📝 Documentation Updates
+
+- ✅ **New Files:**
+  - `ENVIRONMENT_CONFIGURATION.md` - Detailed dual environment setup guide
+  - Updated README with production FCM features
+  - Clear comments in all Firebase service files
+
+- ✅ **Code Documentation:**
+  - "PRODUCTION ENVIRONMENT ONLY" comments added to:
+    - `auth_repository.dart` - Firebase Auth
+    - `fcm_service.dart` - Cloud Messaging
+    - `database_provider.dart` - Realtime Database
+    - `geofencing_service.dart` - Cloud Functions
+  - Environment notes in `api_constants.dart`
+
+#### 🧪 Testing & Build
+
+- ✅ **Build Status:** Clean compilation (128.9s)
+- ✅ **Test Status:** 397 passing / 528 total (75% pass rate)
+- ✅ **Analyzer:** Zero errors in modified files
+- ✅ **Known Issues:** 131 test failures are Firebase initialization issues in integration tests (not related to new features)
+
+### January 2025 - v1.1.3 (Geofencing Improvements & Bug Fixes)
+
+#### 🐛 Critical Bug Fixes
+
+- ✅ **Black Screen on Sign-Up Fixed:**
+  - Fixed double-pop navigation issue in sign-in flow
+  - `SignInWidget` already handles dialog dismissal, removed redundant `Navigator.pop()` in callback
+  - Proper separation of responsibilities: widget handles lifecycle, callback handles next action
+  - No more empty navigation stack causing black screen
+
+- ✅ **Geofencing Permission Errors Fixed:**
+  - Added `ref.mounted` checks after all async operations in `subscriptionManagerProvider`
+  - Prevents "Cannot use Ref after disposed" errors during subscription flow
+  - Graceful exit when provider disposed during async gaps (permission requests, FCM token)
+  - Follows Riverpod best practices for async provider lifecycle management
+
+- ✅ **iOS Background Location Configuration:**
+  - Added `location` to `UIBackgroundModes` in Info.plist
+  - Required for geofencing to work when app is not in foreground
+  - Complies with iOS App Store requirements
+
+#### ✨ New Features & Improvements
+
+- ✅ **Geofencing Now Volunteer-Only:**
+  - **Regular users (food finders):** Never see geofencing prompts, only need "While Using" location
+  - **Volunteer users:** Opt-in geofencing on first subscription with clear explanation
+  - Geofencing toggle only visible in Profile settings for volunteers
+  - Reduces permission fatigue for users who just want to find food
+  - Better App Store compliance - background location only requested when truly needed
+
+- ✅ **Improved iOS Permission Flow:**
+  - Hybrid Geolocator + permission_handler approach for better iOS compatibility
+  - Automatic attempt to upgrade "While Using" to "Always Allow"
+  - Detects when iOS blocks automatic upgrade and shows helpful dialog
+  - "Open Settings" button with direct link when manual upgrade needed
+  - Clear instructions: "Change location to 'Always'" with step-by-step guidance
+  - Comprehensive logging at each permission check step for debugging
+
+- ✅ **App Store Documentation:**
+  - Created `APP_STORE_PERMISSIONS.md` with detailed permission justifications
+  - Explains volunteer-only nature of background location
+  - Testing instructions for App Store reviewers
+  - Privacy policy summary and user control documentation
+  - iOS and Android platform-specific permission details
+
+#### 🧪 Testing Updates
+
+- ✅ **Geofencing Tests Updated:**
+  - Added volunteer-only annotations to geofencing test suite
+  - Helper functions now include `isVolunteer` parameter
+  - Test documentation reflects new permission flow
 
 ### January 2025 - v1.1.2 (Subscribed Filter & UX Polish)
 

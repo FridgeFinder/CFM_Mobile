@@ -724,25 +724,27 @@ class ProfileScreen extends ConsumerWidget {
           ],
         ),
         const SizedBox(height: 12),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Geofencing',
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                  Text(
-                    'Get notified when near fridges needing attention',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
+        // Only show geofencing toggle for volunteers
+        if (profile.isVolunteer) ...[
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Geofencing',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    Text(
+                      'Get notified when near fridges needing attention',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
               ),
-            ),
-            Switch(
+              Switch(
               value: profile.settings.geofencingEnabled,
               onChanged: (value) async {
                 try {
@@ -772,17 +774,17 @@ class ProfileScreen extends ConsumerWidget {
                             final shouldOpenSettings = await showDialog<bool>(
                               context: context,
                               builder: (context) => AlertDialog(
-                                title: const Text('Location Permission Required'),
+                                title: const Text('Enable Location Access'),
                                 content: const Text(
-                                  'Geofencing requires location access. '
-                                  'Please enable "Always Allow" in Settings for best results.',
+                                  'Geofencing requires location access to notify you when you\'re near fridges needing help.\n\n'
+                                  'Please tap "Open Settings" and enable location access for FridgeFinder.',
                                 ),
                                 actions: [
                                   TextButton(
                                     onPressed: () => Navigator.of(context).pop(false),
                                     child: const Text('Cancel'),
                                   ),
-                                  TextButton(
+                                  ElevatedButton(
                                     onPressed: () => Navigator.of(context).pop(true),
                                     child: const Text('Open Settings'),
                                   ),
@@ -823,17 +825,17 @@ class ProfileScreen extends ConsumerWidget {
                         final shouldOpenSettings = await showDialog<bool>(
                           context: context,
                           builder: (context) => AlertDialog(
-                            title: const Text('Location Permission Required'),
+                            title: const Text('Enable Location Access'),
                             content: const Text(
-                              'Location access is disabled. '
-                              'Please enable "Always Allow" in Settings for geofencing.',
+                              'Geofencing requires location access to notify you when you\'re near fridges needing help.\n\n'
+                              'Please tap "Open Settings" and enable location access for FridgeFinder.',
                             ),
                             actions: [
                               TextButton(
                                 onPressed: () => Navigator.of(context).pop(false),
                                 child: const Text('Cancel'),
                               ),
-                              TextButton(
+                              ElevatedButton(
                                 onPressed: () => Navigator.of(context).pop(true),
                                 child: const Text('Open Settings'),
                               ),
@@ -877,6 +879,7 @@ class ProfileScreen extends ConsumerWidget {
           ],
         ),
         const SizedBox(height: 12),
+        ],
         Text(
           'Notification Frequency',
           style: Theme.of(context).textTheme.bodyMedium,

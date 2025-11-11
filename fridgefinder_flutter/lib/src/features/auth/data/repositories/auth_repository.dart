@@ -7,6 +7,10 @@ import '../../../../core/utils/firebase_helpers.dart';
 import '../../domain/models/user_profile.dart';
 
 /// Repository for authentication operations
+///
+/// PRODUCTION ENVIRONMENT ONLY
+/// Firebase Auth always uses production (FirebaseAuth.instance).
+/// Not affected by fridge data API environment setting.
 class AuthRepository {
   final firebase_auth.FirebaseAuth _auth;
   final DatabaseReference _database;

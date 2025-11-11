@@ -42,12 +42,14 @@ class TestFridgeFinderApp extends ConsumerWidget {
 }
 
 /// Helper to create app widget with geofencing settings
+/// NOTE: For geofencing tests, user must be a volunteer (isVolunteer: true)
 Widget createGeofencingTestApp({
   firebase_auth.User? authenticatedUser,
   List<SubscriptionPreferences>? subscriptions,
   bool locationPermissionGranted = false,
   bool alwaysLocationPermission = false,
   bool geofencingEnabled = false,
+  bool isVolunteer = true, // Geofencing is volunteer-only
 }) {
   final fridgesWithDistance = FridgeFixtures.allFridges
       .map((fridge) => FridgeWithDistance(fridge: fridge, distanceKm: null))
@@ -88,7 +90,11 @@ void main() {
   });
 
   group('Geofencing Variations - Setup Scenarios', () {
-    testWidgets('GEO-001: Enable Geofencing - "While Using" Permission',
+    // NOTE: As of the latest implementation, geofencing is VOLUNTEER-ONLY
+    // Non-volunteer users will never see geofencing options or prompts
+    // These tests should be run with volunteer profiles
+
+    testWidgets('GEO-001: Enable Geofencing - "While Using" Permission (Volunteer Only)',
         (WidgetTester tester) async {
       final testUser = TestUser(uid: 'test-user-1', email: 'test1@example.com');
 

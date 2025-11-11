@@ -1,13 +1,13 @@
 /**
  * Test script for creating status reports in Realtime Database
  * This will trigger the Cloud Function onFridgeStatusUpdate
- * 
+ *
  * Usage:
  *   node test_status_report.js <fridge-id> [condition] [food-percentage] [fridge-name]
- * 
+ *
  * Example:
  *   node test_status_report.js "fridge-123" "good" 0.0 "Test Fridge"
- * 
+ *
  * Prerequisites:
  *   1. Install dependencies: npm install firebase-admin
  *   2. Set GOOGLE_APPLICATION_CREDENTIALS environment variable to your service account key

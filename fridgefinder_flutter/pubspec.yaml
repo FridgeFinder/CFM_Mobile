@@ -1,7 +1,7 @@
 name: fridgefinder_app
 description: FridgeFinder mobile app for organizers
 publish_to: "none"
-version: 1.0.0+9
+version: 1.0.0+10
 
 environment:
   sdk: ">=3.8.0 <4.0.0"
@@ -33,6 +33,7 @@ dependencies:
   firebase_messaging: ^16.0.3
   cloud_firestore: ^6.0.3
   firebase_database: ^12.0.3
+  cloud_functions: ^6.0.3
 
   # Location & Geofencing
   geolocator: ^14.0.2

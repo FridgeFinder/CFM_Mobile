@@ -53,23 +53,36 @@ platform :ios do
   lane :beta do
     # Ensure we're on the correct branch/tag
     # ensure_git_status_clean
-    
+
     # Set locale to UTF-8 to avoid CocoaPods warnings
     ENV["LANG"] = "en_US.UTF-8"
     ENV["LC_ALL"] = "en_US.UTF-8"
-    
-    # Install provisioning profile if provided via environment variable
-    # Place your .mobileprovision file in ios/fastlane/profiles/ or set PROVISIONING_PROFILE_PATH
-    if ENV["PROVISIONING_PROFILE_PATH"]
-      install_provisioning_profile(
-        path: ENV["PROVISIONING_PROFILE_PATH"]
-      )
-    elsif File.exist?("fastlane/profiles/dev-tester.mobileprovision")
-      install_provisioning_profile(
-        path: File.expand_path("fastlane/profiles/dev-tester.mobileprovision", __dir__)
-      )
+
+    # Install provisioning profile to system location
+    # Xcode looks for profiles in ~/Library/MobileDevice/Provisioning Profiles/
+    mobileprovision_path = File.expand_path("fastlane/profiles/dev-tester.mobileprovision", __dir__)
+
+    if File.exist?(mobileprovision_path)
+      UI.message "📦 Installing provisioning profile..."
+
+      # Extract UUID from mobileprovision file
+      uuid_command = "security cms -D -i '#{mobileprovision_path}' | plutil -convert xml1 -o - - | grep -A 1 '<key>UUID</key>' | grep '<string>' | sed 's/.*<string>\\(.*\\)<\\/string>.*/\\1/'"
+      profile_uuid = sh(uuid_command).strip
+
+      # Create provisioning profiles directory if it doesn't exist
+      profiles_dir = File.expand_path("~/Library/MobileDevice/Provisioning Profiles")
+      sh("mkdir -p '#{profiles_dir}'")
+
+      # Copy profile with UUID as filename
+      destination = "#{profiles_dir}/#{profile_uuid}.mobileprovision"
+      sh("cp '#{mobileprovision_path}' '#{destination}'")
+
+      UI.success "✅ Provisioning profile installed: #{profile_uuid}"
+    else
+      UI.important "⚠️  No provisioning profile found at #{mobileprovision_path}"
+      UI.important "   Build will use automatic signing or existing profiles"
     end
-    
+
     # Build the app using Flutter with manual signing
     # Flutter will run pod install automatically during the build
     # Even if it shows a CocoaPods warning, the build still succeeds

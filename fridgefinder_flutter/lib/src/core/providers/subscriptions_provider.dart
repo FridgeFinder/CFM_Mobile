@@ -102,6 +102,8 @@ class SubscriptionManager extends _$SubscriptionManager {
 
       // Check if this is the user's first subscription
       final existingSubscriptions = await ref.read(subscribedFridgesProvider.future);
+      if (!ref.mounted) return;
+
       final isFirstSubscription = existingSubscriptions.isEmpty;
 
       final database = DatabaseProvider.databaseRef;
@@ -118,6 +120,8 @@ class SubscriptionManager extends _$SubscriptionManager {
       );
 
       await subscriptionRef.set(subscription.toJson());
+      if (!ref.mounted) return;
+
       logger.i('Subscribed to fridge: $fridgeId');
 
       // If this is the first subscription, request notification permissions
@@ -125,10 +129,13 @@ class SubscriptionManager extends _$SubscriptionManager {
         logger.i('First subscription detected - requesting notification permissions');
         final fcmService = ref.read(fcmServiceProvider);
         final permissionsGranted = await fcmService.requestPermissionsAndGetToken();
-        
+
+        // Check if provider is still mounted after async operation
+        if (!ref.mounted) return;
+
         if (permissionsGranted) {
           logger.i('Notification permissions granted for first subscription');
-          
+
           // Also request geofencing permission if user is a volunteer
           final userProfileAsync = ref.read(userProfileProvider);
           userProfileAsync.whenData((profile) async {

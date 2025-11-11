@@ -248,6 +248,115 @@ exports.checkRoutineValidation = functions.pubsub
     return null;
   });
 
+/**
+ * HTTP Callable Function: Send geofencing notification
+ * Called by the app when a user enters a geofence near a fridge that needs attention
+ *
+ * Expected request data:
+ * {
+ *   fridgeId: string,
+ *   fridgeName: string,
+ *   notificationType: 'cleaning' | 'stocking' | 'routine',
+ *   notificationMessage: string,
+ *   distanceFeet: number
+ * }
+ */
+exports.sendGeofencingNotification = functions.https.onCall(async (data, context) => {
+  // Verify the user is authenticated
+  if (!context.auth) {
+    throw new functions.https.HttpsError(
+      'unauthenticated',
+      'User must be authenticated to send geofencing notifications',
+    );
+  }
+
+  const userId = context.auth.uid;
+  const {fridgeId, fridgeName, notificationType, notificationMessage, distanceFeet} = data;
+
+  // Validate required fields
+  if (!fridgeId || !fridgeName || !notificationType || !notificationMessage) {
+    throw new functions.https.HttpsError(
+      'invalid-argument',
+      'Missing required fields: fridgeId, fridgeName, notificationType, notificationMessage',
+    );
+  }
+
+  try {
+    // Get user profile to check settings
+    const userRef = db.ref(`users/${userId}`);
+    const userSnapshot = await userRef.once('value');
+    const userData = userSnapshot.val();
+
+    if (!userData) {
+      throw new functions.https.HttpsError('not-found', 'User profile not found');
+    }
+
+    // Check if user has geofencing enabled
+    if (!userData.settings || !userData.settings.geofencingEnabled) {
+      console.log(`Geofencing disabled for user ${userId}`);
+      return {success: false, reason: 'geofencing_disabled'};
+    }
+
+    // Check if user has notifications enabled
+    if (userData.settings.notificationsEnabled === false) {
+      console.log(`Notifications disabled for user ${userId}`);
+      return {success: false, reason: 'notifications_disabled'};
+    }
+
+    // Check if we've already sent this notification today (once-per-day limit)
+    const notificationKey = `${fridgeId}_${notificationType}`;
+    const lastNotifications = userData.geofencing?.lastNotifications || {};
+    const lastNotificationDate = lastNotifications[notificationKey];
+
+    if (lastNotificationDate) {
+      const lastDate = new Date(lastNotificationDate);
+      const now = new Date();
+
+      // Check if same day (year, month, day)
+      const isSameDay =
+        lastDate.getFullYear() === now.getFullYear() &&
+        lastDate.getMonth() === now.getMonth() &&
+        lastDate.getDate() === now.getDate();
+
+      if (isSameDay) {
+        console.log(
+          `Already notified user ${userId} about fridge ${fridgeId} (${notificationType}) today`,
+        );
+        return {success: false, reason: 'already_notified_today'};
+      }
+    }
+
+    // Send the notification via FCM
+    await sendNotificationToUser(userId, {
+      title: `${fridgeName} needs help!`,
+      body: notificationMessage,
+      data: {
+        type: 'geofence',
+        fridgeId: fridgeId,
+        needType: notificationType,
+        distanceFeet: distanceFeet ? distanceFeet.toString() : '0',
+      },
+    });
+
+    // Record notification date in database
+    await userRef.child(`geofencing/lastNotifications/${notificationKey}`).set(
+      new Date().toISOString(),
+    );
+
+    console.log(
+      `Geofencing notification sent to ${userId} for fridge ${fridgeId} (${notificationType}, ${distanceFeet}ft away)`,
+    );
+
+    return {
+      success: true,
+      message: 'Geofencing notification sent successfully',
+    };
+  } catch (error) {
+    console.error('Error sending geofencing notification:', error);
+    throw new functions.https.HttpsError('internal', error.message);
+  }
+});
+
 // Helper function to batch notifications based on user preferences
 // For users with daily/weekly frequency, batches notifications
 // Currently unused - reserved for future batching implementation

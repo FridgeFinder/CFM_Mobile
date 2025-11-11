@@ -890,10 +890,10 @@ class _FridgeProfileSheetState extends ConsumerState<FridgeProfileSheet>
 
       await showDialog(
         context: context,
-        builder: (dialogContext) => SubscriptionDialog(
+        builder: (dialogContext) => NotificationPreferencesDialog.subscribe(
           fridgeId: widget.fridge.id,
           isVolunteer: userProfileAsync.isVolunteer,
-          existingSubscription: subscriptionAsync,
+          existingPreferences: subscriptionAsync?.notificationPreferences,
         ),
       );
     } catch (e) {
@@ -928,9 +928,7 @@ class _FridgeProfileSheetState extends ConsumerState<FridgeProfileSheet>
                   const SizedBox(height: 24),
                   SignInWidget(
                     onSignInSuccess: () {
-                      // Close sign-in dialog
-                      Navigator.of(dialogContext).pop();
-                      // Show subscribe dialog
+                      // SignInWidget already closes itself, just show the next dialog
                       if (context.mounted) {
                         _showSubscribeDialog(context, ref);
                       }
@@ -996,7 +994,7 @@ class _FridgeProfileSheetState extends ConsumerState<FridgeProfileSheet>
         await showDialog<bool>(
           context: context,
           useRootNavigator: true,
-          builder: (context) => EditNotificationPreferencesDialog(
+          builder: (context) => NotificationPreferencesDialog.edit(
             fridgeId: widget.fridge.id,
             fridgeName: widget.fridge.name,
             initialPreferences: subscription.notificationPreferences,
