@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../map/domain/models/fridge_domain.dart';
 import '../../../map/data/repositories/fridge_repository.dart';
+import '../../../map/presentation/controllers/fridge_list_controller.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/providers/points_provider.dart';
 
@@ -79,15 +80,13 @@ class _StatusUpdateFormState extends ConsumerState<StatusUpdateForm> {
     try {
       final repository = ref.read(fridgeRepositoryProvider);
 
-      // Upload photo if selected
-      String? photoUrl;
+      // Get photo bytes if selected (will be base64 encoded in the API call)
+      List<int>? photoBytes;
       if (_selectedImage != null) {
-        final imageBytes = await _selectedImage!.readAsBytes();
-        final mimeType = _selectedImage!.mimeType ?? 'image/jpeg';
-        photoUrl = await repository.uploadPhoto(imageBytes, mimeType);
+        photoBytes = await _selectedImage!.readAsBytes();
       }
 
-      // Submit report with optional photo URL
+      // Submit report with optional photo bytes (will be base64 encoded)
       await repository.submitFridgeReport(
         widget.fridge.id,
         _selectedCondition,
@@ -95,8 +94,12 @@ class _StatusUpdateFormState extends ConsumerState<StatusUpdateForm> {
         _notesController.text.trim().isEmpty
             ? null
             : _notesController.text.trim(),
-        photoUrl,
+        photoBytes,
       );
+
+      // Invalidate fridge data providers to refresh UI
+      ref.invalidate(fridgeListProvider);
+      ref.invalidate(singleFridgeProvider(widget.fridge.id));
 
       // Award points if user is a volunteer
       final userProfile = ref.read(userProfileProvider).value;
@@ -140,150 +143,167 @@ class _StatusUpdateFormState extends ConsumerState<StatusUpdateForm> {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Condition Selection
-          Text(
-            'Fridge Condition',
-            style: Theme.of(context).textTheme.titleSmall,
-          ),
-          const SizedBox(height: 8),
-          // Radio buttons for condition selection (exclude ghost)
-          ...FridgeCondition.values
-              .where((condition) => condition != FridgeCondition.ghost)
-              .map(
-                (condition) => RadioListTile<FridgeCondition>(
-                  title: Text(_conditionLabel(condition)),
-                  value: condition,
-                  groupValue: _selectedCondition,
-                  onChanged: (FridgeCondition? value) {
-                    if (value != null) {
-                      setState(() => _selectedCondition = value);
-                    }
-                  },
-                  contentPadding: EdgeInsets.zero,
-                  dense: true,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Scrollable form content
+        Flexible(
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Condition Selection
+                Text(
+                  'Fridge Condition',
+                  style: Theme.of(context).textTheme.titleSmall,
                 ),
-              ),
-          const SizedBox(height: 16),
+                const SizedBox(height: 8),
+                // Radio buttons for condition selection (exclude ghost)
+                ...FridgeCondition.values
+                    .where((condition) => condition != FridgeCondition.ghost)
+                    .map(
+                      (condition) => RadioListTile<FridgeCondition>(
+                        title: Text(_conditionLabel(condition)),
+                        value: condition,
+                        groupValue: _selectedCondition,
+                        onChanged: (FridgeCondition? value) {
+                          if (value != null) {
+                            setState(() => _selectedCondition = value);
+                          }
+                        },
+                        contentPadding: EdgeInsets.zero,
+                        dense: true,
+                      ),
+                    ),
+                const SizedBox(height: 16),
 
-          // Food Level Slider
-          Text(
-            'Food Level: ${_getFoodLevelLabel()}',
-            style: Theme.of(context).textTheme.titleSmall,
+                // Food Level Slider
+                Text(
+                  'Food Level: ${_getFoodLevelLabel()}',
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                Slider(
+                  value: _foodPercentage,
+                  onChanged: (value) {
+                    setState(() => _foodPercentage = value);
+                  },
+                  min: 0,
+                  max: 1,
+                  divisions: 3,
+                  label: _getFoodLevelLabel(),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Empty', style: Theme.of(context).textTheme.bodySmall),
+                    Text('Few Items', style: Theme.of(context).textTheme.bodySmall),
+                    Text('Many Items', style: Theme.of(context).textTheme.bodySmall),
+                    Text('Full', style: Theme.of(context).textTheme.bodySmall),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // Notes
+                Text(
+                  'Additional Notes (Optional)',
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _notesController,
+                  maxLines: 3,
+                  decoration: InputDecoration(
+                    hintText: 'Any additional information...',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Photo Upload
+                Text(
+                  'Photo (Optional)',
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                const SizedBox(height: 8),
+                if (_selectedImage != null)
+                  Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.file(
+                          File(_selectedImage!.path),
+                          height: 200,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      Positioned(
+                        top: 8,
+                        right: 8,
+                        child: IconButton(
+                          icon: const Icon(Icons.close, color: Colors.white),
+                          style: IconButton.styleFrom(
+                            backgroundColor: Colors.black54,
+                          ),
+                          onPressed: _removeImage,
+                        ),
+                      ),
+                    ],
+                  )
+                else
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          icon: const Icon(Icons.camera_alt),
+                          label: const Text('Camera'),
+                          onPressed: () => _pickImage(ImageSource.camera),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          icon: const Icon(Icons.photo_library),
+                          label: const Text('Gallery'),
+                          onPressed: () => _pickImage(ImageSource.gallery),
+                        ),
+                      ),
+                    ],
+                  ),
+                const SizedBox(height: 24),
+              ],
+            ),
           ),
-          Slider(
-            value: _foodPercentage,
-            onChanged: (value) {
-              setState(() => _foodPercentage = value);
-            },
-            min: 0,
-            max: 1,
-            divisions: 3,
-            label: _getFoodLevelLabel(),
-          ),
-          const SizedBox(height: 4),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        ),
+        // Fixed bottom row with Cancel and Submit buttons
+        Padding(
+          padding: const EdgeInsets.only(top: 16.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              Text('Empty', style: Theme.of(context).textTheme.bodySmall),
-              Text('Few Items', style: Theme.of(context).textTheme.bodySmall),
-              Text('Many Items', style: Theme.of(context).textTheme.bodySmall),
-              Text('Full', style: Theme.of(context).textTheme.bodySmall),
+              TextButton(
+                onPressed: _isSubmitting ? null : () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              const SizedBox(width: 8),
+              ElevatedButton(
+                onPressed: _isSubmitting ? null : _submit,
+                child: _isSubmitting
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Submit Update'),
+              ),
             ],
           ),
-          const SizedBox(height: 16),
-
-          // Notes
-          Text(
-            'Additional Notes (Optional)',
-            style: Theme.of(context).textTheme.titleSmall,
-          ),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _notesController,
-            maxLines: 3,
-            decoration: InputDecoration(
-              hintText: 'Any additional information...',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Photo Upload
-          Text(
-            'Photo (Optional)',
-            style: Theme.of(context).textTheme.titleSmall,
-          ),
-          const SizedBox(height: 8),
-          if (_selectedImage != null)
-            Stack(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Image.file(
-                    File(_selectedImage!.path),
-                    height: 200,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white),
-                    style: IconButton.styleFrom(
-                      backgroundColor: Colors.black54,
-                    ),
-                    onPressed: _removeImage,
-                  ),
-                ),
-              ],
-            )
-          else
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    icon: const Icon(Icons.camera_alt),
-                    label: const Text('Camera'),
-                    onPressed: () => _pickImage(ImageSource.camera),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    icon: const Icon(Icons.photo_library),
-                    label: const Text('Gallery'),
-                    onPressed: () => _pickImage(ImageSource.gallery),
-                  ),
-                ),
-              ],
-            ),
-          const SizedBox(height: 24),
-
-          // Submit Button
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _isSubmitting ? null : _submit,
-              child: _isSubmitting
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Text('Submit Update'),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 

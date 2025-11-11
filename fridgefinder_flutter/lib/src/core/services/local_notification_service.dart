@@ -107,6 +107,37 @@ class LocalNotificationService {
     }
 
     try {
+      // Check permissions before showing notification
+      if (Platform.isIOS) {
+        final iosPlugin = _notifications
+            .resolvePlatformSpecificImplementation<
+                IOSFlutterLocalNotificationsPlugin>();
+        if (iosPlugin != null) {
+          final permissionStatus = await iosPlugin.checkPermissions();
+          logger.d('iOS notification permissions: $permissionStatus');
+          
+          // Check if notifications are enabled
+          // permissionStatus can be null, so handle it safely
+          final isEnabled = permissionStatus?.isEnabled;
+          if (isEnabled != true) {
+            logger.w('iOS notifications not enabled. Requesting permissions...');
+            final result = await iosPlugin.requestPermissions(
+              alert: true,
+              badge: true,
+              sound: true,
+            );
+            logger.i('iOS permission request result: $result');
+            
+            // Check if permissions were granted
+            // requestPermissions returns a bool
+            if (result != true) {
+              logger.e('iOS notification permissions not granted. Cannot show notification.');
+              throw Exception('Notification permissions not granted. Please enable notifications in Settings.');
+            }
+          }
+        }
+      }
+
       const androidDetails = AndroidNotificationDetails(
         'fridgefinder_notifications',
         'FridgeFinder Notifications',
@@ -137,9 +168,10 @@ class LocalNotificationService {
         payload: payload != null ? jsonEncode(payload) : null,
       );
 
-      logger.d('Local notification shown: $title');
+      logger.i('Local notification shown successfully: $title');
     } catch (e) {
       logger.e('Error showing notification: $e');
+      rethrow; // Re-throw so caller knows it failed
     }
   }
 
@@ -178,6 +210,9 @@ class LocalNotificationService {
   Future<void> cancel(int id) async {
     await _notifications.cancel(id);
   }
+
+  /// Get the notifications plugin (for testing/diagnostics)
+  FlutterLocalNotificationsPlugin get notificationsPlugin => _notifications;
 
   /// Cancel all notifications
   Future<void> cancelAll() async {

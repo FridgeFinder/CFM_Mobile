@@ -32,7 +32,7 @@ class MockFridgeRepository implements FridgeRepository {
     FridgeCondition condition,
     double foodPercentage,
     String? notes,
-    String? photoUrl,
+    List<int>? photoBytes,
   ) async {
     // Mock implementation - just return
   }

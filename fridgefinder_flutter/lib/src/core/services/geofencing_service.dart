@@ -21,8 +21,8 @@ class GeofencingService {
   final Set<String> _recentlyNotifiedFridges = {};
   static const Duration _notificationCooldown = Duration(minutes: 30);
 
-  // 2 blocks radius ≈ 200 meters (roughly)
-  static const double _geofenceRadiusMeters = 200.0;
+  // 4 blocks radius ≈ 400 meters (roughly)
+  static const double _geofenceRadiusMeters = 400.0;
 
   GeofencingService({
     AuthRepository? authRepository,

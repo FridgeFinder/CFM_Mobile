@@ -6,6 +6,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../map/domain/models/fridge_domain.dart';
 import '../../map/presentation/widgets/fridge_marker.dart';
+import '../../map/presentation/controllers/fridge_list_controller.dart';
 import './widgets/status_update_form.dart';
 import '../../../core/providers/location_provider.dart';
 import '../../../core/providers/auth_provider.dart';
@@ -103,13 +104,20 @@ class _FridgeProfileSheetState extends ConsumerState<FridgeProfileSheet>
       _lastCloseTrigger = closeTrigger;
     });
 
+    // Watch fridge data from provider to get latest updates, fallback to widget.fridge
+    final fridgeAsync = ref.watch(singleFridgeProvider(widget.fridge.id));
+    final fridge = fridgeAsync.whenOrNull(data: (f) => f) ?? widget.fridge;
+
+    // Determine which photo to show - prioritize report photo if available
+    final photoUrl = fridge.latestFridgeReport?.photoUrl ?? fridge.photoUrl;
+
     // Calculate distance if user location is available
     double? distance;
     if (userLocationAsync.value != null) {
       final userLocation = userLocationAsync.value!.position;
       final fridgeLocation = LatLng(
-        widget.fridge.location.geoLat,
-        widget.fridge.location.geoLng,
+        fridge.location.geoLat,
+        fridge.location.geoLng,
       );
       distance = distance_utils.DistanceCalculator.calculateDistanceInKm(
         userLocation,
@@ -135,7 +143,7 @@ class _FridgeProfileSheetState extends ConsumerState<FridgeProfileSheet>
                   Consumer(
                     builder: (context, ref, child) {
                       final isSubscribedAsync = ref.watch(
-                        isFridgeSubscribedProvider(widget.fridge.id),
+                        isFridgeSubscribedProvider(fridge.id),
                       );
                       final isSubscribed =
                           isSubscribedAsync.whenOrNull(
@@ -147,7 +155,7 @@ class _FridgeProfileSheetState extends ConsumerState<FridgeProfileSheet>
                         width: 48,
                         height: 48,
                         child: FridgeIconUtils.getFridgeIcon(
-                          fridge: widget.fridge,
+                          fridge: fridge,
                           size: 48,
                         ),
                       );
@@ -195,7 +203,7 @@ class _FridgeProfileSheetState extends ConsumerState<FridgeProfileSheet>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          widget.fridge.name,
+                          fridge.name,
                           style: Theme.of(context).textTheme.titleLarge,
                         ),
                         Wrap(
@@ -203,18 +211,18 @@ class _FridgeProfileSheetState extends ConsumerState<FridgeProfileSheet>
                           runSpacing: 2,
                           crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
-                            if (widget.fridge.latestFridgeReport != null)
+                            if (fridge.latestFridgeReport != null)
                               Icon(
                                 FridgeIconUtils.getStatusIcon(
-                                  widget.fridge.latestFridgeReport!.condition,
+                                  fridge.latestFridgeReport!.condition,
                                 ),
                                 size: 14,
                                 color: FridgeIconUtils.getStatusColor(
-                                  widget.fridge.latestFridgeReport!.condition,
+                                  fridge.latestFridgeReport!.condition,
                                 ),
                               ),
                             Text(
-                              widget.fridge.statusText,
+                              fridge.statusText,
                               style: Theme.of(context).textTheme.bodySmall
                                   ?.copyWith(
                                     color: Theme.of(
@@ -254,7 +262,7 @@ class _FridgeProfileSheetState extends ConsumerState<FridgeProfileSheet>
                         isAuthenticatedProvider,
                       );
                       final isSubscribedAsync = ref.watch(
-                        isFridgeSubscribedProvider(widget.fridge.id),
+                        isFridgeSubscribedProvider(fridge.id),
                       );
 
                       // If not authenticated, show subscribe button
@@ -378,15 +386,15 @@ class _FridgeProfileSheetState extends ConsumerState<FridgeProfileSheet>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      widget.fridge.location.fullAddress,
+                      fridge.location.fullAddress,
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                   ],
                 ),
               ),
 
-              // Fridge Photo
-              if (widget.fridge.photoUrl != null)
+              // Fridge Photo - Show report photo if available, otherwise main photo
+              if (photoUrl != null)
                 _buildSection(
                   context: context,
                   icon: Icons.image,
@@ -395,10 +403,14 @@ class _FridgeProfileSheetState extends ConsumerState<FridgeProfileSheet>
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(12),
                       child: Image.network(
-                        widget.fridge.photoUrl!,
+                        photoUrl,
                         width: double.infinity,
                         height: 250,
                         fit: BoxFit.cover,
+                        // Use report timestamp as key to force refresh when report updates
+                        key: ValueKey(
+                          '${photoUrl}_${fridge.latestFridgeReport?.timestamp ?? fridge.latestFridgeReport?.epochTimestamp ?? ''}',
+                        ),
                         errorBuilder: (context, error, stackTrace) {
                           return Container(
                             width: double.infinity,
@@ -434,7 +446,7 @@ class _FridgeProfileSheetState extends ConsumerState<FridgeProfileSheet>
                 ),
 
               // Latest Report Section
-              if (widget.fridge.latestFridgeReport != null)
+              if (fridge.latestFridgeReport != null)
                 _buildSection(
                   context: context,
                   icon: Icons.report,
@@ -461,34 +473,23 @@ class _FridgeProfileSheetState extends ConsumerState<FridgeProfileSheet>
                                 children: [
                                   Icon(
                                     FridgeIconUtils.getStatusIcon(
-                                      widget
-                                          .fridge
-                                          .latestFridgeReport!
-                                          .condition,
+                                      fridge.latestFridgeReport!.condition,
                                     ),
                                     size: 18,
                                     color: FridgeIconUtils.getStatusColor(
-                                      widget
-                                          .fridge
-                                          .latestFridgeReport!
-                                          .condition,
+                                      fridge.latestFridgeReport!.condition,
                                     ),
                                   ),
                                   const SizedBox(width: 6),
                                   Text(
-                                    widget
-                                        .fridge
-                                        .latestFridgeReport!
-                                        .condition
-                                        .value,
+                                    fridge.latestFridgeReport!.condition.value,
                                     style: Theme.of(context)
                                         .textTheme
                                         .titleMedium
                                         ?.copyWith(
                                           fontWeight: FontWeight.bold,
                                           color: FridgeIconUtils.getStatusColor(
-                                            widget
-                                                .fridge
+                                            fridge
                                                 .latestFridgeReport!
                                                 .condition,
                                           ),
@@ -511,7 +512,7 @@ class _FridgeProfileSheetState extends ConsumerState<FridgeProfileSheet>
                                     ),
                               ),
                               Text(
-                                '${widget.fridge.latestFridgeReport!.foodPercentageInt}%',
+                                '${fridge.latestFridgeReport!.foodPercentageInt}%',
                                 style: Theme.of(context).textTheme.titleMedium
                                     ?.copyWith(fontWeight: FontWeight.bold),
                               ),
@@ -520,7 +521,7 @@ class _FridgeProfileSheetState extends ConsumerState<FridgeProfileSheet>
                         ],
                       ),
                       const SizedBox(height: 12),
-                      if (widget.fridge.latestFridgeReport!.notes != null)
+                      if (fridge.latestFridgeReport!.notes != null)
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -535,16 +536,16 @@ class _FridgeProfileSheetState extends ConsumerState<FridgeProfileSheet>
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              widget.fridge.latestFridgeReport!.notes!,
+                              fridge.latestFridgeReport!.notes!,
                               style: Theme.of(context).textTheme.bodyMedium,
                             ),
                           ],
                         ),
-                      if (widget.fridge.latestFridgeReport!.reportDate != null)
+                      if (fridge.latestFridgeReport!.reportDate != null)
                         Padding(
                           padding: const EdgeInsets.only(top: 8.0),
                           child: Text(
-                            'Last updated: ${_formatDate(widget.fridge.latestFridgeReport!.reportDate!)}',
+                            'Last updated: ${_formatDate(fridge.latestFridgeReport!.reportDate!)}',
                             style: Theme.of(context).textTheme.bodySmall
                                 ?.copyWith(
                                   color: Theme.of(
@@ -558,7 +559,7 @@ class _FridgeProfileSheetState extends ConsumerState<FridgeProfileSheet>
                 ),
 
               // Status Section (simplified)
-              if (widget.fridge.latestFridgeReport == null)
+              if (fridge.latestFridgeReport == null)
                 _buildSection(
                   context: context,
                   icon: Icons.info_outline,
@@ -574,7 +575,7 @@ class _FridgeProfileSheetState extends ConsumerState<FridgeProfileSheet>
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
                           Text(
-                            widget.fridge.statusText,
+                            fridge.statusText,
                             style: Theme.of(context).textTheme.bodyMedium
                                 ?.copyWith(
                                   fontWeight: FontWeight.bold,
@@ -591,7 +592,7 @@ class _FridgeProfileSheetState extends ConsumerState<FridgeProfileSheet>
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
                           Text(
-                            widget.fridge.foodLevelText,
+                            fridge.foodLevelText,
                             style: Theme.of(context).textTheme.bodyMedium
                                 ?.copyWith(fontWeight: FontWeight.bold),
                           ),
@@ -602,11 +603,11 @@ class _FridgeProfileSheetState extends ConsumerState<FridgeProfileSheet>
                 ),
 
               // Maintainer Section
-              if (widget.fridge.maintainer != null &&
-                  (widget.fridge.maintainer!.organization != null ||
-                      widget.fridge.maintainer!.email != null ||
-                      widget.fridge.maintainer!.phone != null ||
-                      widget.fridge.maintainer!.name != null))
+              if (fridge.maintainer != null &&
+                  (fridge.maintainer!.organization != null ||
+                      fridge.maintainer!.email != null ||
+                      fridge.maintainer!.phone != null ||
+                      fridge.maintainer!.name != null))
                 _buildSection(
                   context: context,
                   icon: Icons.person,
@@ -614,18 +615,18 @@ class _FridgeProfileSheetState extends ConsumerState<FridgeProfileSheet>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      if (widget.fridge.maintainer?.name != null)
-                        Text(widget.fridge.maintainer!.name!),
-                      if (widget.fridge.maintainer?.organization != null)
-                        Text(widget.fridge.maintainer!.organization!),
-                      if (widget.fridge.maintainer?.email != null)
-                        Text(widget.fridge.maintainer!.email!),
-                      if (widget.fridge.maintainer?.phone != null)
-                        Text(widget.fridge.maintainer!.phone!),
-                      if (widget.fridge.maintainer?.instagram != null)
-                        Text(widget.fridge.maintainer!.instagram!),
-                      if (widget.fridge.maintainer?.website != null)
-                        Text(widget.fridge.maintainer!.website!),
+                      if (fridge.maintainer?.name != null)
+                        Text(fridge.maintainer!.name!),
+                      if (fridge.maintainer?.organization != null)
+                        Text(fridge.maintainer!.organization!),
+                      if (fridge.maintainer?.email != null)
+                        Text(fridge.maintainer!.email!),
+                      if (fridge.maintainer?.phone != null)
+                        Text(fridge.maintainer!.phone!),
+                      if (fridge.maintainer?.instagram != null)
+                        Text(fridge.maintainer!.instagram!),
+                      if (fridge.maintainer?.website != null)
+                        Text(fridge.maintainer!.website!),
                     ],
                   ),
                 ),
@@ -698,20 +699,18 @@ class _FridgeProfileSheetState extends ConsumerState<FridgeProfileSheet>
   }
 
   void _showStatusUpdateDialog(BuildContext context) {
+    // Get current fridge data from provider
+    final fridgeAsync = ref.read(singleFridgeProvider(widget.fridge.id));
+    final fridge = fridgeAsync.whenOrNull(data: (f) => f) ?? widget.fridge;
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Report Status Update'),
         content: SizedBox(
           width: MediaQuery.of(context).size.width * 0.9,
-          child: StatusUpdateForm(fridge: widget.fridge),
+          child: StatusUpdateForm(fridge: fridge),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-        ],
       ),
     );
   }

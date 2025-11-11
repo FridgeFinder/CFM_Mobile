@@ -12,6 +12,7 @@ import '../../../core/providers/points_provider.dart';
 import '../../../features/auth/domain/models/user_profile.dart';
 import '../../../features/auth/presentation/widgets/sign_in_widget.dart';
 import '../../../features/auth/presentation/widgets/reauthenticate_dialog.dart';
+import 'test_notification_screen.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -345,6 +346,18 @@ class ProfileScreen extends ConsumerWidget {
                           },
                           icon: const Icon(Icons.refresh),
                           label: const Text('Reset Auth State (Sign Out)'),
+                        ),
+                        const SizedBox(height: 12),
+                        OutlinedButton.icon(
+                          onPressed: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => const TestNotificationScreen(),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.notifications_active),
+                          label: const Text('Test Notifications'),
                         ),
                       ],
                     ),

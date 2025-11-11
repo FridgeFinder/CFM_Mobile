@@ -11,15 +11,38 @@ class FirebaseEmulatorConfig {
   static const int databaseEmulatorPort = 9000;
   static const String functionsEmulatorHost = '127.0.0.1';
   static const int functionsEmulatorPort = 5001;
+
+  // Static flag to ensure Firebase is only initialized once
+  static bool _isInitialized = false;
 }
 
 /// Initialize Firebase for testing with emulators
 /// Call this in setUpAll() of your test files
+/// Thread-safe initialization that prevents duplicate initialization
 Future<void> initializeFirebaseEmulator() async {
+  // Early return if already initialized
+  if (FirebaseEmulatorConfig._isInitialized) {
+    return;
+  }
+
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  // Double-check after binding is initialized
+  if (FirebaseEmulatorConfig._isInitialized) {
+    return;
+  }
+
   // Check if Firebase is already initialized
+  bool firebaseExists = false;
   try {
+    Firebase.app();
+    firebaseExists = true;
+  } catch (e) {
+    // Firebase not initialized yet
+  }
+
+  if (!firebaseExists) {
+    // Firebase not initialized, so initialize it
     await Firebase.initializeApp(
       options: const FirebaseOptions(
         apiKey: 'test-api-key',
@@ -29,21 +52,30 @@ Future<void> initializeFirebaseEmulator() async {
         databaseURL: 'http://127.0.0.1:9000/?ns=test-project',
       ),
     );
-  } catch (e) {
-    // Firebase already initialized
   }
 
-  // Connect to Auth Emulator
-  await FirebaseAuth.instance.useAuthEmulator(
-    FirebaseEmulatorConfig.authEmulatorHost,
-    FirebaseEmulatorConfig.authEmulatorPort,
-  );
+  // Connect to Auth Emulator (only if not already connected)
+  try {
+    await FirebaseAuth.instance.useAuthEmulator(
+      FirebaseEmulatorConfig.authEmulatorHost,
+      FirebaseEmulatorConfig.authEmulatorPort,
+    );
+  } catch (e) {
+    // Already connected to emulator, ignore
+  }
 
   // Connect to Realtime Database Emulator
-  FirebaseDatabase.instance.useDatabaseEmulator(
-    FirebaseEmulatorConfig.databaseEmulatorHost,
-    FirebaseEmulatorConfig.databaseEmulatorPort,
-  );
+  try {
+    FirebaseDatabase.instance.useDatabaseEmulator(
+      FirebaseEmulatorConfig.databaseEmulatorHost,
+      FirebaseEmulatorConfig.databaseEmulatorPort,
+    );
+  } catch (e) {
+    // Already connected to emulator, ignore
+  }
+
+  // Mark as initialized
+  FirebaseEmulatorConfig._isInitialized = true;
 }
 
 /// Clean up Firebase emulator data between tests

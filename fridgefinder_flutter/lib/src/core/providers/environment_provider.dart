@@ -21,7 +21,7 @@ class Environment extends _$Environment {
   ApiEnvironment build() {
     // Load environment asynchronously without blocking
     Future.microtask(() => _loadEnvironment());
-    return ApiEnvironment.prod; // Default to production
+    return ApiEnvironment.dev; // Default to dev for beta testing
   }
 
   Future<void> _loadEnvironment() async {

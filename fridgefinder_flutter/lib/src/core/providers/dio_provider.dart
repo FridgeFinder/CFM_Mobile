@@ -48,10 +48,24 @@ Dio dio(Ref ref) {
           );
         }
 
+        // Only log data if it's a Map (JSON), not Stream or FormData (file uploads)
+        Map<String, dynamic>? dataToLog;
+        if (options.data is Map<String, dynamic>) {
+          dataToLog = options.data as Map<String, dynamic>;
+        } else if (options.data is FormData) {
+          dataToLog = {
+            '_type': 'FormData',
+            '_fields': (options.data as FormData).fields.length,
+          };
+        } else if (options.data != null) {
+          // Handle Stream, List<int>, or other binary data types
+          dataToLog = {'_type': 'Binary data'};
+        }
+        
         logger.apiRequest(
           options.method,
           '${options.baseUrl}${options.path}',
-          data: options.data,
+          data: dataToLog,
         );
 
         return handler.next(options);

@@ -5,6 +5,7 @@ import 'src/routing/router.dart';
 import 'src/core/theme/app_theme.dart';
 import 'src/core/providers/theme_provider.dart';
 import 'src/core/providers/notification_providers.dart';
+import 'src/core/providers/notification_navigation_provider.dart';
 import 'src/core/providers/auth_provider.dart';
 import 'src/core/services/local_notification_service.dart';
 import 'src/core/utils/app_logger.dart';
@@ -22,7 +23,7 @@ class _FridgeFinderAppState extends ConsumerState<FridgeFinderApp> {
     super.initState();
     // Handle Firebase Auth deep links and redirect results
     _handleAuthRedirects();
-    
+
     // Listen for auth state changes to refresh providers
     firebase_auth.FirebaseAuth.instance.authStateChanges().listen((user) {
       logger.d('[App] Auth state changed: ${user?.uid ?? "null"}');
@@ -42,21 +43,22 @@ class _FridgeFinderAppState extends ConsumerState<FridgeFinderApp> {
     firebase_auth.FirebaseAuth.instance
         .getRedirectResult()
         .then((result) {
-      if (result.user != null) {
-        logger.i('Firebase Auth redirect result: ${result.user?.uid}');
-        // Auth state will update automatically via authUserProvider
-        // Invalidate to force refresh
-        if (mounted) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (result.user != null) {
+            logger.i('Firebase Auth redirect result: ${result.user?.uid}');
+            // Auth state will update automatically via authUserProvider
+            // Invalidate to force refresh
             if (mounted) {
-              ref.invalidate(authUserProvider);
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) {
+                  ref.invalidate(authUserProvider);
+                }
+              });
             }
-          });
-        }
-      }
-    }).catchError((error) {
-      logger.e('Firebase Auth redirect error: $error');
-    });
+          }
+        })
+        .catchError((error) {
+          logger.e('Firebase Auth redirect error: $error');
+        });
   }
 
   @override
@@ -73,6 +75,22 @@ class _FridgeFinderAppState extends ConsumerState<FridgeFinderApp> {
 
     final router = ref.watch(routerProvider);
     final themeMode = ref.watch(appThemeModeProvider);
+
+    // Listen for notification navigation globally (works from any screen)
+    ref.listen(notificationNavigationProvider, (previous, next) {
+      if (next != null && mounted) {
+        logger.i('🔔🔔🔔 NOTIFICATION NAV: Global navigation triggered for fridge: $next 🔔🔔🔔');
+        // Navigate to map view if not already there
+        final currentRoute = router.routerDelegate.currentConfiguration.uri
+            .toString();
+        if (currentRoute != '/') {
+          logger.i('🔔🔔🔔 NOTIFICATION NAV: Navigating to map view from: $currentRoute 🔔🔔🔔');
+          router.go('/');
+        } else {
+          logger.i('🔔🔔🔔 NOTIFICATION NAV: Already on map view 🔔🔔🔔');
+        }
+      }
+    });
 
     return MaterialApp.router(
       title: 'FridgeFinder',

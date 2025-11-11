@@ -179,7 +179,7 @@ class MockFridgeRepository implements IFridgeRepository {
     FridgeCondition condition,
     double foodPercentage,
     String? notes,
-    String? photoUrl,
+    List<int>? photoBytes,
   ) async {
     _checkShouldFail();
     await _simulateNetworkDelay();
@@ -187,6 +187,12 @@ class MockFridgeRepository implements IFridgeRepository {
     final fridge = _fridges[fridgeId];
     if (fridge == null) {
       throw NotFoundException('Fridge with ID $fridgeId not found');
+    }
+
+    // Create mock photo URL if photo bytes provided
+    String? photoUrl;
+    if (photoBytes != null && photoBytes.isNotEmpty) {
+      photoUrl = 'https://mock.fridgefinder.com/photos/mock_${DateTime.now().millisecondsSinceEpoch}.jpg';
     }
 
     // Create new report

@@ -1,4 +1,6 @@
+import 'dart:typed_data';
 import 'package:dio/dio.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../map/domain/models/fridge_domain.dart';
 import '../../../map/domain/repositories/i_fridge_repository.dart';
@@ -84,6 +86,7 @@ class FridgeRepository implements IFridgeRepository {
   /// Throws [NetworkException] on network errors
   /// Based on real API: POST /v1/fridges/{fridgeId}/reports
   /// foodPercentage is in 0-1 range and will be converted to 0-3 API format
+  /// If photoBytes is provided, uploads photo to /photo endpoint first, then includes URL in report
   /// Also writes to Realtime Database to trigger Cloud Functions
   @override
   Future<void> submitFridgeReport(
@@ -91,7 +94,7 @@ class FridgeRepository implements IFridgeRepository {
     FridgeCondition condition,
     double foodPercentage,
     String? notes,
-    String? photoUrl,
+    List<int>? photoBytes,
   ) async {
     try {
       // Convert foodPercentage from 0-1 range to 0-3 integer for API
@@ -104,6 +107,16 @@ class FridgeRepository implements IFridgeRepository {
         foodLevel = 1; // Few items
       } else {
         foodLevel = 0; // Empty
+      }
+
+      // Upload photo first if provided, then use the returned URL in the report
+      String? photoUrl;
+      if (photoBytes != null && photoBytes.isNotEmpty) {
+        // Upload to /photo endpoint (converts to WebP and sends raw bytes)
+        // The uploadPhoto method handles WebP conversion
+        final mimeType = 'image/jpeg'; // Original format, uploadPhoto will convert to WebP
+        photoUrl = await uploadPhoto(photoBytes, mimeType);
+        logger.d('Photo uploaded successfully, URL: $photoUrl');
       }
 
       final response = await _dio.post(
@@ -187,19 +200,42 @@ class FridgeRepository implements IFridgeRepository {
   /// Upload a fridge photo
   /// Throws [NetworkException] on network errors
   /// Based on real API: POST /v1/photo
+  /// Converts image to WebP and sends raw bytes with Content-Type: image/webp
+  /// Desktop sends @FILE_LOCATION (file path via curl), mobile sends raw WebP bytes
+  /// Returns the photo URL from the API response
   @override
   Future<String> uploadPhoto(List<int> imageBytes, String mimeType) async {
     try {
+      // Convert image to WebP format first (required by backend)
+      final webpBytes = await FlutterImageCompress.compressWithList(
+        Uint8List.fromList(imageBytes),
+        format: CompressFormat.webp,
+        quality: 85,
+      );
+
+      if (webpBytes.isEmpty) {
+        throw AppException('Failed to convert image to WebP');
+      }
+
+      logger.d('Converted image to WebP (${webpBytes.length} bytes), sending raw bytes');
+
+      // Send raw WebP bytes directly (like curl --data '@FILE_LOCATION')
+      // Backend expects: Content-Type: image/webp with raw file bytes as body
       final response = await _dio.post(
         '/photo',
-        data: Stream.fromIterable(imageBytes.map((e) => [e])),
+        data: webpBytes, // Send raw WebP bytes, not base64
         options: Options(
-          contentType: mimeType,
-          headers: {'Content-Type': mimeType},
+          headers: {
+            'Content-Type': 'image/webp',
+          },
         ),
       );
 
       if (response.statusCode != 200) {
+        final errorData = response.data;
+        logger.e('Photo upload failed with status ${response.statusCode}');
+        logger.e('Response data: $errorData');
+        logger.e('Response data type: ${errorData.runtimeType}');
         throw ServerException(
           'Failed to upload photo: ${response.statusCode}',
           statusCode: response.statusCode,
@@ -207,16 +243,37 @@ class FridgeRepository implements IFridgeRepository {
       }
 
       // Parse response to extract photo URL
-      // Could be {'url': '...'} or {'photoUrl': '...'} or direct string
+      // API returns {'url': '...'} or {'photoUrl': '...'} or direct string
       if (response.data is String) {
-        return response.data as String;
+        final url = response.data as String;
+        if (url.isEmpty) {
+          throw AppException('Photo upload succeeded but no URL returned');
+        }
+        logger.d('Photo upload successful, URL: $url');
+        return url;
       } else if (response.data is Map) {
-        return response.data['url'] ?? response.data['photoUrl'] ?? '';
+        final data = response.data as Map<String, dynamic>;
+        final url = data['url'] as String? ?? data['photoUrl'] as String?;
+        if (url == null || url.isEmpty) {
+          logger.e('Photo upload response: ${response.data}');
+          throw AppException('Photo upload succeeded but no URL in response');
+        }
+        logger.d('Photo upload successful, URL: $url');
+        return url;
       }
-      return '';
+      logger.e('Unexpected photo upload response format: ${response.data}');
+      throw AppException('Unexpected response format from photo upload');
     } on DioException catch (e) {
+      // Log the actual error response from the backend
+      if (e.response != null) {
+        logger.e('Photo upload DioException: Status ${e.response?.statusCode}, Data: ${e.response?.data}');
+      } else {
+        logger.e('Photo upload DioException: ${e.message}');
+      }
       throw _handleDioError(e);
     } catch (e) {
+      if (e is AppException) rethrow;
+      logger.e('Photo upload error: $e');
       throw AppException('Failed to upload photo: $e');
     }
   }
@@ -239,27 +296,60 @@ class FridgeRepository implements IFridgeRepository {
     }
 
     final statusCode = e.response?.statusCode;
+    final responseData = e.response?.data;
+
+    // Try to extract error message from API response
+    String? apiErrorMessage;
+    if (responseData != null) {
+      try {
+        if (responseData is Map<String, dynamic>) {
+          // Common error message fields in API responses
+          apiErrorMessage =
+              responseData['message'] as String? ??
+              responseData['error'] as String? ??
+              responseData['errorMessage'] as String? ??
+              responseData['msg'] as String?;
+        } else if (responseData is String) {
+          apiErrorMessage = responseData;
+        }
+      } catch (_) {
+        // If parsing fails, use generic message
+      }
+    }
+
     if (statusCode != null) {
       if (statusCode >= 500) {
         return ServerException(
-          'Server error occurred. Please try again later.',
+          apiErrorMessage ?? 'Server error occurred. Please try again later.',
           statusCode: statusCode,
           originalError: e,
         );
       }
       if (statusCode == 404) {
-        return NotFoundException('Resource not found.', originalError: e);
+        return NotFoundException(
+          apiErrorMessage ?? 'Resource not found.',
+          originalError: e,
+        );
       }
       if (statusCode == 401 || statusCode == 403) {
         return AuthException(
-          'Authentication failed. Please log in again.',
+          apiErrorMessage ?? 'Authentication failed. Please log in again.',
+          originalError: e,
+        );
+      }
+      // Handle 4xx client errors (400, 422, etc.) with API error message
+      if (statusCode >= 400 && statusCode < 500) {
+        return ServerException(
+          apiErrorMessage ??
+              'Request failed. Please check your input and try again.',
+          statusCode: statusCode,
           originalError: e,
         );
       }
     }
 
     return NetworkException(
-      'Network error occurred. Please try again.',
+      apiErrorMessage ?? 'Network error occurred. Please try again.',
       originalError: e,
     );
   }

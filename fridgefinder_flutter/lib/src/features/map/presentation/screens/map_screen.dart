@@ -22,6 +22,7 @@ import '../../../../core/providers/location_provider.dart';
 import '../../../../core/providers/map_cache_provider.dart';
 import '../../../../core/providers/notification_navigation_provider.dart';
 import '../../../../core/providers/drawer_provider.dart';
+import '../../../../core/utils/app_logger.dart';
 
 /// Map screen showing all community fridges on a map
 class MapScreen extends ConsumerStatefulWidget {
@@ -37,6 +38,8 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   late FocusNode _searchFocusNode;
   bool _isFilterPanelExpanded = false;
   String? _currentRoute;
+  String?
+  _handlingNotificationId; // Track which notification we're currently handling
 
   @override
   void initState() {
@@ -55,6 +58,12 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   }
 
   void _showFridgeProfile(FridgeDomain fridge) {
+    // Prevent opening multiple sheets - close any existing bottom sheet first
+    if (!mounted) return;
+
+    // Close any existing bottom sheet
+    Navigator.of(context).popUntil((route) => route.isFirst || !route.isActive);
+
     ref.read(selectedFridgeIdProvider.notifier).setSelectedFridgeId(fridge.id);
 
     showModalBottomSheet(
@@ -64,7 +73,194 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     );
   }
 
-void _toggleFilterPanel() {
+  Future<void> _handleNotificationNavigation(String fridgeId) async {
+    // Prevent multiple simultaneous calls for the same notification
+    if (_handlingNotificationId == fridgeId) {
+      logger.i(
+        '🔔🔔🔔 NOTIFICATION NAV: Already handling fridge: $fridgeId, skipping 🔔🔔🔔',
+      );
+      return;
+    }
+
+    _handlingNotificationId = fridgeId;
+    logger.i(
+      '🔔🔔🔔 NOTIFICATION NAV: Handling navigation for fridge: $fridgeId 🔔🔔🔔',
+    );
+
+    try {
+      // Wait for the next frame to ensure map is fully built and initialized
+      await Future.delayed(const Duration(milliseconds: 500));
+      if (!mounted) return;
+
+      logger.i(
+        '🔔🔔🔔 NOTIFICATION NAV: Starting fridge lookup for: $fridgeId 🔔🔔🔔',
+      );
+
+      // Wait for fridge list to load, then find and show the fridge
+      final fridgesAsync = ref.read(fridgeListProvider);
+      logger.i(
+        '🔔🔔🔔 NOTIFICATION NAV: Fridge list state: ${fridgesAsync.runtimeType} 🔔🔔🔔',
+      );
+
+      fridgesAsync.when(
+        data: (fridges) async {
+          if (!mounted) return;
+
+          logger.i(
+            '🔔🔔🔔 NOTIFICATION NAV: Fridge list loaded with ${fridges.length} fridges, searching for: $fridgeId 🔔🔔🔔',
+          );
+          // Find the fridge in the list
+          try {
+            final fridge = fridges.firstWhere((f) => f.id == fridgeId);
+            logger.i(
+              '🔔🔔🔔 NOTIFICATION NAV: ✅ Found fridge "${fridge.name}" at (${fridge.location.geoLat}, ${fridge.location.geoLng}) 🔔🔔🔔',
+            );
+
+            // Zoom to fridge location
+            final fridgeLocation = LatLng(
+              fridge.location.geoLat,
+              fridge.location.geoLng,
+            );
+
+            logger.i(
+              '🔔🔔🔔 NOTIFICATION NAV: Moving map to location... 🔔🔔🔔',
+            );
+            _mapController.move(
+              fridgeLocation,
+              16.0,
+            ); // Zoom level 16 for close-up view
+
+            // Show fridge profile sheet after a short delay to ensure map has moved
+            await Future.delayed(const Duration(milliseconds: 1000));
+            if (!mounted) return;
+
+            logger.i(
+              '🔔🔔🔔 NOTIFICATION NAV: Showing fridge profile sheet 🔔🔔🔔',
+            );
+            _showFridgeProfile(fridge);
+            // Clear the notification navigation state
+            ref.read(notificationNavigationProvider.notifier).clear();
+            logger.i('🔔🔔🔔 NOTIFICATION NAV: ✅ Complete! 🔔🔔🔔');
+          } catch (e) {
+            logger.w(
+              '🔔🔔🔔 NOTIFICATION NAV: ❌ Fridge not found in list for ID: $fridgeId - $e 🔔🔔🔔',
+            );
+            // Try fetching directly from API as fallback
+            try {
+              logger.i(
+                '🔔🔔🔔 NOTIFICATION NAV: Fetching fridge directly from API... 🔔🔔🔔',
+              );
+              final fridgeAsync = await ref.read(
+                singleFridgeProvider(fridgeId).future,
+              );
+              if (!mounted) return;
+
+              logger.i(
+                '🔔🔔🔔 NOTIFICATION NAV: ✅ Fetched fridge directly: ${fridgeAsync.name} 🔔🔔🔔',
+              );
+              final fridgeLocation = LatLng(
+                fridgeAsync.location.geoLat,
+                fridgeAsync.location.geoLng,
+              );
+              logger.i(
+                '🔔🔔🔔 NOTIFICATION NAV: Moving map to fetched fridge location... 🔔🔔🔔',
+              );
+              _mapController.move(fridgeLocation, 16.0);
+
+              await Future.delayed(const Duration(milliseconds: 1000));
+              if (!mounted) return;
+
+              logger.i(
+                '🔔🔔🔔 NOTIFICATION NAV: Showing fridge profile sheet 🔔🔔🔔',
+              );
+              _showFridgeProfile(fridgeAsync);
+              ref.read(notificationNavigationProvider.notifier).clear();
+              logger.i('🔔🔔🔔 NOTIFICATION NAV: ✅ Complete! 🔔🔔🔔');
+            } catch (fetchError) {
+              logger.e(
+                '🔔🔔🔔 NOTIFICATION NAV: ❌ Failed to fetch fridge: $fetchError 🔔🔔🔔',
+              );
+              // Clear the notification navigation state even if fridge not found
+              ref.read(notificationNavigationProvider.notifier).clear();
+            }
+          }
+        },
+        loading: () {
+          // If still loading, wait a bit and try again
+          logger.i(
+            '🔔🔔🔔 NOTIFICATION NAV: ⏳ Fridge list still loading, waiting... 🔔🔔🔔',
+          );
+          Future.delayed(const Duration(milliseconds: 2000), () async {
+            if (!mounted) return;
+            // Re-trigger by reading the provider again
+            final fridgesAsyncRetry = ref.read(fridgeListProvider);
+            fridgesAsyncRetry.whenData((fridges) async {
+              if (!mounted) return;
+              try {
+                final fridge = fridges.firstWhere((f) => f.id == fridgeId);
+                logger.i(
+                  '🔔🔔🔔 NOTIFICATION NAV: ✅ Found fridge after retry: ${fridge.name} 🔔🔔🔔',
+                );
+                final fridgeLocation = LatLng(
+                  fridge.location.geoLat,
+                  fridge.location.geoLng,
+                );
+                _mapController.move(fridgeLocation, 16.0);
+                await Future.delayed(const Duration(milliseconds: 1000));
+                if (!mounted) return;
+                _showFridgeProfile(fridge);
+                ref.read(notificationNavigationProvider.notifier).clear();
+                logger.i('🔔🔔🔔 NOTIFICATION NAV: ✅ Complete! 🔔🔔🔔');
+              } catch (e) {
+                logger.w(
+                  '🔔🔔🔔 NOTIFICATION NAV: ❌ Fridge still not found after retry: $e 🔔🔔🔔',
+                );
+                ref.read(notificationNavigationProvider.notifier).clear();
+              }
+            });
+          });
+        },
+        error: (error, stack) {
+          logger.e(
+            '🔔🔔🔔 NOTIFICATION NAV: ❌ Error loading fridge list: $error 🔔🔔🔔',
+          );
+          // Try fetching directly from API as fallback
+          Future.delayed(const Duration(milliseconds: 500), () async {
+            if (!mounted) return;
+            try {
+              final fridgeAsync = await ref.read(
+                singleFridgeProvider(fridgeId).future,
+              );
+              if (!mounted) return;
+              logger.i(
+                '🔔🔔🔔 NOTIFICATION NAV: ✅ Fetched fridge directly after error: ${fridgeAsync.name} 🔔🔔🔔',
+              );
+              final fridgeLocation = LatLng(
+                fridgeAsync.location.geoLat,
+                fridgeAsync.location.geoLng,
+              );
+              _mapController.move(fridgeLocation, 16.0);
+              await Future.delayed(const Duration(milliseconds: 1000));
+              if (!mounted) return;
+              _showFridgeProfile(fridgeAsync);
+              ref.read(notificationNavigationProvider.notifier).clear();
+              logger.i('🔔🔔🔔 NOTIFICATION NAV: ✅ Complete! 🔔🔔🔔');
+            } catch (fetchError) {
+              logger.e(
+                '🔔🔔🔔 NOTIFICATION NAV: ❌ Failed to fetch fridge: $fetchError 🔔🔔🔔',
+              );
+              ref.read(notificationNavigationProvider.notifier).clear();
+            }
+          });
+        },
+      );
+    } finally {
+      // Always clear the handling flag when done
+      _handlingNotificationId = null;
+    }
+  }
+
+  void _toggleFilterPanel() {
     setState(() {
       _isFilterPanelExpanded = !_isFilterPanelExpanded;
       if (_isFilterPanelExpanded) {
@@ -135,7 +331,8 @@ void _toggleFilterPanel() {
     final filteredFridges = ref.watch(mapFilteredFridgesProvider);
     final subscriptionsAsync = ref.watch(subscribedFridgesProvider);
     final router = GoRouter.of(context);
-    final currentRoute = router.routerDelegate.currentConfiguration.uri.toString();
+    final currentRoute = router.routerDelegate.currentConfiguration.uri
+        .toString();
 
     // Listen for route changes and trigger bottom sheet close
     if (_currentRoute != null && _currentRoute != currentRoute) {
@@ -155,20 +352,29 @@ void _toggleFilterPanel() {
     });
 
     // Listen for notification navigation (must be in build method)
+    // Note: Navigation to map is handled globally in app.dart
+    // Here we just handle zooming and showing the sheet when on map screen
     ref.listen(notificationNavigationProvider, (previous, next) {
       if (next != null && mounted) {
-        // Wait a bit for the fridge list to load, then get the fridge
-        Future.delayed(const Duration(milliseconds: 500), () {
-          if (!mounted) return;
-          final fridge = ref.read(selectedFridgeProvider);
-          if (fridge != null) {
-            _showFridgeProfile(fridge);
-            // Clear the notification navigation state
-            ref.read(notificationNavigationProvider.notifier).clear();
-          }
-        });
+        logger.i(
+          '🔔🔔🔔 NOTIFICATION NAV: Map screen listener fired for fridge: $next 🔔🔔🔔',
+        );
+        _handleNotificationNavigation(next);
       }
     });
+
+    // Also check if there's already a notification pending when screen builds
+    final currentNotification = ref.read(notificationNavigationProvider);
+    if (currentNotification != null && mounted) {
+      logger.i(
+        '🔔🔔🔔 NOTIFICATION NAV: Found pending notification on build: $currentNotification 🔔🔔🔔',
+      );
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _handleNotificationNavigation(currentNotification);
+        }
+      });
+    }
 
     return Scaffold(
       body: fridgesAsync.when(
@@ -242,7 +448,8 @@ void _toggleFilterPanel() {
                       markers: () {
                         // Create set of subscribed fridge IDs for O(1) lookup
                         final subscribedFridgeIds = subscriptionsAsync.when(
-                          data: (subscriptions) => subscriptions.map((s) => s.fridgeId).toSet(),
+                          data: (subscriptions) =>
+                              subscriptions.map((s) => s.fridgeId).toSet(),
                           loading: () => <String>{},
                           error: (_, _) => <String>{},
                         );
@@ -258,7 +465,9 @@ void _toggleFilterPanel() {
                                 height: FridgeMarker.markerSize,
                                 child: FridgeMarker(
                                   fridge: fridge,
-                                  isSubscribed: subscribedFridgeIds.contains(fridge.id),
+                                  isSubscribed: subscribedFridgeIds.contains(
+                                    fridge.id,
+                                  ),
                                 ),
                               ),
                             )
@@ -337,18 +546,22 @@ void _toggleFilterPanel() {
                             final shouldOpenSettings = await showDialog<bool>(
                               context: context,
                               builder: (context) => AlertDialog(
-                                title: const Text('Location Permission Required'),
+                                title: const Text(
+                                  'Location Permission Required',
+                                ),
                                 content: const Text(
                                   'Location access is disabled. '
                                   'Please enable it in Settings to center the map on your location.',
                                 ),
                                 actions: [
                                   TextButton(
-                                    onPressed: () => Navigator.of(context).pop(false),
+                                    onPressed: () =>
+                                        Navigator.of(context).pop(false),
                                     child: const Text('Cancel'),
                                   ),
                                   TextButton(
-                                    onPressed: () => Navigator.of(context).pop(true),
+                                    onPressed: () =>
+                                        Navigator.of(context).pop(true),
                                     child: const Text('Open Settings'),
                                   ),
                                 ],
