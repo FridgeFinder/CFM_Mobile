@@ -10,6 +10,10 @@ dependencies:
   flutter:
     sdk: flutter
 
+  # Design System
+  design_system:
+    path: packages/design_system
+
   # Navigation
   go_router: ^16.3.0
 

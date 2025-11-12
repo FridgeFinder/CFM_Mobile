@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:design_system/design_system.dart';
 import '../../../map/domain/models/fridge_domain.dart';
 import '../../../map/presentation/widgets/fridge_marker.dart';
 import '../../../../core/utils/fridge_icon_utils.dart';
@@ -75,61 +76,60 @@ class _FridgeCardState extends State<FridgeCard>
         ? FridgeIconUtils.getStatusColor(report.condition)
         : Colors.grey;
 
-    final cardWidget = Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: InkWell(
-        onTap: widget.onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+    return CardM3E(
+      onTap: widget.onTap,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
               // Title and Icon Row
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // SVG marker icon - same as map (with green glow if subscribed)
-                  widget.isSubscribed
-                      ? AnimatedBuilder(
-                          animation: _animation,
-                          builder: (context, child) {
-                            return Container(
-                              width: FridgeCard.iconSize,
-                              height: FridgeCard.iconSize,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: FridgeMarker.subscribedGreen
-                                        .withValues(alpha: _animation.value * 0.6),
-                                    blurRadius: 8,
-                                    spreadRadius: 1,
-                                  ),
-                                  BoxShadow(
-                                    color: FridgeMarker.subscribedGreen
-                                        .withValues(alpha: _animation.value * 0.4),
-                                    blurRadius: 12,
-                                    spreadRadius: 2,
-                                  ),
-                                ],
-                              ),
-                              child: FridgeIconUtils.getFridgeIcon(
-                                fridge: widget.fridge,
-                                size: FridgeCard.iconSize,
-                              ),
-                            );
-                          },
-                        )
-                      : SizedBox(
-                          width: FridgeCard.iconSize,
-                          height: FridgeCard.iconSize,
-                          child: FridgeIconUtils.getFridgeIcon(
-                            fridge: widget.fridge,
-                            size: FridgeCard.iconSize,
+                  // Wrapped in Hero for smooth transition to detail view
+                  Hero(
+                    tag: 'fridge-icon-${widget.fridge.id}',
+                    child: widget.isSubscribed
+                        ? AnimatedBuilder(
+                            animation: _animation,
+                            builder: (context, child) {
+                              return Container(
+                                width: FridgeCard.iconSize,
+                                height: FridgeCard.iconSize,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: FridgeMarker.subscribedGreen
+                                          .withValues(alpha: _animation.value * 0.6),
+                                      blurRadius: 8,
+                                      spreadRadius: 1,
+                                    ),
+                                    BoxShadow(
+                                      color: FridgeMarker.subscribedGreen
+                                          .withValues(alpha: _animation.value * 0.4),
+                                      blurRadius: 12,
+                                      spreadRadius: 2,
+                                    ),
+                                  ],
+                                ),
+                                child: FridgeIconUtils.getFridgeIcon(
+                                  fridge: widget.fridge,
+                                  size: FridgeCard.iconSize,
+                                ),
+                              );
+                            },
+                          )
+                        : SizedBox(
+                            width: FridgeCard.iconSize,
+                            height: FridgeCard.iconSize,
+                            child: FridgeIconUtils.getFridgeIcon(
+                              fridge: widget.fridge,
+                              size: FridgeCard.iconSize,
+                            ),
                           ),
-                        ),
-                  const SizedBox(width: 12),
+                  ),
+                  M3ESpacing.horizontalMD,
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -140,7 +140,7 @@ class _FridgeCardState extends State<FridgeCard>
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 4),
+                        M3ESpacing.verticalXXS,
                         Text(
                           widget.fridge.location.shortAddress,
                           style: Theme.of(context).textTheme.bodySmall,
@@ -161,7 +161,7 @@ class _FridgeCardState extends State<FridgeCard>
                     ),
                 ],
               ),
-              const SizedBox(height: 12),
+              M3ESpacing.verticalMD,
 
               // Status, Food Level, and Distance Row
               Row(
@@ -180,7 +180,7 @@ class _FridgeCardState extends State<FridgeCard>
                       Row(
                         children: [
                           Icon(statusIcon, size: 16, color: statusColor),
-                          const SizedBox(width: 6),
+                          M3ESpacing.horizontalXS,
                           Text(
                             widget.fridge.statusText,
                             style: Theme.of(context).textTheme.bodyMedium
@@ -230,12 +230,8 @@ class _FridgeCardState extends State<FridgeCard>
                     ),
                 ],
               ),
-            ],
-          ),
-        ),
+        ],
       ),
     );
-
-    return cardWidget;
   }
 }

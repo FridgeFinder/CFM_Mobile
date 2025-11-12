@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 
 class AppTheme {
   // Light theme colors
-  static const Color _lightPrimary = Color(0xFF2196F3); // Same blue as top bar
+  static const Color _lightPrimary = Color(0xFF88B3FF); // Custom light blue
   static const Color _lightSurface = Color(0xFFFFFFFF);
   static const Color _lightBackground = Color(0xFFFAFAFA);
   static const Color _lightError = Color(0xFFB3261E);
 
   // Dark theme colors - Softer palette inspired by Material Design 3, Spotify, Discord, YouTube
-  static const Color _darkPrimary = Color(0xFF2196F3); // Light blue
+  static const Color _darkPrimary = Color(0xFF88B3FF); // Custom light blue
   static const Color _darkSurface = Color(
     0xFF1E1E1E,
   ); // Slightly lighter surface

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:design_system/design_system.dart';
 
 /// Error display widget with retry action
 class ErrorView extends StatelessWidget {
@@ -17,34 +18,36 @@ class ErrorView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: M3ESpacing.all(M3ESpacing.xl),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               Icons.error_outline,
               size: 64,
-              color: Theme.of(context).colorScheme.error,
+              color: colorScheme.error,
             ),
-            const SizedBox(height: 16),
+            M3ESpacing.verticalMD,
             Text(
               title,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: Theme.of(context).colorScheme.error,
-              ),
+                    color: colorScheme.error,
+                  ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 8),
+            M3ESpacing.verticalXS,
             Text(
               message,
               style: Theme.of(context).textTheme.bodyMedium,
               textAlign: TextAlign.center,
             ),
             if (onRetry != null) ...[
-              const SizedBox(height: 24),
-              ElevatedButton(onPressed: onRetry, child: Text(retryLabel)),
+              M3ESpacing.verticalMD,
+              FilledButtonM3E(onPressed: onRetry, child: Text(retryLabel)),
             ],
           ],
         ),

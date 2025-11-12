@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:design_system/design_system.dart';
 
 /// Empty state display widget
 class EmptyStateView extends StatelessWidget {
@@ -17,30 +18,34 @@ class EmptyStateView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: M3ESpacing.all(M3ESpacing.xl),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               icon,
               size: 64,
-              color: Theme.of(context).colorScheme.secondary,
+              color: colorScheme.onSurfaceVariant,
             ),
-            const SizedBox(height: 16),
+            M3ESpacing.verticalMD,
             Text(
               title,
               style: Theme.of(context).textTheme.titleLarge,
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 8),
+            M3ESpacing.verticalXS,
             Text(
               message,
-              style: Theme.of(context).textTheme.bodyMedium,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
               textAlign: TextAlign.center,
             ),
-            if (action != null) ...[const SizedBox(height: 24), action!],
+            if (action != null) ...[M3ESpacing.verticalMD, action!],
           ],
         ),
       ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:design_system/design_system.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/providers/subscriptions_provider.dart';
 import '../../../../core/utils/app_logger.dart';
@@ -24,7 +25,7 @@ class MyFridgesScreen extends ConsumerWidget {
       return Scaffold(
         body: Center(
           child: Padding(
-            padding: const EdgeInsets.all(24.0),
+            padding: M3ESpacing.all(M3ESpacing.xl),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -33,18 +34,18 @@ class MyFridgesScreen extends ConsumerWidget {
                   size: 64,
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
-                const SizedBox(height: 24),
+                M3ESpacing.verticalXL,
                 Text(
                   'My Fridges',
                   style: Theme.of(context).textTheme.headlineMedium,
                 ),
-                const SizedBox(height: 16),
+                M3ESpacing.verticalMD,
                 Text(
                   'Subscribe to specific fridges to receive updates on food availability or when fridges need re-stocking or cleaning.',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
-                const SizedBox(height: 8),
+                M3ESpacing.verticalXS,
                 Text(
                   'This option is available for both people looking for food and volunteers.',
                   textAlign: TextAlign.center,
@@ -52,21 +53,19 @@ class MyFridgesScreen extends ConsumerWidget {
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
-                const SizedBox(height: 32),
-                ElevatedButton.icon(
+                M3ESpacing.verticalXXL,
+                FilledButtonM3E(
+                  icon: Icons.login,
                   onPressed: () {
-                    showDialog(
+                    DialogM3E.showCustom(
                       context: context,
-                      builder: (context) => Dialog(
-                        child: Padding(
-                          padding: const EdgeInsets.all(24.0),
-                          child: SignInWidget(),
-                        ),
+                      child: Padding(
+                        padding: M3ESpacing.all(M3ESpacing.xl),
+                        child: SignInWidget(),
                       ),
                     );
                   },
-                  icon: const Icon(Icons.login),
-                  label: const Text('Sign In'),
+                  child: const Text('Sign In'),
                 ),
               ],
             ),

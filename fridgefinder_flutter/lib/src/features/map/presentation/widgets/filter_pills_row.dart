@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:design_system/design_system.dart';
 import '../controllers/filter_condition.dart';
 import '../controllers/map_filter_controller.dart';
 import 'filter_pill_button.dart';
@@ -39,13 +40,13 @@ class FilterPillsRow extends ConsumerWidget {
           height: 48,
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
+            padding: EdgeInsets.symmetric(horizontal: M3ESpacing.sm),
             child: Row(
               children: [
                 // Subscribed pill - FIRST position, only show if authenticated and has subscriptions
                 if (isAuthenticated && hasSubscriptions)
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    padding: EdgeInsets.symmetric(horizontal: M3ESpacing.xxs),
                     child: _buildSubscribedPill(
                       context: context,
                       isSelected: state.subscribedOnly,
@@ -58,7 +59,7 @@ class FilterPillsRow extends ConsumerWidget {
                 // Other filter pills
                 ...FilterCondition.values.map(
                   (condition) => Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    padding: EdgeInsets.symmetric(horizontal: M3ESpacing.xxs),
                     child: FilterPillButton(
                       condition: condition,
                       isSelected: state.selectedConditions.contains(condition),
@@ -92,7 +93,10 @@ class FilterPillsRow extends ConsumerWidget {
     final backgroundColor = color.withValues(alpha: 0.85);
 
     final pillContent = Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
+      padding: EdgeInsets.symmetric(
+        horizontal: M3ESpacing.lg,
+        vertical: M3ESpacing.xxs + 2,
+      ),
       decoration: BoxDecoration(
         border: Border.all(color: borderColor, width: 2.0),
         borderRadius: BorderRadius.circular(18),
@@ -109,7 +113,7 @@ class FilterPillsRow extends ConsumerWidget {
                 size: 18,
                 color: Colors.white,
               ),
-              const SizedBox(width: 6),
+              M3ESpacing.horizontalXS,
               Text(
                 'Subscribed',
                 style: TextStyle(

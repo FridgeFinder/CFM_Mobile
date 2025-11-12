@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:design_system/design_system.dart';
 import '../../map/domain/models/fridge_domain.dart';
 import '../../map/presentation/widgets/fridge_marker.dart';
 import '../../map/presentation/controllers/fridge_list_controller.dart';
@@ -54,9 +55,9 @@ class _FridgeProfileSheetState extends ConsumerState<FridgeProfileSheet>
   @override
   void initState() {
     super.initState();
-    // Initialize animation controller
+    // Initialize animation controller with M3E duration
     _glowController = AnimationController(
-      duration: const Duration(milliseconds: 1500),
+      duration: M3EMotion.extraLong2, // M3E expressive duration
       vsync: this,
     )..repeat(reverse: true);
     _glowAnimation = Tween<double>(begin: 0.3, end: 0.7).animate(

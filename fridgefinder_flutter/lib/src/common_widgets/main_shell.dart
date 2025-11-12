@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:design_system/design_system.dart';
 import './bottom_nav_bar.dart';
 import '../core/providers/auth_provider.dart';
 import '../core/providers/drawer_provider.dart';
@@ -34,7 +35,7 @@ class _MainShellState extends ConsumerState<MainShell> with TickerProviderStateM
     _previousIndex = _currentIndex;
 
     _animationController = AnimationController(
-      duration: const Duration(milliseconds: 500),
+      duration: M3EMotion.medium3, // Use M3E duration
       vsync: this,
     );
 
@@ -47,7 +48,7 @@ class _MainShellState extends ConsumerState<MainShell> with TickerProviderStateM
         );
 
     _drawerAnimationController = AnimationController(
-      duration: const Duration(milliseconds: 300),
+      duration: M3EMotionPatterns.drawerFallback, // Use M3E duration
       vsync: this,
     );
   }
@@ -59,17 +60,18 @@ class _MainShellState extends ConsumerState<MainShell> with TickerProviderStateM
       _previousIndex = _currentIndex;
       _currentIndex = _getIndexForRoute(widget.currentRoute);
 
-      // Determine direction and animate
+      // Determine direction and animate with M3E Shared Axis X pattern
       final isMovingRight = _currentIndex > _previousIndex;
+      // M3E uses 3% offset for shared axis transitions
       final beginOffset = isMovingRight
-          ? const Offset(1.0, 0.0) // Enter from right
-          : const Offset(-1.0, 0.0); // Enter from left
+          ? const Offset(0.03, 0.0) // Enter from right (3%)
+          : const Offset(-0.03, 0.0); // Enter from left (3%)
 
       _slideAnimation = Tween<Offset>(begin: beginOffset, end: Offset.zero)
           .animate(
             CurvedAnimation(
               parent: _animationController,
-              curve: Curves.easeInOutCubic,
+              curve: M3EMotion.emphasizedDecelerate, // M3E emphasized curve
             ),
           );
 

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:design_system/design_system.dart';
 import '../../../core/providers/theme_provider.dart';
 import '../../../core/providers/environment_provider.dart';
 import '../../../core/providers/location_provider.dart';
@@ -26,7 +27,7 @@ class ProfileScreen extends ConsumerWidget {
     return Scaffold(
       body: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: M3ESpacing.all(M3ESpacing.md),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -38,39 +39,34 @@ class ProfileScreen extends ConsumerWidget {
                   final userPointsAsync = ref.watch(userPointsProvider);
 
                   if (!isAuthenticated) {
-                    return Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Text(
-                              'Account',
-                              style: Theme.of(context).textTheme.titleLarge,
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'Sign in to subscribe to fridges and track your volunteer points',
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            ),
-                            const SizedBox(height: 16),
-                            ElevatedButton.icon(
-                              onPressed: () {
-                                showDialog(
-                                  context: context,
-                                  builder: (context) => Dialog(
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(24.0),
-                                      child: SignInWidget(),
-                                    ),
-                                  ),
-                                );
-                              },
-                              icon: const Icon(Icons.login),
-                              label: const Text('Sign In'),
-                            ),
-                          ],
-                        ),
+                    return CardM3E(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            'Account',
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                          M3ESpacing.verticalMD,
+                          Text(
+                            'Sign in to subscribe to fridges and track your volunteer points',
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                          M3ESpacing.verticalMD,
+                          FilledButtonM3E(
+                            icon: Icons.login,
+                            onPressed: () {
+                              DialogM3E.showCustom(
+                                context: context,
+                                child: Padding(
+                                  padding: M3ESpacing.all(M3ESpacing.xl),
+                                  child: SignInWidget(),
+                                ),
+                              );
+                            },
+                            child: const Text('Sign In'),
+                          ),
+                        ],
                       ),
                     );
                   }

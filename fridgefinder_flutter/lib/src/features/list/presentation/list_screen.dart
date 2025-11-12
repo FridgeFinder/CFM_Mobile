@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:design_system/design_system.dart';
 import '../../map/domain/models/fridge_domain.dart';
 import '../../map/presentation/controllers/fridge_list_controller.dart';
 import '../../map/presentation/controllers/map_filter_controller.dart';
@@ -21,7 +22,9 @@ class ListScreen extends ConsumerStatefulWidget {
   ConsumerState<ListScreen> createState() => _ListScreenState();
 }
 
-class _ListScreenState extends ConsumerState<ListScreen> {
+class _ListScreenState extends ConsumerState<ListScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _listAnimationController;
   late TextEditingController _searchController;
   late FocusNode _searchFocusNode;
   LatLng? _selectedLocation;
@@ -33,12 +36,22 @@ class _ListScreenState extends ConsumerState<ListScreen> {
     super.initState();
     _searchController = TextEditingController();
     _searchFocusNode = FocusNode();
+
+    // Initialize animation controller for list entrance
+    _listAnimationController = AnimationController(
+      duration: M3EMotion.long2,
+      vsync: this,
+    );
+
+    // Start animation on mount
+    _listAnimationController.forward();
   }
 
   @override
   void dispose() {
     _searchController.dispose();
     _searchFocusNode.dispose();
+    _listAnimationController.dispose();
     super.dispose();
   }
 
@@ -211,7 +224,7 @@ class _ListScreenState extends ConsumerState<ListScreen> {
 
                   // Search Bar
                   Padding(
-                    padding: const EdgeInsets.all(12.0),
+                    padding: M3ESpacing.all(M3ESpacing.sm),
                     child: TextField(
                       controller: _searchController,
                       focusNode: _searchFocusNode,
@@ -246,11 +259,16 @@ class _ListScreenState extends ConsumerState<ListScreen> {
                   // Location pill (shown when location is selected)
                   if (_locationName != null)
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                      padding: EdgeInsets.fromLTRB(
+                        M3ESpacing.sm,
+                        0,
+                        M3ESpacing.sm,
+                        M3ESpacing.sm,
+                      ),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: M3ESpacing.sm,
+                          vertical: M3ESpacing.xs,
                         ),
                         decoration: BoxDecoration(
                           color: Colors.blue.withValues(alpha: 0.15),
@@ -324,20 +342,27 @@ class _ListScreenState extends ConsumerState<ListScreen> {
                             ),
                           )
                         : ListView.builder(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            padding: EdgeInsets.symmetric(horizontal: M3ESpacing.md),
                             itemCount: filtered.length,
                             itemBuilder: (context, index) {
                               final fridgeWithDistance = filtered[index];
                               // Use the pre-computed subscribedFridgeIds for green glow
-                              return FridgeCard(
-                                fridge: fridgeWithDistance.fridge,
-                                distanceKm: fridgeWithDistance.distanceKm,
-                                isSubscribed: subscribedFridgeIds
-                                    .contains(fridgeWithDistance.fridge.id),
-                                onTap: () => _showFridgeProfile(
-                                  context,
-                                  ref,
-                                  fridgeWithDistance.fridge,
+
+                              // Wrap each card with staggered entrance animation
+                              return M3ETransitions.listItemEntrance(
+                                animation: _listAnimationController,
+                                index: index,
+                                totalItems: filtered.length.clamp(0, 10), // Limit stagger to first 10
+                                child: FridgeCard(
+                                  fridge: fridgeWithDistance.fridge,
+                                  distanceKm: fridgeWithDistance.distanceKm,
+                                  isSubscribed: subscribedFridgeIds
+                                      .contains(fridgeWithDistance.fridge.id),
+                                  onTap: () => _showFridgeProfile(
+                                    context,
+                                    ref,
+                                    fridgeWithDistance.fridge,
+                                  ),
                                 ),
                               );
                             },
