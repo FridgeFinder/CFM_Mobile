@@ -3,7 +3,6 @@ import 'dart:math';
 /// Get a random loading message related to fridges and food
 String getRandomLoadingMessage() {
   final messages = [
-    'Loading...',
     'Defrosting...',
     'Thawing...',
     'Chilling...',

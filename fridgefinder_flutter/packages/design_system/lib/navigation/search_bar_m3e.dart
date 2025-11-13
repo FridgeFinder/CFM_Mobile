@@ -103,11 +103,13 @@ class SearchBarM3E extends StatefulWidget {
 }
 
 class _SearchBarM3EState extends State<SearchBarM3E>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   // Animation controllers
   late AnimationController _expandController;
+  late AnimationController _iconMorphController;
   late Animation<double> _expandAnimation;
   late Animation<double> _iconSlideAnimation;
+  late Animation<double> _iconScaleAnimation;
   late Animation<double> _clearButtonAnimation;
 
   // Text controller
@@ -141,7 +143,7 @@ class _SearchBarM3EState extends State<SearchBarM3E>
     _focusNode = FocusNode();
     _focusNode.addListener(_onFocusChanged);
 
-    // Initialize animation controller
+    // Initialize animation controllers
     _expandController = AnimationController(
       vsync: this,
       duration: M3EMotion.getDuration(
@@ -150,6 +152,11 @@ class _SearchBarM3EState extends State<SearchBarM3E>
       reverseDuration: M3EMotion.getDuration(
         M3EMotion.medium3,
       ), // 350ms for smoother collapse
+    );
+
+    _iconMorphController = AnimationController(
+      vsync: this,
+      duration: M3EMotion.getDuration(M3EMotion.medium3),
     );
 
     // Expand animation (for width/shape changes)
@@ -164,6 +171,24 @@ class _SearchBarM3EState extends State<SearchBarM3E>
       begin: 0.0,
       end: -8.0,
     ).animate(_expandAnimation);
+
+    // Icon scale/morph animation
+    _iconScaleAnimation = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween<double>(
+          begin: 1.0,
+          end: 1.2,
+        ).chain(CurveTween(curve: M3EMotion.expressiveFastOvershoot)),
+        weight: 50.0,
+      ),
+      TweenSequenceItem(
+        tween: Tween<double>(
+          begin: 1.2,
+          end: 1.0,
+        ).chain(CurveTween(curve: M3EMotion.emphasizedDecelerate)),
+        weight: 50.0,
+      ),
+    ]).animate(_iconMorphController);
 
     // Clear button fade animation
     _clearButtonAnimation = CurvedAnimation(
@@ -197,6 +222,7 @@ class _SearchBarM3EState extends State<SearchBarM3E>
     _focusNode.removeListener(_onFocusChanged);
     _focusNode.dispose();
     _expandController.dispose();
+    _iconMorphController.dispose();
     super.dispose();
   }
 
@@ -223,6 +249,7 @@ class _SearchBarM3EState extends State<SearchBarM3E>
         _isExpanded = true;
       });
       _expandController.forward();
+      _iconMorphController.forward(); // Trigger icon morph animation
     }
   }
 
@@ -290,21 +317,27 @@ class _SearchBarM3EState extends State<SearchBarM3E>
                 borderRadius: BorderRadius.circular(28.0),
                 child: Row(
                   children: [
-                    // Leading icon with slide animation
+                    // Leading icon with slide and morph animations
                     AnimatedBuilder(
-                      animation: _iconSlideAnimation,
+                      animation: Listenable.merge([
+                        _iconSlideAnimation,
+                        _iconScaleAnimation,
+                      ]),
                       builder: (context, child) {
                         return Transform.translate(
                           offset: Offset(_iconSlideAnimation.value, 0),
-                          child: Padding(
-                            padding: const EdgeInsets.only(
-                              left: M3ESpacing.md,
-                              right: M3ESpacing.xs,
-                            ),
-                            child: Icon(
-                              widget.leadingIcon ?? Icons.search,
-                              size: 24.0,
-                              color: colorScheme.onSurfaceVariant,
+                          child: Transform.scale(
+                            scale: _iconScaleAnimation.value,
+                            child: Padding(
+                              padding: const EdgeInsets.only(
+                                left: M3ESpacing.md,
+                                right: M3ESpacing.xs,
+                              ),
+                              child: Icon(
+                                widget.leadingIcon ?? Icons.search,
+                                size: 24.0,
+                                color: colorScheme.onSurfaceVariant,
+                              ),
                             ),
                           ),
                         );
@@ -542,11 +575,14 @@ class SearchBarWithSuggestionsM3E extends StatefulWidget {
 }
 
 class _SearchBarWithSuggestionsM3EState
-    extends State<SearchBarWithSuggestionsM3E> {
+    extends State<SearchBarWithSuggestionsM3E>
+    with TickerProviderStateMixin {
   late TextEditingController _controller;
   bool _isInternalController = false;
   bool _showSuggestions = false;
   List<String> _filteredSuggestions = [];
+  late AnimationController _staggerController;
+  static const Duration _staggerDelay = Duration(milliseconds: 30);
 
   @override
   void initState() {
@@ -560,6 +596,11 @@ class _SearchBarWithSuggestionsM3EState
     }
 
     _controller.addListener(_onTextChanged);
+
+    _staggerController = AnimationController(
+      vsync: this,
+      duration: M3EMotion.getDuration(M3EMotion.medium4),
+    );
   }
 
   @override
@@ -568,6 +609,7 @@ class _SearchBarWithSuggestionsM3EState
     if (_isInternalController) {
       _controller.dispose();
     }
+    _staggerController.dispose();
     super.dispose();
   }
 
@@ -579,6 +621,7 @@ class _SearchBarWithSuggestionsM3EState
         _showSuggestions = false;
         _filteredSuggestions = [];
       });
+      _staggerController.reset();
       return;
     }
 
@@ -590,6 +633,13 @@ class _SearchBarWithSuggestionsM3EState
       _showSuggestions = filtered.isNotEmpty;
       _filteredSuggestions = filtered;
     });
+
+    if (filtered.isNotEmpty) {
+      _staggerController.reset();
+      _staggerController.forward();
+    } else {
+      _staggerController.reset();
+    }
 
     widget.onChanged?.call(_controller.text);
   }
@@ -631,22 +681,48 @@ class _SearchBarWithSuggestionsM3EState
               itemCount: _filteredSuggestions.length,
               itemBuilder: (context, index) {
                 final suggestion = _filteredSuggestions[index];
+                final delay = index * _staggerDelay.inMilliseconds;
+                final animation = CurvedAnimation(
+                  parent: _staggerController,
+                  curve: Interval(
+                    (delay / _staggerController.duration!.inMilliseconds).clamp(
+                      0.0,
+                      1.0,
+                    ),
+                    1.0,
+                    curve: M3EMotion.emphasizedDecelerate,
+                  ),
+                );
 
+                Widget suggestionWidget;
                 if (widget.suggestionBuilder != null) {
-                  return InkWell(
-                    onTap: () => _handleSuggestionTap(suggestion),
-                    child: widget.suggestionBuilder!(context, suggestion),
+                  suggestionWidget = widget.suggestionBuilder!(
+                    context,
+                    suggestion,
+                  );
+                } else {
+                  suggestionWidget = ListTile(
+                    leading: Icon(
+                      Icons.search,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                    title: Text(suggestion),
+                    dense: true,
                   );
                 }
 
-                return ListTile(
-                  leading: Icon(
-                    Icons.search,
-                    color: colorScheme.onSurfaceVariant,
+                return FadeTransition(
+                  opacity: animation,
+                  child: SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(0, -0.1),
+                      end: Offset.zero,
+                    ).animate(animation),
+                    child: InkWell(
+                      onTap: () => _handleSuggestionTap(suggestion),
+                      child: suggestionWidget,
+                    ),
                   ),
-                  title: Text(suggestion),
-                  onTap: () => _handleSuggestionTap(suggestion),
-                  dense: true,
                 );
               },
             ),

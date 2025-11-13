@@ -324,8 +324,8 @@ class ProgressIndicatorWithLabelM3E extends StatelessWidget {
         SizedBox(height: gap),
         // Animated label (respects reduce motion)
         TweenAnimationBuilder<double>(
-          duration: M3EMotion.getDurationReduced(M3EMotion.medium2),
-          curve: M3EMotion.getCurve(M3EMotion.standard),
+          duration: M3EMotion.getDurationReduced(M3EMotion.medium4), // Smoother animation
+          curve: M3EMotion.getCurve(M3EMotion.emphasizedDecelerate), // Smoother curve
           tween: Tween<double>(begin: 0, end: value),
           builder: (context, animatedValue, child) {
             return Text(
@@ -357,52 +357,88 @@ class SkeletonLoader extends StatefulWidget {
 }
 
 class _SkeletonLoaderState extends State<SkeletonLoader>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _animation;
+    with TickerProviderStateMixin {
+  late AnimationController _shimmerController;
+  late AnimationController _pulseController;
+  late Animation<double> _shimmerAnimation;
+  late Animation<double> _pulseAnimation;
 
   @override
   void initState() {
     super.initState();
-    // Respect reduce motion setting for skeleton loader animation
-    _controller = AnimationController(
+    // Shimmer animation - smooth gradient sweep
+    _shimmerController = AnimationController(
       duration: M3EMotion.getDurationReduced(
         const Duration(milliseconds: 1500),
-        percentageWhenReduced: 0.5, // 50% of original = 750ms minimum
+        percentageWhenReduced: 0.5,
+      ),
+      vsync: this,
+    )..repeat();
+
+    _shimmerAnimation = Tween<double>(
+      begin: -1.0,
+      end: 2.0,
+    ).animate(CurvedAnimation(
+      parent: _shimmerController,
+      curve: M3EMotion.getCurve(Curves.easeInOut),
+    ));
+
+    // Pulse animation - breathing effect
+    _pulseController = AnimationController(
+      duration: M3EMotion.getDurationReduced(
+        const Duration(milliseconds: 2000),
+        percentageWhenReduced: 0.5,
       ),
       vsync: this,
     )..repeat(reverse: true);
 
-    _animation = Tween<double>(
+    _pulseAnimation = Tween<double>(
       begin: 0.3,
       end: 0.7,
     ).animate(CurvedAnimation(
-      parent: _controller,
+      parent: _pulseController,
       curve: M3EMotion.getCurve(Curves.easeInOut),
     ));
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _shimmerController.dispose();
+    _pulseController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final baseColor = colorScheme.surfaceContainerHighest;
 
     return AnimatedBuilder(
-      animation: _animation,
+      animation: Listenable.merge([_shimmerAnimation, _pulseAnimation]),
       builder: (context, child) {
         return Container(
           width: widget.width,
           height: widget.height ?? 20,
           decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerHighest.withValues(
-              alpha: _animation.value,
-            ),
             borderRadius: widget.borderRadius ?? BorderRadius.circular(4),
+            gradient: LinearGradient(
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+              stops: [
+                0.0,
+                (_shimmerAnimation.value.clamp(0.0, 1.0) - 0.3).clamp(0.0, 1.0),
+                _shimmerAnimation.value.clamp(0.0, 1.0),
+                (_shimmerAnimation.value.clamp(0.0, 1.0) + 0.3).clamp(0.0, 1.0),
+                1.0,
+              ],
+              colors: [
+                baseColor.withValues(alpha: _pulseAnimation.value),
+                baseColor.withValues(alpha: _pulseAnimation.value * 0.5),
+                baseColor.withValues(alpha: (_pulseAnimation.value * 1.2).clamp(0.0, 1.0)),
+                baseColor.withValues(alpha: _pulseAnimation.value * 0.5),
+                baseColor.withValues(alpha: _pulseAnimation.value),
+              ],
+            ),
           ),
         );
       },

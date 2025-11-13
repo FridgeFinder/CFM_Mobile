@@ -58,8 +58,8 @@ class _MenuM3EState extends State<MenuM3E>
   late Animation<double> _fadeAnimation;
   int _focusedIndex = -1;
 
-  static const Duration _cascadeDuration = Duration(milliseconds: 250);
-  static const Duration _itemStaggerDelay = Duration(milliseconds: 30);
+  static const Duration _cascadeDuration = Duration(milliseconds: 400);
+  static const Duration _itemStaggerDelay = Duration(milliseconds: 40);
   static const int _maxStaggerItems = 8;
 
   @override
@@ -67,7 +67,7 @@ class _MenuM3EState extends State<MenuM3E>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: _cascadeDuration,
+      duration: M3EMotion.getDuration(M3EMotion.medium4), // 400ms for smoother cascade
     );
 
     // Cascade animation: scale from anchor point
@@ -172,9 +172,11 @@ class _MenuM3EState extends State<MenuM3E>
                   if (widget.enableStagger && index < _maxStaggerItems) {
                     return TweenAnimationBuilder<double>(
                       tween: Tween(begin: 0.0, end: 1.0),
-                      duration: Duration(
-                        milliseconds: _cascadeDuration.inMilliseconds +
-                            (index * _itemStaggerDelay.inMilliseconds),
+                      duration: M3EMotion.getDuration(
+                        Duration(
+                          milliseconds: _cascadeDuration.inMilliseconds +
+                              (index * _itemStaggerDelay.inMilliseconds),
+                        ),
                       ),
                       curve: M3EMotion.emphasizedDecelerate,
                       child: item.copyWith(
@@ -305,8 +307,6 @@ class _MenuItemM3EState extends State<MenuItemM3E> {
   bool _isHovered = false;
   bool _isPressed = false;
 
-  static const Duration _stateLayerDuration = Duration(milliseconds: 100);
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -341,8 +341,8 @@ class _MenuItemM3EState extends State<MenuItemM3E> {
         onTapCancel: () => setState(() => _isPressed = false),
         onTap: widget.disabled ? null : widget.onTap,
         child: AnimatedContainer(
-          duration: _stateLayerDuration,
-          curve: Curves.linear,
+          duration: M3EMotion.getDuration(M3EMotion.medium3), // Smoother hover transition
+          curve: M3EMotion.emphasizedDecelerate,
           height: widget.height ?? 48.0,
           padding: const EdgeInsets.symmetric(horizontal: 12.0),
           color: backgroundColor,

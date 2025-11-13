@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/elevation.dart';
+import '../theme/motion.dart';
 import '../theme/spacing.dart';
 import '../theme/typography.dart';
 
@@ -645,17 +646,17 @@ class _AnimatedTopAppBarM3EState extends State<AnimatedTopAppBarM3E>
 
     // Initialize animation controller with M3E motion duration
     _elevationController = AnimationController(
-      duration: const Duration(milliseconds: 300),
+      duration: M3EMotion.getDuration(M3EMotion.medium4), // 400ms for smoother transition
       vsync: this,
     );
 
-    // Create elevation animation with M3E gentle spring curve
+    // Create elevation animation with M3E expressive curve
     _elevationAnimation = Tween<double>(
       begin: M3EElevation.appBarDefault,
       end: M3EElevation.appBarScrolled,
     ).animate(CurvedAnimation(
       parent: _elevationController,
-      curve: Curves.easeInOut,
+      curve: M3EMotion.emphasizedDecelerate,
     ));
 
     // Listen to scroll changes

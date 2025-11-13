@@ -18,6 +18,7 @@ export 'theme/shared_element_transitions.dart';
 export 'components/fab_m3e.dart';
 export 'components/buttons_m3e.dart' hide IconButtonM3E;  // Use IconButtonM3E from fab_m3e.dart
 export 'components/button_interactions_m3e.dart';
+export 'components/toggle_icon_button_m3e.dart';
 export 'components/cards_m3e.dart';
 export 'components/dialogs_m3e.dart';
 export 'components/text_fields_m3e.dart';
@@ -33,10 +34,15 @@ export 'components/communication_m3e.dart';
 export 'components/menu_m3e.dart';
 export 'components/accessibility_settings_m3e.dart';
 export 'components/stepper_m3e.dart';
+export 'components/tabs_m3e.dart';
+export 'components/banner_m3e.dart';
+export 'components/empty_state_m3e.dart';
 
 // Navigation
 export 'navigation/navigation_bar_m3e.dart';
 export 'navigation/navigation_bar_enhanced_m3e.dart';
 export 'navigation/navigation_drawer_m3e.dart';
+export 'navigation/navigation_rail_m3e.dart';
 export 'navigation/search_bar_m3e.dart';
 export 'navigation/top_app_bar_m3e.dart';
+export 'navigation/collapsing_app_bar_m3e.dart';

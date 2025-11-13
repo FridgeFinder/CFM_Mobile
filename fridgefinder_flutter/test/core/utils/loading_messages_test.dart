@@ -12,7 +12,6 @@ void main() {
 
       test('returns one of the expected messages', () {
         final expectedMessages = [
-          'Loading...',
           'Defrosting...',
           'Thawing...',
           'Chilling...',
@@ -41,8 +40,11 @@ void main() {
         }
 
         // With 15 possible messages and 50 calls, we should get multiple unique messages
-        expect(messages.length, greaterThanOrEqualTo(3),
-            reason: 'Expected at least 3 different messages out of 50 calls');
+        expect(
+          messages.length,
+          greaterThanOrEqualTo(3),
+          reason: 'Expected at least 3 different messages out of 50 calls',
+        );
       });
 
       test('returns different messages on consecutive calls', () {
@@ -53,9 +55,12 @@ void main() {
         }
 
         final uniqueMessages = messages.toSet();
-        expect(uniqueMessages.length, greaterThan(1),
-            reason:
-                'Expected at least 2 different messages over 10 consecutive calls');
+        expect(
+          uniqueMessages.length,
+          greaterThan(1),
+          reason:
+              'Expected at least 2 different messages over 10 consecutive calls',
+        );
       });
 
       test('messages are all fridge/food related', () {
@@ -87,11 +92,15 @@ void main() {
         // Check that each message contains at least one keyword (case insensitive)
         for (final message in messages) {
           final lowerMessage = message.toLowerCase();
-          final hasKeyword =
-              keywords.any((keyword) => lowerMessage.contains(keyword));
-          expect(hasKeyword, isTrue,
-              reason:
-                  'Message "$message" should contain fridge/food-related keywords');
+          final hasKeyword = keywords.any(
+            (keyword) => lowerMessage.contains(keyword),
+          );
+          expect(
+            hasKeyword,
+            isTrue,
+            reason:
+                'Message "$message" should contain fridge/food-related keywords',
+          );
         }
       });
 
@@ -105,8 +114,10 @@ void main() {
         // Check that each message ends appropriately
         for (final message in messages) {
           expect(
-              message.endsWith('...') || message.endsWith('.'), isTrue,
-              reason: 'Message "$message" should end with ellipsis or period');
+            message.endsWith('...') || message.endsWith('.'),
+            isTrue,
+            reason: 'Message "$message" should end with ellipsis or period',
+          );
         }
       });
 
@@ -127,10 +138,16 @@ void main() {
         }
 
         for (final message in messages) {
-          expect(message.length, greaterThanOrEqualTo(5),
-              reason: 'Message "$message" is too short');
-          expect(message.length, lessThanOrEqualTo(50),
-              reason: 'Message "$message" is too long');
+          expect(
+            message.length,
+            greaterThanOrEqualTo(5),
+            reason: 'Message "$message" is too short',
+          );
+          expect(
+            message.length,
+            lessThanOrEqualTo(50),
+            reason: 'Message "$message" is too long',
+          );
         }
       });
 
@@ -146,17 +163,26 @@ void main() {
         // With 15 messages and 1500 calls, we expect ~100 per message
         // Allow for variance: minimum 50, maximum 150
         for (final entry in messageCounts.entries) {
-          expect(entry.value, greaterThanOrEqualTo(50),
-              reason:
-                  'Message "${entry.key}" appears too infrequently (${entry.value} times)');
-          expect(entry.value, lessThanOrEqualTo(150),
-              reason:
-                  'Message "${entry.key}" appears too frequently (${entry.value} times)');
+          expect(
+            entry.value,
+            greaterThanOrEqualTo(50),
+            reason:
+                'Message "${entry.key}" appears too infrequently (${entry.value} times)',
+          );
+          expect(
+            entry.value,
+            lessThanOrEqualTo(150),
+            reason:
+                'Message "${entry.key}" appears too frequently (${entry.value} times)',
+          );
         }
 
         // Verify we got all 15 expected messages
-        expect(messageCounts.length, equals(15),
-            reason: 'Should have all 15 different messages');
+        expect(
+          messageCounts.length,
+          equals(15),
+          reason: 'Should have all 15 different messages',
+        );
       });
     });
   });

@@ -102,10 +102,18 @@ class _BadgeM3EState extends State<BadgeM3E>
       vsync: this,
     );
 
-    _scaleAnimation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.elasticOut,
-    );
+    _scaleAnimation = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween<double>(begin: 0.0, end: 1.2)
+            .chain(CurveTween(curve: M3EMotion.expressiveFastOvershoot)),
+        weight: 40.0,
+      ),
+      TweenSequenceItem(
+        tween: Tween<double>(begin: 1.2, end: 1.0)
+            .chain(CurveTween(curve: M3EMotion.emphasizedDecelerate)),
+        weight: 60.0,
+      ),
+    ]).animate(_controller);
 
     _fadeAnimation = CurvedAnimation(
       parent: _controller,
@@ -133,7 +141,7 @@ class _BadgeM3EState extends State<BadgeM3E>
       }
     }
 
-    // Animate count change
+    // Animate count change with pulse
     if (widget.count != _previousCount && widget.count != null) {
       _animateCountChange();
       _previousCount = widget.count;
@@ -141,9 +149,15 @@ class _BadgeM3EState extends State<BadgeM3E>
   }
 
   void _animateCountChange() {
-    _controller
-      ..reset()
-      ..forward();
+    // Pulse animation: scale up then back down
+    _controller.reset();
+    _controller.forward();
+    // Add a small pulse after initial animation completes
+    Future.delayed(M3EMotion.medium3, () {
+      if (mounted) {
+        _controller.forward(from: 0.8);
+      }
+    });
   }
 
   @override
