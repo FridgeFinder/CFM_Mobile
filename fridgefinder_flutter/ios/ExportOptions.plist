@@ -9,7 +9,7 @@
 	<key>provisioningProfiles</key>
 	<dict>
 		<key>com.fridgefinder.fridgefinderFlutterApp</key>
-		<string>756a6e0a-cfa7-4161-a9e4-12b98286bfbc</string>
+		<string>f4d7efba-e172-4d06-8eed-c959bcb0109d</string>
 	</dict>
 	<key>signingStyle</key>
 	<string>manual</string>

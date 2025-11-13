@@ -1,7 +1,7 @@
 name: fridgefinder_app
 description: FridgeFinder mobile app for organizers
 publish_to: "none"
-version: 1.0.0+10
+version: 1.0.0+11
 
 environment:
   sdk: ">=3.8.0 <4.0.0"
