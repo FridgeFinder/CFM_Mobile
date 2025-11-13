@@ -548,7 +548,10 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     initialCenter: initialCenter,
                     initialZoom: 13.0,
                     maxZoom: 18.0,
-                    minZoom: 10.0,
+                    minZoom: 3.0,
+                    interactionOptions: const InteractionOptions(
+                      rotationThreshold: 40.0, // Increase from default (20) to reduce rotation sensitivity
+                    ),
                     onTap: (tapPosition, latLng) {
                       // Unfocus search when tapping on the map
                       FocusScope.of(context).unfocus();
@@ -616,7 +619,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                         );
                         return MarkerClusterLayerWidget(
                           options: MarkerClusterLayerOptions(
-                            maxClusterRadius: 40,
+                            maxClusterRadius: 20,
                             size: const Size(50, 50),
                             markers: () {
                               // Create set of subscribed fridge IDs for O(1) lookup

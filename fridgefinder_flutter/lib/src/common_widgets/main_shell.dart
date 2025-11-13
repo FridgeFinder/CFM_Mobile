@@ -117,7 +117,7 @@ class _MainShellState extends ConsumerState<MainShell>
       children: [
         Scaffold(
           appBar: PreferredSize(
-            preferredSize: const Size.fromHeight(80),
+            preferredSize: const Size.fromHeight(52),
             child: Container(
               decoration: BoxDecoration(
                 // M3E-compliant gradient using tonal palette values

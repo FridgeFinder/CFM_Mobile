@@ -249,3 +249,53 @@ final class IsAuthenticatedProvider
 }
 
 String _$isAuthenticatedHash() => r'5d11c591acebeb1c703d1b318d396598f404a230';
+
+/// Provider for checking if profile is complete
+/// Profile is complete if:
+/// - Username is set (non-empty)
+/// - isVolunteer is set (always required)
+/// - zipCode is set if user is a volunteer
+
+@ProviderFor(isProfileComplete)
+const isProfileCompleteProvider = IsProfileCompleteProvider._();
+
+/// Provider for checking if profile is complete
+/// Profile is complete if:
+/// - Username is set (non-empty)
+/// - isVolunteer is set (always required)
+/// - zipCode is set if user is a volunteer
+
+final class IsProfileCompleteProvider
+    extends $FunctionalProvider<AsyncValue<bool>, bool, FutureOr<bool>>
+    with $FutureModifier<bool>, $FutureProvider<bool> {
+  /// Provider for checking if profile is complete
+  /// Profile is complete if:
+  /// - Username is set (non-empty)
+  /// - isVolunteer is set (always required)
+  /// - zipCode is set if user is a volunteer
+  const IsProfileCompleteProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'isProfileCompleteProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$isProfileCompleteHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<bool> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<bool> create(Ref ref) {
+    return isProfileComplete(ref);
+  }
+}
+
+String _$isProfileCompleteHash() => r'36c32e8d44e6dc458f42a659918780793e359f06';

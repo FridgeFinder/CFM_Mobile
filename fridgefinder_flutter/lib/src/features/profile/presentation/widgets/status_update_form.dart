@@ -22,7 +22,7 @@ class StatusUpdateForm extends ConsumerStatefulWidget {
 class _StatusUpdateFormState extends ConsumerState<StatusUpdateForm> {
   bool _isSubmitting = false;
   int _currentStep = 0;
-  late FridgeCondition _selectedCondition;
+  FridgeCondition? _selectedCondition;
   late double _foodPercentage;
   final _notesController = TextEditingController();
   final _imagePicker = ImagePicker();
@@ -31,12 +31,8 @@ class _StatusUpdateFormState extends ConsumerState<StatusUpdateForm> {
   @override
   void initState() {
     super.initState();
-    final currentCondition = widget.fridge.latestFridgeReport?.condition;
-    // Default to 'good', and skip ghost condition if somehow present
-    _selectedCondition =
-        (currentCondition == null || currentCondition == FridgeCondition.ghost)
-        ? FridgeCondition.good
-        : currentCondition;
+    // Condition is now optional - don't set a default
+    _selectedCondition = null;
     _foodPercentage = widget.fridge.latestFridgeReport?.foodPercentage ?? 0.5;
   }
 
@@ -88,10 +84,16 @@ class _StatusUpdateFormState extends ConsumerState<StatusUpdateForm> {
         photoBytes = await _selectedImage!.readAsBytes();
       }
 
+      // Use current condition as default if user didn't select one
+      // This keeps the field optional in UI but satisfies API requirements
+      final conditionToSubmit = _selectedCondition ??
+          widget.fridge.latestFridgeReport?.condition ??
+          FridgeCondition.good;
+
       // Submit report with optional photo bytes (will be base64 encoded)
       await repository.submitFridgeReport(
         widget.fridge.id,
-        _selectedCondition,
+        conditionToSubmit,
         _foodPercentage,
         _notesController.text.trim().isEmpty
             ? null
@@ -113,7 +115,7 @@ class _StatusUpdateFormState extends ConsumerState<StatusUpdateForm> {
         final pointsManager = ref.read(pointsManagerProvider.notifier);
         await pointsManager.awardPointsForStatusReport(
           wasDirty: previousCondition == FridgeCondition.dirty,
-          isNowGood: _selectedCondition == FridgeCondition.good,
+          isNowGood: conditionToSubmit == FridgeCondition.good,
           previousFoodPercentage: previousFoodPercentage,
           newFoodPercentage: _foodPercentage,
           isVolunteer: true,
@@ -233,20 +235,18 @@ class _StatusUpdateFormState extends ConsumerState<StatusUpdateForm> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Fridge Condition',
+            'Fridge Condition (Optional)',
             style: M3ETypography.labelLarge,
           ),
           SizedBox(height: M3ESpacing.xs),
           ...FridgeCondition.values
               .where((condition) => condition != FridgeCondition.ghost)
               .map(
-                (condition) => RadioM3E<FridgeCondition>(
+                (condition) => RadioM3E<FridgeCondition?>(
                   value: condition,
                   groupValue: _selectedCondition,
                   onChanged: (FridgeCondition? value) {
-                    if (value != null) {
-                      setState(() => _selectedCondition = value);
-                    }
+                    setState(() => _selectedCondition = value);
                   },
                   label: _conditionLabel(condition),
                 ),
@@ -409,7 +409,7 @@ class _StatusUpdateFormState extends ConsumerState<StatusUpdateForm> {
       case FridgeCondition.dirty:
         return 'Dirty - Needs Cleaning';
       case FridgeCondition.outOfOrder:
-        return 'Out of Order';
+        return 'Needs Repairs';
       case FridgeCondition
           .ghost: // Ghost fridges are filtered from API response
         return 'Ghost - No Longer There'; // Kept for exhaustive switch, but ghost fridges are filtered out

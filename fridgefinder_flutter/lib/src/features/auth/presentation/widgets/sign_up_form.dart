@@ -179,10 +179,12 @@ class _SignUpFormState extends ConsumerState<SignUpForm>
 
   @override
   Widget build(BuildContext context) {
-    return FadeTransition(
-      opacity: _fadeAnimation,
-      child: IntrinsicHeight(
-        child: StepperM3E(
+    return PopScope(
+      canPop: false, // Prevent back navigation during profile setup
+      child: FadeTransition(
+        opacity: _fadeAnimation,
+        child: IntrinsicHeight(
+          child: StepperM3E(
           currentStep: _currentStep,
           type: StepperType.horizontal,
           steps: [
@@ -206,6 +208,7 @@ class _SignUpFormState extends ConsumerState<SignUpForm>
           },
           onStepContinue: _nextStep,
           onStepCancel: _previousStep,
+          ),
         ),
       ),
     );

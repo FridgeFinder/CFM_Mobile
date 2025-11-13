@@ -28,7 +28,7 @@ enum FilterCondition {
       case FilterCondition.needsCleaning:
         return 'Needs Cleaning';
       case FilterCondition.needsServicing:
-        return 'Needs Servicing';
+        return 'Needs Repairs';
       case FilterCondition.notAtLocation:
         return 'Not at Location';
     }

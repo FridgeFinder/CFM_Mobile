@@ -86,3 +86,45 @@ bool isAuthenticated(Ref ref) {
   return isAuth;
 }
 
+/// Provider for checking if profile is complete
+/// Profile is complete if:
+/// - Username is set (non-empty)
+/// - isVolunteer is set (always required)
+/// - zipCode is set if user is a volunteer
+@riverpod
+Future<bool> isProfileComplete(Ref ref) async {
+  final profileAsync = ref.watch(userProfileProvider);
+
+  return profileAsync.when(
+    data: (profile) {
+      if (profile == null) {
+        logger.d('[AuthProvider] Profile is null, incomplete');
+        return false;
+      }
+
+      // Check if username is set
+      if (profile.username.isEmpty) {
+        logger.d('[AuthProvider] Username is empty, profile incomplete');
+        return false;
+      }
+
+      // Check if zipCode is set when user is a volunteer
+      if (profile.isVolunteer && (profile.zipCode == null || profile.zipCode!.isEmpty)) {
+        logger.d('[AuthProvider] Volunteer without zipCode, profile incomplete');
+        return false;
+      }
+
+      logger.d('[AuthProvider] Profile is complete');
+      return true;
+    },
+    loading: () {
+      logger.d('[AuthProvider] Profile loading, treating as incomplete');
+      return false;
+    },
+    error: (_, _) {
+      logger.w('[AuthProvider] Error loading profile, treating as incomplete');
+      return false;
+    },
+  );
+}
+

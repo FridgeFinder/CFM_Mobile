@@ -109,9 +109,6 @@ class _FridgeProfileSheetState extends ConsumerState<FridgeProfileSheet>
     final fridgeAsync = ref.watch(singleFridgeProvider(widget.fridge.id));
     final fridge = fridgeAsync.whenOrNull(data: (f) => f) ?? widget.fridge;
 
-    // Determine which photo to show - prioritize report photo if available
-    final photoUrl = fridge.latestFridgeReport?.photoUrl ?? fridge.photoUrl;
-
     // Calculate distance if user location is available
     double? distance;
     if (userLocationAsync.value != null) {
@@ -506,24 +503,21 @@ class _FridgeProfileSheetState extends ConsumerState<FridgeProfileSheet>
                     SizedBox(
                       height: M3ESpacing.xl,
                     ), // 24dp between header and content
-                    // Fridge Photo - Show report photo if available, otherwise main photo
-                    if (photoUrl != null)
+                    // Fridge Photo - Show main fridge photo
+                    if (fridge.photoUrl != null)
                       _buildSection(
                         context: context,
                         icon: Icons.image,
-                        title: 'Photo',
+                        title: 'Fridge Photo',
                         child: Center(
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(12),
                             child: Image.network(
-                              photoUrl,
+                              fridge.photoUrl!,
                               width: double.infinity,
                               height: 250,
                               fit: BoxFit.cover,
-                              // Use report timestamp as key to force refresh when report updates
-                              key: ValueKey(
-                                '${photoUrl}_${fridge.latestFridgeReport?.timestamp ?? fridge.latestFridgeReport?.epochTimestamp ?? ''}',
-                              ),
+                              key: ValueKey('fridge_photo_${fridge.photoUrl}'),
                               errorBuilder: (context, error, stackTrace) {
                                 return Container(
                                   width: double.infinity,
@@ -628,7 +622,7 @@ class _FridgeProfileSheetState extends ConsumerState<FridgeProfileSheet>
                                       ),
                                     ),
                                     Text(
-                                      '${fridge.latestFridgeReport!.foodPercentageInt}%',
+                                      fridge.foodLevelText,
                                       style: M3ETypography.bodyLarge.copyWith(
                                         fontWeight: FontWeight.bold,
                                       ),
@@ -668,6 +662,64 @@ class _FridgeProfileSheetState extends ConsumerState<FridgeProfileSheet>
                                     ).colorScheme.onSurfaceVariant,
                                   ),
                                 ),
+                              ),
+                            // Report Photo - Show separately under report
+                            if (fridge.latestFridgeReport!.photoUrl != null)
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    'Report Photo',
+                                    style: M3ETypography.bodySmall.copyWith(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Image.network(
+                                      fridge.latestFridgeReport!.photoUrl!,
+                                      width: double.infinity,
+                                      height: 200,
+                                      fit: BoxFit.cover,
+                                      key: ValueKey(
+                                        'report_photo_${fridge.latestFridgeReport!.photoUrl}_${fridge.latestFridgeReport!.timestamp ?? fridge.latestFridgeReport!.epochTimestamp ?? ''}',
+                                      ),
+                                      errorBuilder: (context, error, stackTrace) {
+                                        return Container(
+                                          width: double.infinity,
+                                          height: 200,
+                                          decoration: BoxDecoration(
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.surfaceContainerHighest,
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          child: Column(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              Icon(
+                                                Icons.image_not_supported,
+                                                size: 48,
+                                                color: Theme.of(
+                                                  context,
+                                                ).colorScheme.onSurfaceVariant,
+                                              ),
+                                              const SizedBox(height: 8),
+                                              Text(
+                                                'Photo unavailable',
+                                                style: M3ETypography.bodySmall,
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ],
                               ),
                           ],
                         ),

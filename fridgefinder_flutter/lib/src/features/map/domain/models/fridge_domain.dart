@@ -251,7 +251,7 @@ abstract class FridgeDomain with _$FridgeDomain {
       case FridgeCondition.dirty:
         return 'Dirty';
       case FridgeCondition.outOfOrder:
-        return 'Out of Order';
+        return 'Needs Repairs';
       case FridgeCondition
           .ghost: // Ghost fridges are filtered from API response
         return 'Ghost Fridge'; // Kept for exhaustive switch, but ghost fridges are filtered out
@@ -265,10 +265,11 @@ abstract class FridgeDomain with _$FridgeDomain {
     final report = latestFridgeReport;
     if (report == null) return 'Unknown';
 
-    final percentage = (report.foodPercentage * 100).round();
-    if (percentage > 75) return 'Full ($percentage%)';
-    if (percentage > 50) return 'Well Stocked ($percentage%)';
-    if (percentage > 25) return 'Low ($percentage%)';
-    return 'Very Low ($percentage%)';
+    // Return simple label based on food level
+    // API values: 0 = empty, 1 = few items, 2 = many items, 3 = full
+    if (report.foodPercentage >= 0.75) return 'Full';
+    if (report.foodPercentage >= 0.5) return 'Many Items';
+    if (report.foodPercentage > 0) return 'Few Items';
+    return 'Empty';
   }
 }

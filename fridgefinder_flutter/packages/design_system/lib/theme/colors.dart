@@ -7,15 +7,15 @@ import 'package:flutter/material.dart';
 class M3EColors {
   M3EColors._();
 
-  // Primary palette - Vibrant M3E Electric Blue (#5B9FFF)
-  // Enhanced from original #88B3FF with higher saturation for M3 Expressive
+  // Primary palette - Custom Light Blue (#88B3FF)
+  // Standard app blue color for consistent branding
   static const Color primaryTone0 = Color(0xFF000000);
   static const Color primaryTone10 = Color(0xFF001D3A);
   static const Color primaryTone20 = Color(0xFF003062);
   static const Color primaryTone30 = Color(0xFF00468A);
   static const Color primaryTone40 = Color(0xFF2E6BC9);
   static const Color primaryTone50 = Color(0xFF4882E6);
-  static const Color primaryTone60 = Color(0xFF5B9FFF); // New vibrant primary!
+  static const Color primaryTone60 = Color(0xFF88B3FF); // Custom light blue primary
   static const Color primaryTone70 = Color(0xFF7BB4FF);
   static const Color primaryTone80 = Color(0xFF9BC7FF);
   static const Color primaryTone90 = Color(0xFFD0E4FF);
@@ -209,8 +209,8 @@ class M3EColors {
   static const Color alertTone99 = Color(0xFFFFFBF9);
   static const Color alertTone100 = Color(0xFFFFFFFF);
 
-  /// Get primary color constant - New vibrant electric blue
-  static const Color primary = Color(0xFF5B9FFF);
+  /// Get primary color constant - Custom light blue
+  static const Color primary = Color(0xFF88B3FF);
 
   /// Get secondary color constant - Vibrant pink/magenta
   static const Color secondary = Color(0xFFFF6B9D);

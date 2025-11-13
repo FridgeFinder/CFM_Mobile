@@ -39,7 +39,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     return Scaffold(
       body: SingleChildScrollView(
         child: Padding(
-          padding: M3ESpacing.all(M3ESpacing.lg),
+          padding: EdgeInsets.only(
+            left: M3ESpacing.lg,
+            right: M3ESpacing.lg,
+            top: M3ESpacing.sm,
+            bottom: M3ESpacing.lg,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1315,7 +1320,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           );
 
                           // Wait a moment for the message to be visible, then navigate to home
-                          await Future.delayed(const Duration(milliseconds: 500));
+                          await Future.delayed(
+                            const Duration(milliseconds: 500),
+                          );
 
                           if (context.mounted) {
                             debugPrint(
@@ -1346,7 +1353,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           Navigator.of(context, rootNavigator: true).pop();
                           debugPrint('Dialog closed after error');
                         } catch (e) {
-                          debugPrint('Error closing dialog after deletion error: $e');
+                          debugPrint(
+                            'Error closing dialog after deletion error: $e',
+                          );
                         }
 
                         showSnackbarM3E(
