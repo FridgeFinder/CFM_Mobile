@@ -23,7 +23,7 @@ Map<String, dynamic> _$SubscriptionPreferencesToJson(
 ) => <String, dynamic>{
   'fridgeId': instance.fridgeId,
   'subscribedAt': instance.subscribedAt.toIso8601String(),
-  'notificationPreferences': instance.notificationPreferences,
+  'notificationPreferences': instance.notificationPreferences.toJson(),
 };
 
 _NotificationPreferences _$NotificationPreferencesFromJson(

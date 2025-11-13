@@ -260,26 +260,38 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             if (context.mounted) {
                               if (result['openSettings'] == true) {
                                 // Guide user to settings
-                                final shouldOpenSettings = await showDialog<bool>(
+                                final shouldOpenSettings = await DialogM3E.showCustom<bool>(
                                   context: context,
-                                  builder: (context) => AlertDialog(
-                                    title: const Text(
-                                      'Location Permission Required',
-                                    ),
-                                    content: const Text(
-                                      'Location access is disabled. '
-                                      'Please enable it in Settings to see distances and sort fridges by proximity.',
-                                    ),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.of(context).pop(false),
-                                        child: const Text('Cancel'),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Location Permission Required',
+                                        style: M3ETypography.headlineSmall,
                                       ),
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.of(context).pop(true),
-                                        child: const Text('Open Settings'),
+                                      M3ESpacing.verticalMD,
+                                      Text(
+                                        'Location access is disabled. '
+                                        'Please enable it in Settings to see distances and sort fridges by proximity.',
+                                        style: M3ETypography.bodyMedium,
+                                      ),
+                                      M3ESpacing.verticalXL,
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.end,
+                                        children: [
+                                          TextButtonM3E(
+                                            onPressed: () =>
+                                                Navigator.of(context).pop(false),
+                                            child: const Text('Cancel'),
+                                          ),
+                                          M3ESpacing.horizontalXS,
+                                          FilledButtonM3E(
+                                            onPressed: () =>
+                                                Navigator.of(context).pop(true),
+                                            child: const Text('Open Settings'),
+                                          ),
+                                        ],
                                       ),
                                     ],
                                   ),
@@ -290,24 +302,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                 }
                               } else if (result['disabled'] == true) {
                                 // User disabled location
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'Location access disabled. '
+                                showSnackbarM3E(
+                                  context: context,
+                                  message: 'Location access disabled. '
                                       'To revoke location permission, go to Settings.',
-                                    ),
-                                    duration: Duration(seconds: 4),
-                                  ),
+                                  duration: SnackbarDuration.long_,
                                 );
                               } else if (result['success'] == false &&
                                   result['openSettings'] != true) {
                                 // Permission denied but not permanently
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'Location permission is required',
-                                    ),
-                                  ),
+                                showSnackbarM3E(
+                                  context: context,
+                                  message: 'Location permission is required',
                                 );
                               }
                             }

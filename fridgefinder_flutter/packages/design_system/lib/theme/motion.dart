@@ -331,26 +331,26 @@ class M3EMotionPatterns {
   M3EMotionPatterns._();
 
   /// Button press animation configuration
-  static const Duration buttonPress = M3EMotion.short2;
+  static const Duration buttonPress = M3EMotion.medium3; // Increased from short2 for more expressive press
   static const Curve buttonPressIn = M3EMotion.emphasizedAccelerate;
   static const Curve buttonPressOut = M3EMotion.emphasizedDecelerate;
 
   /// Card/Surface elevation change configuration
-  static const Duration elevationChange = M3EMotion.short3;
+  static const Duration elevationChange = M3EMotion.medium3; // Increased from short3 for smoother elevation
   static const Curve elevationCurve = M3EMotion.standard;
 
   /// Ripple effect configuration
-  static const Duration rippleDuration = M3EMotion.medium1;
+  static const Duration rippleDuration = M3EMotion.medium4; // Increased from medium1 for more noticeable ripple
   static const Curve rippleCurve = M3EMotion.standard;
 
   /// State layer (hover/focus/press) configuration
-  static const Duration stateLayerIn = M3EMotion.short2;
-  static const Duration stateLayerOut = M3EMotion.short3;
+  static const Duration stateLayerIn = M3EMotion.medium3; // Increased from short2 for smoother appearance
+  static const Duration stateLayerOut = M3EMotion.medium3; // Increased from short3 for smoother disappearance
   static const Curve stateLayerCurve = Curves.linear;
 
   /// Dialog/Modal entrance configuration
-  static const Duration modalEntrance = M3EMotion.medium3;
-  static const Duration modalExit = M3EMotion.medium2;
+  static const Duration modalEntrance = M3EMotion.long1; // Increased from medium3 for more expressive entrance
+  static const Duration modalExit = M3EMotion.medium4; // Increased from medium2 for smoother exit
   static const Curve modalCurve = M3EMotion.emphasized;
 
   /// Bottom sheet configuration
@@ -362,36 +362,36 @@ class M3EMotionPatterns {
   static const Duration drawerFallback = M3EMotion.medium4;
 
   /// Chip select/deselect configuration
-  static const Duration chipToggle = M3EMotion.short4;
+  static const Duration chipToggle = M3EMotion.medium3; // Increased from short4 for more expressive toggle
   static const Curve chipCurve = M3EMotion.standard;
 
   /// Switch toggle configuration
   static const SpringDescription switchSpring = M3EMotion.responsiveSpring;
-  static const Duration switchFallback = M3EMotion.medium1;
+  static const Duration switchFallback = M3EMotion.medium4; // Increased from medium1 for smoother toggle
 
   /// Checkbox/Radio check configuration
-  static const Duration checkDuration = M3EMotion.short4;
+  static const Duration checkDuration = M3EMotion.medium3; // Increased from short4 for more noticeable check
   static const Curve checkCurve = M3EMotion.emphasized;
 
   /// FAB expand/collapse configuration
-  static const Duration fabTransform = M3EMotion.medium2;
+  static const Duration fabTransform = M3EMotion.medium4; // Increased from medium2 for smoother transform
   static const Curve fabCurve = M3EMotion.emphasized;
 
   /// Snackbar slide configuration
   static const SpringDescription snackbarSpring = M3EMotion.expressiveSpring;
-  static const Duration snackbarFallback = M3EMotion.medium3;
+  static const Duration snackbarFallback = M3EMotion.long1; // Increased from medium3 for more expressive slide
 
   /// Tooltip fade configuration
-  static const Duration tooltipIn = M3EMotion.short3;
-  static const Duration tooltipOut = M3EMotion.short2;
+  static const Duration tooltipIn = M3EMotion.medium3; // Increased from short3 for smoother fade in
+  static const Duration tooltipOut = M3EMotion.medium3; // Increased from short2 for smoother fade out
   static const Curve tooltipCurve = Curves.linear;
 
   /// Menu cascade configuration
-  static const Duration menuCascade = M3EMotion.short4;
+  static const Duration menuCascade = M3EMotion.medium3; // Increased from short4 for more noticeable cascade
   static const Curve menuCurve = M3EMotion.emphasizedDecelerate;
 
   /// Tab indicator slide configuration
-  static const Duration tabIndicator = M3EMotion.medium1;
+  static const Duration tabIndicator = M3EMotion.medium4; // Increased from medium1 for smoother slide
   static const Curve tabCurve = M3EMotion.standard;
 
   /// Loading spinner rotation configuration
@@ -399,10 +399,10 @@ class M3EMotionPatterns {
   static const Curve spinnerCurve = Curves.linear;
 
   /// Progress indicator configuration
-  static const Duration progressUpdate = M3EMotion.medium2;
+  static const Duration progressUpdate = M3EMotion.medium4; // Increased from medium2 for smoother progress
   static const Curve progressCurve = M3EMotion.standard;
 
   /// Carousel swipe configuration
   static const SpringDescription carouselSpring = M3EMotion.standardSpring;
-  static const Duration carouselFallback = M3EMotion.medium3;
+  static const Duration carouselFallback = M3EMotion.long1; // Increased from medium3 for smoother swipe
 }

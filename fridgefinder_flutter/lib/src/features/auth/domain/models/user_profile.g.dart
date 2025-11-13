@@ -60,7 +60,7 @@ Map<String, dynamic> _$UserProfileToJson(_UserProfile instance) =>
       'zipCode': instance.zipCode,
       'points': instance.points,
       'fcmToken': instance.fcmToken,
-      'settings': instance.settings,
+      'settings': instance.settings.toJson(),
       'createdAt': instance.createdAt.toIso8601String(),
       'lastLoginAt': instance.lastLoginAt?.toIso8601String(),
     };

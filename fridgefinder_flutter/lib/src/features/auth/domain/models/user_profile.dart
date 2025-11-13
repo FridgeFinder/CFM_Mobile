@@ -52,7 +52,8 @@ abstract class UserSettings with _$UserSettings {
 }
 
 /// User profile model stored in Realtime Database
-@freezed
+/// explicitToJson ensures nested objects (like UserSettings) are properly serialized
+@Freezed(toJson: true, fromJson: true)
 abstract class UserProfile with _$UserProfile {
   const UserProfile._();
 

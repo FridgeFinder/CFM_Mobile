@@ -144,8 +144,12 @@ class _SearchBarM3EState extends State<SearchBarM3E>
     // Initialize animation controller
     _expandController = AnimationController(
       vsync: this,
-      duration: M3EMotion.medium2, // 300ms for expand
-      reverseDuration: M3EMotion.medium1, // 250ms for collapse
+      duration: M3EMotion.getDuration(
+        M3EMotion.medium4,
+      ), // 400ms for smoother expand
+      reverseDuration: M3EMotion.getDuration(
+        M3EMotion.medium3,
+      ), // 350ms for smoother collapse
     );
 
     // Expand animation (for width/shape changes)
@@ -258,7 +262,8 @@ class _SearchBarM3EState extends State<SearchBarM3E>
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final effectiveElevation = widget.elevation ?? M3EElevation.level2;
-    final effectiveBackgroundColor = widget.backgroundColor ?? colorScheme.surfaceContainerHigh;
+    final effectiveBackgroundColor =
+        widget.backgroundColor ?? colorScheme.surfaceContainerHigh;
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),

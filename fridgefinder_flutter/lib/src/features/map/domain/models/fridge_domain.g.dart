@@ -108,10 +108,10 @@ Map<String, dynamic> _$FridgeDomainToJson(_FridgeDomain instance) =>
       'id': instance.id,
       'name': instance.name,
       'verified': instance.verified,
-      'location': instance.location,
-      'maintainer': instance.maintainer,
+      'location': instance.location.toJson(),
+      'maintainer': instance.maintainer?.toJson(),
       'notes': instance.notes,
       'photoUrl': instance.photoUrl,
       'last_edited': instance.lastEdited,
-      'latestFridgeReport': instance.latestFridgeReport,
+      'latestFridgeReport': instance.latestFridgeReport?.toJson(),
     };

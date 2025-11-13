@@ -3,6 +3,7 @@ import '../theme/elevation.dart';
 import '../theme/motion.dart';
 import '../theme/shapes.dart';
 import '../theme/spacing.dart';
+import '../theme/state_layers.dart';
 
 /// M3E Card
 ///
@@ -39,16 +40,24 @@ class CardM3E extends StatefulWidget {
 }
 
 class _CardM3EState extends State<CardM3E>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late AnimationController _elevationController;
+  late AnimationController _pressController;
   late Animation<double> _elevationAnimation;
+  late Animation<double> _pressScaleAnimation;
   bool _isHovered = false;
+  bool _isPressed = false;
 
   @override
   void initState() {
     super.initState();
     _elevationController = AnimationController(
       duration: M3EMotionPatterns.elevationChange,
+      vsync: this,
+    );
+
+    _pressController = AnimationController(
+      duration: M3EMotion.getDuration(M3EMotion.medium3), // 350ms for more noticeable press feedback
       vsync: this,
     );
 
@@ -59,11 +68,20 @@ class _CardM3EState extends State<CardM3E>
       parent: _elevationController,
       curve: M3EMotionPatterns.elevationCurve,
     ));
+
+    _pressScaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.98, // Slight scale down on press
+    ).animate(CurvedAnimation(
+      parent: _pressController,
+      curve: M3EMotion.emphasizedDecelerate,
+    ));
   }
 
   @override
   void dispose() {
     _elevationController.dispose();
+    _pressController.dispose();
     super.dispose();
   }
 
@@ -128,10 +146,46 @@ class _CardM3EState extends State<CardM3E>
       cardContent = MouseRegion(
         onEnter: (_) => _handleHoverChange(true),
         onExit: (_) => _handleHoverChange(false),
-        child: InkWell(
-          onTap: widget.onTap,
-          borderRadius: borderRadius as BorderRadius?,
-          child: cardContent,
+        child: GestureDetector(
+          onTapDown: (_) {
+            setState(() => _isPressed = true);
+            _pressController.forward();
+          },
+          onTapUp: (_) {
+            setState(() => _isPressed = false);
+            _pressController.reverse();
+            widget.onTap?.call();
+          },
+          onTapCancel: () {
+            setState(() => _isPressed = false);
+            _pressController.reverse();
+          },
+          child: AnimatedBuilder(
+            animation: _pressScaleAnimation,
+            builder: (context, child) {
+              return Transform.scale(
+                scale: _isPressed ? _pressScaleAnimation.value : 1.0,
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: widget.onTap,
+                    borderRadius: borderRadius as BorderRadius?,
+                    overlayColor: WidgetStateProperty.resolveWith<Color?>((states) {
+                      if (states.contains(WidgetState.pressed)) {
+                        return M3EStateLayer.getPressColor(colorScheme.onSurface);
+                      }
+                      if (states.contains(WidgetState.hovered)) {
+                        return M3EStateLayer.getHoverColor(colorScheme.onSurface);
+                      }
+                      return null;
+                    }),
+                    child: child,
+                  ),
+                ),
+              );
+            },
+            child: cardContent,
+          ),
         ),
       );
     }

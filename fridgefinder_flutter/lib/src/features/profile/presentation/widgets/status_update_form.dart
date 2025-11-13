@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide StepperType;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:design_system/design_system.dart';
@@ -21,6 +21,7 @@ class StatusUpdateForm extends ConsumerStatefulWidget {
 
 class _StatusUpdateFormState extends ConsumerState<StatusUpdateForm> {
   bool _isSubmitting = false;
+  int _currentStep = 0;
   late FridgeCondition _selectedCondition;
   late double _foodPercentage;
   final _notesController = TextEditingController();
@@ -127,7 +128,14 @@ class _StatusUpdateFormState extends ConsumerState<StatusUpdateForm> {
           backgroundColor: Colors.green,
         ),
       );
-      Navigator.pop(context);
+
+      // Wait for next frame to ensure all provider rebuilds complete before navigation
+      if (!mounted) return;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          Navigator.pop(context);
+        }
+      });
     } catch (e) {
       if (!mounted) return;
 
@@ -142,168 +150,63 @@ class _StatusUpdateFormState extends ConsumerState<StatusUpdateForm> {
     }
   }
 
+  void _nextStep() {
+    if (_currentStep < 2) {
+      setState(() => _currentStep++);
+    } else {
+      _submit();
+    }
+  }
+
+  void _previousStep() {
+    if (_currentStep > 0) {
+      setState(() => _currentStep--);
+    } else {
+      Navigator.pop(context);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        // Scrollable form content - uses Expanded to fill available space
-        Expanded(
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Condition Selection
-                Text(
-                  'Fridge Condition',
-                  style: M3ETypography.labelLarge, // 14px Medium
-                ),
-                SizedBox(height: M3ESpacing.xs), // 8dp
-                // Radio buttons for condition selection (exclude ghost)
-                ...FridgeCondition.values
-                    .where((condition) => condition != FridgeCondition.ghost)
-                    .map(
-                      (condition) =>
-                      // ignore: deprecated_member_use
-                      RadioListTile<FridgeCondition>(
-                        title: Text(_conditionLabel(condition)),
-                        value: condition,
-                        // ignore: deprecated_member_use
-                        groupValue: _selectedCondition,
-                        // ignore: deprecated_member_use
-                        onChanged: (FridgeCondition? value) {
-                          if (value != null) {
-                            setState(() => _selectedCondition = value);
-                          }
-                        },
-                        contentPadding: EdgeInsets.zero,
-                        dense: true,
-                      ),
-                    ),
-                SizedBox(height: M3ESpacing.md), // 16dp
-
-                // Food Level Slider
-                Text(
-                  'Food Level: ${_getFoodLevelLabel()}',
-                  style: M3ETypography.labelLarge, // 14px Medium
-                ),
-                Slider(
-                  value: _foodPercentage,
-                  onChanged: (value) {
-                    setState(() => _foodPercentage = value);
-                  },
-                  min: 0,
-                  max: 1,
-                  divisions: 3,
-                  label: _getFoodLevelLabel(),
-                ),
-                SizedBox(height: M3ESpacing.xxs), // 4dp
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Empty', style: M3ETypography.bodySmall),
-                    Text('Few Items', style: M3ETypography.bodySmall),
-                    Text('Many Items', style: M3ETypography.bodySmall),
-                    Text('Full', style: M3ETypography.bodySmall),
-                  ],
-                ),
-                SizedBox(height: M3ESpacing.md), // 16dp
-
-                // Notes - M3E TextField with 56dp height, 12dp top corners, 4dp bottom
-                Text(
-                  'Additional Notes (Optional)',
-                  style: M3ETypography.labelLarge, // 14px Medium
-                ),
-                SizedBox(height: M3ESpacing.xs), // 8dp
-                TextFieldM3E(
-                  controller: _notesController,
-                  maxLines: 3,
-                  hintText: 'Any additional information...',
-                  filled: true,
-                ),
-                SizedBox(height: M3ESpacing.md), // 16dp
-
-                // Photo Upload
-                Text(
-                  'Photo (Optional)',
-                  style: M3ETypography.labelLarge, // 14px Medium
-                ),
-                SizedBox(height: M3ESpacing.xs), // 8dp
-                if (_selectedImage != null)
-                  Stack(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Image.file(
-                          File(_selectedImage!.path),
-                          height: 200,
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                      Positioned(
-                        top: 8,
-                        right: 8,
-                        child: IconButton(
-                          icon: const Icon(Icons.close, color: Colors.white),
-                          style: IconButton.styleFrom(
-                            backgroundColor: Colors.black54,
-                          ),
-                          onPressed: _removeImage,
-                        ),
-                      ),
-                    ],
-                  )
-                else
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButtonM3E(
-                          icon: Icons.camera_alt,
-                          onPressed: () => _pickImage(ImageSource.camera),
-                          child: Text(
-                            'Camera',
-                            style: M3ETypography.labelLarge,
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: M3ESpacing.xs), // 8dp
-                      Expanded(
-                        child: OutlinedButtonM3E(
-                          icon: Icons.photo_library,
-                          onPressed: () => _pickImage(ImageSource.gallery),
-                          child: Text(
-                            'Gallery',
-                            style: M3ETypography.labelLarge,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                SizedBox(height: M3ESpacing.xl), // 24dp
-              ],
-            ),
-          ),
+    return StepperM3E(
+      currentStep: _currentStep,
+      type: StepperType.horizontal,
+      steps: [
+        StepperStepM3E(
+          title: 'Condition',
+          content: _buildConditionStep(),
         ),
-        // Fixed bottom row with Cancel and Submit buttons - M3E variants
-        Padding(
-          padding: EdgeInsets.only(top: M3ESpacing.md), // 16dp
+        StepperStepM3E(
+          title: 'Food Level',
+          content: _buildFoodLevelStep(),
+        ),
+        StepperStepM3E(
+          title: 'Details',
+          content: _buildDetailsStep(),
+        ),
+      ],
+      onStepTapped: (index) {
+        if (index <= _currentStep) {
+          setState(() => _currentStep = index);
+        }
+      },
+      onStepContinue: _nextStep,
+      onStepCancel: _previousStep,
+      controlsBuilder: (context, details) {
+        return Padding(
+          padding: M3ESpacing.all(M3ESpacing.xl),
           child: Row(
-            mainAxisSize: MainAxisSize.min,  // ← FIX: Prevent unbounded constraints
-            mainAxisAlignment: MainAxisAlignment.end,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Cancel - M3E Text button (40dp height)
               TextButtonM3E(
-                onPressed: _isSubmitting ? null : () => Navigator.pop(context),
+                onPressed: _isSubmitting ? null : details.onStepCancel,
                 child: Text(
-                  'Cancel',
+                  details.stepIndex == 0 ? 'Cancel' : 'Back',
                   style: M3ETypography.labelLarge,
                 ),
               ),
-              SizedBox(width: M3ESpacing.xs), // 8dp
-              // Submit - M3E Filled button (40dp height) with 300ms press animation
               FilledButtonM3E(
-                onPressed: _isSubmitting ? null : _submit,
+                onPressed: _isSubmitting ? null : details.onStepContinue,
                 child: _isSubmitting
                     ? const SizedBox(
                         height: 20,
@@ -313,14 +216,155 @@ class _StatusUpdateFormState extends ConsumerState<StatusUpdateForm> {
                         ),
                       )
                     : Text(
-                        'Submit Update',
+                        details.stepIndex == 2 ? 'Submit Update' : 'Next',
                         style: M3ETypography.labelLarge,
                       ),
               ),
             ],
           ),
-        ),
-      ],
+        );
+      },
+    );
+  }
+
+  Widget _buildConditionStep() {
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Fridge Condition',
+            style: M3ETypography.labelLarge,
+          ),
+          SizedBox(height: M3ESpacing.xs),
+          ...FridgeCondition.values
+              .where((condition) => condition != FridgeCondition.ghost)
+              .map(
+                (condition) => RadioM3E<FridgeCondition>(
+                  value: condition,
+                  groupValue: _selectedCondition,
+                  onChanged: (FridgeCondition? value) {
+                    if (value != null) {
+                      setState(() => _selectedCondition = value);
+                    }
+                  },
+                  label: _conditionLabel(condition),
+                ),
+              ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFoodLevelStep() {
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Food Level: ${_getFoodLevelLabel()}',
+            style: M3ETypography.labelLarge,
+          ),
+          SliderM3E(
+            value: _foodPercentage,
+            onChanged: (value) {
+              setState(() => _foodPercentage = value);
+            },
+            min: 0,
+            max: 1,
+            divisions: 3,
+            label: _getFoodLevelLabel(),
+          ),
+          SizedBox(height: M3ESpacing.xxs),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Empty', style: M3ETypography.bodySmall),
+              Text('Few Items', style: M3ETypography.bodySmall),
+              Text('Many Items', style: M3ETypography.bodySmall),
+              Text('Full', style: M3ETypography.bodySmall),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailsStep() {
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Additional Notes (Optional)',
+            style: M3ETypography.labelLarge,
+          ),
+          SizedBox(height: M3ESpacing.xs),
+          TextFieldM3E(
+            controller: _notesController,
+            maxLines: 3,
+            hintText: 'Any additional information...',
+            filled: true,
+          ),
+          SizedBox(height: M3ESpacing.md),
+          Text(
+            'Photo (Optional)',
+            style: M3ETypography.labelLarge,
+          ),
+          SizedBox(height: M3ESpacing.xs),
+          if (_selectedImage != null)
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.file(
+                    File(_selectedImage!.path),
+                    height: 200,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: InteractiveIconButtonM3E(
+                    icon: Icons.close,
+                    iconSize: 20,
+                    iconColor: Colors.white,
+                    backgroundColor: Colors.black54,
+                    onPressed: _removeImage,
+                  ),
+                ),
+              ],
+            )
+          else
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButtonM3E(
+                    icon: Icons.camera_alt,
+                    onPressed: () => _pickImage(ImageSource.camera),
+                    child: Text(
+                      'Camera',
+                      style: M3ETypography.labelLarge,
+                    ),
+                  ),
+                ),
+                SizedBox(width: M3ESpacing.xs),
+                Expanded(
+                  child: OutlinedButtonM3E(
+                    icon: Icons.photo_library,
+                    onPressed: () => _pickImage(ImageSource.gallery),
+                    child: Text(
+                      'Gallery',
+                      style: M3ETypography.labelLarge,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+        ],
+      ),
     );
   }
 

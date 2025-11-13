@@ -4,7 +4,8 @@ part 'subscription_preferences.freezed.dart';
 part 'subscription_preferences.g.dart';
 
 /// Notification preferences for a subscribed fridge
-@freezed
+/// toJson/fromJson params ensure nested NotificationPreferences is properly serialized
+@Freezed(toJson: true, fromJson: true)
 abstract class SubscriptionPreferences with _$SubscriptionPreferences {
   const SubscriptionPreferences._();
 

@@ -160,9 +160,9 @@ class NavigationBarM3E extends StatelessWidget {
     this.showShadow = true,
     this.labelBehavior,
   }) : assert(
-          destinations.length >= 3 && destinations.length <= 5,
-          'NavigationBarM3E must have between 3-5 destinations per M3 guidelines',
-        );
+         destinations.length >= 3 && destinations.length <= 5,
+         'NavigationBarM3E must have between 3-5 destinations per M3 guidelines',
+       );
 
   @override
   Widget build(BuildContext context) {
@@ -176,7 +176,8 @@ class NavigationBarM3E extends StatelessWidget {
     final effectiveIndicatorColor =
         indicatorColor ?? colorScheme.secondaryContainer;
     final effectiveAnimationDuration =
-        animationDuration ?? M3EMotion.medium2; // 300ms
+        animationDuration ??
+        M3EMotion.medium4; // 400ms for smoother transitions
 
     // Calculate surface with tonal elevation
     final surfaceWithTint = M3EElevation.applySurfaceTint(
@@ -202,10 +203,10 @@ class NavigationBarM3E extends StatelessWidget {
           elevation: 0, // We handle elevation in the Container
           height: effectiveHeight,
           indicatorColor: effectiveIndicatorColor,
-          indicatorShape: indicatorShape ??
-              const StadiumBorder(), // Pill-shaped indicator
-          labelBehavior: labelBehavior ??
-              NavigationDestinationLabelBehavior.alwaysShow,
+          indicatorShape:
+              indicatorShape ?? const StadiumBorder(), // Pill-shaped indicator
+          labelBehavior:
+              labelBehavior ?? NavigationDestinationLabelBehavior.alwaysShow,
           // Apply animation duration through theme
           animationDuration: effectiveAnimationDuration,
         ),
@@ -283,9 +284,9 @@ class NavigationBarM3EExtended extends StatelessWidget {
     this.overlayColor,
     this.iconSize,
   }) : assert(
-          destinations.length >= 3 && destinations.length <= 5,
-          'NavigationBarM3EExtended must have between 3-5 destinations',
-        );
+         destinations.length >= 3 && destinations.length <= 5,
+         'NavigationBarM3EExtended must have between 3-5 destinations',
+       );
 
   @override
   Widget build(BuildContext context) {
@@ -298,7 +299,8 @@ class NavigationBarM3EExtended extends StatelessWidget {
     final effectiveIndicatorColor =
         indicatorColor ?? colorScheme.secondaryContainer;
     final effectiveAnimationDuration =
-        animationDuration ?? M3EMotion.medium2;
+        animationDuration ??
+        M3EMotion.medium4; // 400ms for smoother transitions
 
     final surfaceWithTint = M3EElevation.applySurfaceTint(
       surface: effectiveBackgroundColor,
@@ -313,8 +315,8 @@ class NavigationBarM3EExtended extends StatelessWidget {
       height: effectiveHeight,
       indicatorColor: effectiveIndicatorColor,
       indicatorShape: indicatorShape ?? const StadiumBorder(),
-      labelBehavior: labelBehavior ??
-          NavigationDestinationLabelBehavior.alwaysShow,
+      labelBehavior:
+          labelBehavior ?? NavigationDestinationLabelBehavior.alwaysShow,
       iconTheme: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {
           return IconThemeData(
@@ -337,9 +339,7 @@ class NavigationBarM3EExtended extends StatelessWidget {
               );
         }
         return unselectedLabelStyle ??
-            baseStyle?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            );
+            baseStyle?.copyWith(color: colorScheme.onSurfaceVariant);
       }),
     );
 
@@ -353,9 +353,7 @@ class NavigationBarM3EExtended extends StatelessWidget {
       ),
       child: SafeArea(
         child: Theme(
-          data: theme.copyWith(
-            navigationBarTheme: navigationBarTheme,
-          ),
+          data: theme.copyWith(navigationBarTheme: navigationBarTheme),
           child: NavigationBar(
             selectedIndex: selectedIndex,
             onDestinationSelected: onDestinationSelected,
@@ -404,9 +402,9 @@ class AdaptiveNavigationBarM3E extends StatelessWidget {
     this.indicatorColor,
     this.showLabels = true,
   }) : assert(
-          destinations.length >= 3 && destinations.length <= 5,
-          'AdaptiveNavigationBarM3E must have between 3-5 destinations',
-        );
+         destinations.length >= 3 && destinations.length <= 5,
+         'AdaptiveNavigationBarM3E must have between 3-5 destinations',
+       );
 
   @override
   Widget build(BuildContext context) {
@@ -439,10 +437,8 @@ class AdaptiveNavigationBarM3E extends StatelessWidget {
       labelType: showLabels
           ? NavigationRailLabelType.all
           : NavigationRailLabelType.none,
-      backgroundColor:
-          backgroundColor ?? colorScheme.surface,
-      indicatorColor:
-          indicatorColor ?? colorScheme.secondaryContainer,
+      backgroundColor: backgroundColor ?? colorScheme.surface,
+      indicatorColor: indicatorColor ?? colorScheme.secondaryContainer,
       destinations: destinations
           .map(
             (dest) => NavigationRailDestination(

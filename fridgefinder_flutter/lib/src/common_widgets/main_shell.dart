@@ -172,9 +172,9 @@ class _MainShellState extends ConsumerState<MainShell>
                         ),
                       ),
                       // Hamburger Menu
-                      IconButton(
-                        icon: const Icon(Icons.menu),
-                        color: Colors.white,
+                      InteractiveIconButtonM3E(
+                        icon: Icons.menu,
+                        iconColor: Colors.white,
                         onPressed: _toggleDrawer,
                       ),
                     ],
@@ -253,8 +253,8 @@ class _MainShellState extends ConsumerState<MainShell>
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text('Menu', style: M3ETypography.titleLarge),
-                      IconButton(
-                        icon: const Icon(Icons.close),
+                      InteractiveIconButtonM3E(
+                        icon: Icons.close,
                         onPressed: _toggleDrawer,
                       ),
                     ],
@@ -283,13 +283,11 @@ class _MainShellState extends ConsumerState<MainShell>
                               OutlinedButtonM3E(
                                 onPressed: () {
                                   _toggleDrawer();
-                                  showDialog(
+                                  DialogM3E.showCustom(
                                     context: context,
-                                    builder: (context) => Dialog(
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(24.0),
-                                        child: SignInWidget(),
-                                      ),
+                                    child: Padding(
+                                      padding: M3ESpacing.all(M3ESpacing.xl),
+                                      child: SignInWidget(),
                                     ),
                                   );
                                 },
@@ -302,7 +300,8 @@ class _MainShellState extends ConsumerState<MainShell>
                         }
 
                         return userProfileAsync.when(
-                          loading: () => const common_widgets.LoadingIndicator(),
+                          loading: () =>
+                              const common_widgets.LoadingIndicator(),
                           error: (_, _) => const SizedBox.shrink(),
                           data: (profile) {
                             if (profile == null) return const SizedBox.shrink();
@@ -368,14 +367,9 @@ class _MainShellState extends ConsumerState<MainShell>
                                       _toggleDrawer();
                                     } catch (e) {
                                       if (context.mounted) {
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          SnackBar(
-                                            content: Text(
-                                              'Error signing out: $e',
-                                            ),
-                                          ),
+                                        showSnackbarM3E(
+                                          context: context,
+                                          message: 'Error signing out: $e',
                                         );
                                       }
                                     }

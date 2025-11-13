@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide StepperType;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:design_system/design_system.dart';
@@ -181,86 +181,30 @@ class _SignUpFormState extends ConsumerState<SignUpForm>
   Widget build(BuildContext context) {
     return FadeTransition(
       opacity: _fadeAnimation,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Step indicator
-          Row(
-            children: [
-              _buildStepIndicator(0, 'Volunteer'),
-              M3ESpacing.horizontalXS,
-              _buildStepIndicator(1, _isVolunteer ? 'Zip Code' : 'Username'),
-            ],
+      child: StepperM3E(
+        currentStep: _currentStep,
+        type: StepperType.horizontal,
+        steps: [
+          StepperStepM3E(
+            title: 'Volunteer',
+            content: _buildVolunteerStep(),
           ),
-          M3ESpacing.verticalXL,
-
-          // Step content
-          if (_currentStep == 0) _buildVolunteerStep(),
-          if (_currentStep == 1) _buildUsernameStep(),
-
-          M3ESpacing.verticalXL,
-
-          // Navigation buttons
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              if (_currentStep > 0)
-                OutlinedButtonM3E(
-                  onPressed: _previousStep,
-                  child: const Text('Back'),
-                )
-              else
-                const SizedBox.shrink(),
-              FilledButtonM3E(
-                onPressed: _nextStep,
-                child: Text(_currentStep == 1 ? 'Complete' : 'Next'),
-              ),
-            ],
+          StepperStepM3E(
+            title: _isVolunteer ? 'Zip Code' : 'Username',
+            content: _buildUsernameStep(),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildStepIndicator(int step, String label) {
-    final isActive = step == _currentStep;
-    final isCompleted = step < _currentStep;
-
-    return Expanded(
-      child: Column(
-        children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: isActive || isCompleted
-                  ? Theme.of(context).colorScheme.primary
-                  : Colors.grey,
-            ),
-            child: Center(
-              child: isCompleted
-                  ? const Icon(Icons.check, color: Colors.white, size: 20)
-                  : Text(
-                      '${step + 1}',
-                      style: M3ETypography.labelMedium.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-            ),
-          ),
-          M3ESpacing.verticalXXS,
-          Text(
-            label,
-            style: M3ETypography.labelSmall.copyWith(
-              color: isActive || isCompleted
-                  ? Theme.of(context).colorScheme.primary
-                  : Colors.grey,
-            ),
-          ),
-        ],
+        onStepTapped: (index) {
+          if (index <= _currentStep) {
+            setState(() {
+              _currentStep = index;
+              _fadeController.reset();
+              _fadeController.forward();
+            });
+          }
+        },
+        onStepContinue: _nextStep,
+        onStepCancel: _previousStep,
       ),
     );
   }
@@ -350,8 +294,8 @@ class _SignUpFormState extends ConsumerState<SignUpForm>
                   child: CircularProgressIndicatorM3E.small(),
                 )
               else
-                IconButton(
-                  icon: const Icon(Icons.casino),
+                InteractiveIconButtonM3E(
+                  icon: Icons.casino,
                   tooltip: 'Roll dice for new username',
                   onPressed: _rollDice,
                 ),

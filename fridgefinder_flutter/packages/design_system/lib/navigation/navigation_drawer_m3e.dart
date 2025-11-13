@@ -51,7 +51,7 @@ import '../theme/spacing.dart';
 ///   ),
 /// )
 /// ```
-class NavigationDrawerM3E extends StatelessWidget {
+class NavigationDrawerM3E extends StatefulWidget {
   /// The index of the currently selected destination.
   final int selectedIndex;
 
@@ -94,57 +94,123 @@ class NavigationDrawerM3E extends StatelessWidget {
   });
 
   @override
+  State<NavigationDrawerM3E> createState() => _NavigationDrawerM3EState();
+}
+
+class _NavigationDrawerM3EState extends State<NavigationDrawerM3E>
+    with TickerProviderStateMixin {
+  late AnimationController _entranceController;
+
+  @override
+  void initState() {
+    super.initState();
+    // Cascade entrance animation (500ms total with stagger)
+    _entranceController = AnimationController(
+      duration: M3EMotion.getDuration(M3EMotion.long2), // 500ms
+      vsync: this,
+    );
+    _entranceController.forward();
+  }
+
+  @override
+  void dispose() {
+    _entranceController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
     return Drawer(
       width: 300, // M3E spec: increased from MD2's 304dp
-      backgroundColor: backgroundColor ?? colorScheme.surfaceContainerLow,
-      elevation: elevation,
+      backgroundColor:
+          widget.backgroundColor ?? colorScheme.surfaceContainerLow,
+      elevation: widget.elevation,
       child: Column(
         mainAxisSize: MainAxisSize.max,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Header
-          if (header != null) header!,
+          // Header with fade animation
+          if (widget.header != null)
+            FadeTransition(
+              opacity: CurvedAnimation(
+                parent: _entranceController,
+                curve: const Interval(
+                  0.0,
+                  0.2,
+                  curve: M3EMotion.emphasizedDecelerate,
+                ),
+              ),
+              child: widget.header!,
+            ),
 
           // Add top padding if no header
-          if (header == null) M3ESpacing.verticalSM,
+          if (widget.header == null) M3ESpacing.verticalSM,
 
-          // Destinations
-          ...destinations.asMap().entries.map((entry) {
+          // Destinations with cascade entrance animation
+          ...widget.destinations.asMap().entries.map((entry) {
             final index = entry.key;
             final destination = entry.value;
-            final isSelected = index == selectedIndex;
+            final isSelected = index == widget.selectedIndex;
 
-            return Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 12.0, // 12dp margins for pill indicator
-                vertical:
-                    4.0, // 4dp between items (totals to 8dp with both sides)
+            // Stagger delay: 40ms per item
+            final staggerDelay = (index / widget.destinations.length) * 0.3;
+            final itemAnimation = CurvedAnimation(
+              parent: _entranceController,
+              curve: Interval(
+                staggerDelay.clamp(0.0, 0.7),
+                (staggerDelay + 0.7).clamp(0.0, 1.0),
+                curve: M3EMotion.expressiveDefaultOvershoot,
               ),
-              child: _NavigationDrawerItem(
-                destination: destination,
-                isSelected: isSelected,
-                onTap: () => onDestinationSelected(index),
-                textTheme: textTheme,
-                colorScheme: colorScheme,
+            );
+
+            return SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(-0.3, 0), // Slide from left
+                end: Offset.zero,
+              ).animate(itemAnimation),
+              child: FadeTransition(
+                opacity: itemAnimation,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12.0, // 12dp margins for pill indicator
+                    vertical:
+                        4.0, // 4dp between items (totals to 8dp with both sides)
+                  ),
+                  child: _NavigationDrawerItem(
+                    destination: destination,
+                    isSelected: isSelected,
+                    onTap: () => widget.onDestinationSelected(index),
+                    textTheme: textTheme,
+                    colorScheme: colorScheme,
+                  ),
+                ),
               ),
             );
           }),
 
           // Spacer to push footer to bottom
-          if (footer != null) const Spacer(),
+          if (widget.footer != null) const Spacer(),
 
-          // Footer
-          if (footer != null) ...[
-            Padding(
-              padding: M3ESpacing.navigationDrawerPadding,
-              child: footer!,
+          // Footer with fade animation
+          if (widget.footer != null)
+            FadeTransition(
+              opacity: CurvedAnimation(
+                parent: _entranceController,
+                curve: const Interval(
+                  0.8,
+                  1.0,
+                  curve: M3EMotion.emphasizedDecelerate,
+                ),
+              ),
+              child: Padding(
+                padding: M3ESpacing.navigationDrawerPadding,
+                child: widget.footer!,
+              ),
             ),
-            M3ESpacing.verticalSM,
-          ],
+          if (widget.footer != null) M3ESpacing.verticalSM,
         ],
       ),
     );
@@ -207,7 +273,7 @@ class _NavigationDrawerItem extends StatefulWidget {
 }
 
 class _NavigationDrawerItemState extends State<_NavigationDrawerItem>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
 

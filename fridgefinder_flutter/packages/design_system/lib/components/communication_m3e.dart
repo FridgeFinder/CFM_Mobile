@@ -88,7 +88,7 @@ class BadgeM3E extends StatefulWidget {
 }
 
 class _BadgeM3EState extends State<BadgeM3E>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
   late Animation<double> _fadeAnimation;
@@ -98,7 +98,7 @@ class _BadgeM3EState extends State<BadgeM3E>
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: M3EMotion.short3,
+      duration: M3EMotion.getDuration(M3EMotion.medium3), // 350ms for more expressive badge
       vsync: this,
     );
 
@@ -454,7 +454,7 @@ SnackbarController showSnackbarM3E({
       elevation: 0,
       padding: EdgeInsets.zero,
       behavior: SnackBarBehavior.floating,
-      dismissDirection: DismissDirection.horizontal,
+      dismissDirection: DismissDirection.horizontal, // Swipe left/right to dismiss
       shape: M3EShapes.snackbar,
     ),
   );
@@ -564,7 +564,7 @@ class TooltipM3E extends StatefulWidget {
 }
 
 class _TooltipM3EState extends State<TooltipM3E>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   OverlayEntry? _overlayEntry;
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
@@ -573,7 +573,7 @@ class _TooltipM3EState extends State<TooltipM3E>
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: M3EMotion.short3,
+      duration: M3EMotion.getDuration(M3EMotion.medium3), // 350ms for more expressive badge
       vsync: this,
     );
 

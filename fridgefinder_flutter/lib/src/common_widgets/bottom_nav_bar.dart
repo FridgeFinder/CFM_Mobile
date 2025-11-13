@@ -17,7 +17,7 @@ class AppBottomNavBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return NavigationBarM3E(
+    return NavigationBarEnhancedM3E(
       selectedIndex: _getIndexForRoute(currentRoute),
       onDestinationSelected: (index) {
         final routes = ['/', '/list', '/my-fridges', '/profile'];

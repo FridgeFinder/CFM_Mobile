@@ -240,8 +240,8 @@ class M3ETransitions {
   }) {
     return PageRouteBuilder<T>(
       pageBuilder: (context, animation, secondaryAnimation) => page,
-      transitionDuration: duration ?? M3EMotion.getDuration(M3EMotion.medium3),
-      reverseTransitionDuration: duration ?? M3EMotion.getDuration(M3EMotion.medium2),
+      transitionDuration: duration ?? M3EMotion.getDuration(M3EMotion.long1), // 450ms for smoother transitions
+      reverseTransitionDuration: duration ?? M3EMotion.getDuration(M3EMotion.medium4), // 400ms for smoother reverse
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
         if (axis == Axis.horizontal) {
           return sharedAxisX(
@@ -327,8 +327,8 @@ class M3ETransitions {
   }) {
     return PageRouteBuilder<T>(
       pageBuilder: (context, animation, secondaryAnimation) => page,
-      transitionDuration: duration ?? M3EMotion.getDuration(M3EMotion.medium3),
-      reverseTransitionDuration: duration ?? M3EMotion.getDuration(M3EMotion.medium2),
+      transitionDuration: duration ?? M3EMotion.getDuration(M3EMotion.long1), // 450ms for smoother transitions
+      reverseTransitionDuration: duration ?? M3EMotion.getDuration(M3EMotion.medium4), // 400ms for smoother reverse
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
         return fadeThrough(
           animation: animation,
@@ -368,8 +368,8 @@ class M3ETransitions {
   }) {
     return PageRouteBuilder<T>(
       pageBuilder: (context, animation, secondaryAnimation) => page,
-      transitionDuration: duration ?? M3EMotion.getDuration(M3EMotion.short4),
-      reverseTransitionDuration: duration ?? M3EMotion.getDuration(M3EMotion.short3),
+      transitionDuration: duration ?? M3EMotion.getDuration(M3EMotion.medium3), // 350ms for smoother fade
+      reverseTransitionDuration: duration ?? M3EMotion.getDuration(M3EMotion.medium3), // 350ms for smoother fade
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
         return fade(animation: animation, child: child, curve: M3EMotion.getCurve(curve));
       },

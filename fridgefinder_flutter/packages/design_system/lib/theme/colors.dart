@@ -124,6 +124,28 @@ class M3EColors {
     return baseColor.withValues(alpha: opacity);
   }
 
+  /// Apply state layer overlay to a surface color
+  ///
+  /// Combines surface color with state layer overlay for interactive states.
+  /// Returns the resulting color after applying the state layer.
+  static Color applyStateLayer({
+    required Color surface,
+    required Color onSurface,
+    required String state,
+  }) {
+    final layerColor = getStateLayerColor(
+      baseColor: onSurface,
+      state: state,
+    );
+    return Color.alphaBlend(layerColor, surface);
+  }
+
+  /// Get primary color constant
+  static const Color primary = Color(0xFF88B3FF);
+
+  /// Get error color constant
+  static const Color error = Color(0xFFBA1A1A);
+
   /// Create custom color scheme with specific primary color
   ///
   /// This creates a complete M3 color scheme with all 40+ color roles

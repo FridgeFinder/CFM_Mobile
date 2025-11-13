@@ -352,8 +352,8 @@ class SegmentedButtonM3E<T> extends StatelessWidget {
       // Elevation: Flat design, no shadow
       elevation: WidgetStateProperty.all<double>(0.0),
 
-      // Animation duration: Fast, responsive transitions
-      animationDuration: M3EMotion.short4, // 200ms
+      // Animation duration: Smooth, expressive transitions
+      animationDuration: M3EMotion.medium3, // 350ms for more noticeable transitions
 
       // Overlay color: State layers for press/hover/focus
       overlayColor: WidgetStateProperty.resolveWith<Color>(

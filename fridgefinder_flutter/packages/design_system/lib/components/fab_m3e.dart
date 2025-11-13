@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/elevation.dart';
+import '../theme/state_layers.dart';
 import '../theme/motion.dart';
 import '../theme/shapes.dart';
 import '../theme/spacing.dart';
@@ -96,7 +97,7 @@ class FABM3E extends StatefulWidget {
 }
 
 class _FABM3EState extends State<FABM3E>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
 
@@ -137,7 +138,7 @@ class _FABM3EState extends State<FABM3E>
     super.initState();
 
     _controller = AnimationController(
-      duration: M3EMotion.medium2,
+      duration: M3EMotion.getDuration(M3EMotion.medium4), // 400ms for smoother FAB animation
       vsync: this,
     );
 
@@ -394,7 +395,7 @@ class IconButtonM3E extends StatefulWidget {
 }
 
 class _IconButtonM3EState extends State<IconButtonM3E>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late AnimationController _controller;
 
   bool _isPressed = false;
@@ -404,7 +405,7 @@ class _IconButtonM3EState extends State<IconButtonM3E>
     super.initState();
 
     _controller = AnimationController(
-      duration: M3EMotion.short3,
+      duration: M3EMotion.getDuration(M3EMotion.medium3), // 350ms for more expressive pulse
       vsync: this,
     );
 
@@ -656,7 +657,7 @@ class FABMenuM3E extends StatefulWidget {
 }
 
 class _FABMenuM3EState extends State<FABMenuM3E>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _mainRotation;
   late Animation<double> _scrimOpacity;
@@ -674,7 +675,7 @@ class _FABMenuM3EState extends State<FABMenuM3E>
     super.initState();
 
     _controller = AnimationController(
-      duration: M3EMotion.medium3,
+      duration: M3EMotion.getDuration(M3EMotion.long1), // 450ms for smoother menu animation
       vsync: this,
     );
 
@@ -834,7 +835,7 @@ class _FABMenuItemWidget extends StatelessWidget {
     final animation = CurvedAnimation(
       parent: controller,
       curve: Interval(
-        (delay / M3EMotion.medium3.inMilliseconds).clamp(0.0, 1.0),
+        (delay / M3EMotion.long1.inMilliseconds).clamp(0.0, 1.0), // Updated to match new duration
         1.0,
         curve: M3EMotion.emphasizedDecelerate,
       ),
@@ -1036,7 +1037,7 @@ class _ExtendedFABM3EState extends State<ExtendedFABM3E>
 
     // Entrance animation
     _entranceController = AnimationController(
-      duration: M3EMotion.medium2,
+      duration: M3EMotion.getDuration(M3EMotion.medium4), // 400ms for smoother entrance
       vsync: this,
     );
 
@@ -1048,7 +1049,7 @@ class _ExtendedFABM3EState extends State<ExtendedFABM3E>
 
     // Expand/collapse animation
     _expandController = AnimationController(
-      duration: M3EMotion.medium3,
+      duration: M3EMotion.getDuration(M3EMotion.long1), // 450ms for smoother expand
       vsync: this,
     );
 
