@@ -181,30 +181,32 @@ class _SignUpFormState extends ConsumerState<SignUpForm>
   Widget build(BuildContext context) {
     return FadeTransition(
       opacity: _fadeAnimation,
-      child: StepperM3E(
-        currentStep: _currentStep,
-        type: StepperType.horizontal,
-        steps: [
-          StepperStepM3E(
-            title: 'Volunteer',
-            content: _buildVolunteerStep(),
-          ),
-          StepperStepM3E(
-            title: _isVolunteer ? 'Zip Code' : 'Username',
-            content: _buildUsernameStep(),
-          ),
-        ],
-        onStepTapped: (index) {
-          if (index <= _currentStep) {
-            setState(() {
-              _currentStep = index;
-              _fadeController.reset();
-              _fadeController.forward();
-            });
-          }
-        },
-        onStepContinue: _nextStep,
-        onStepCancel: _previousStep,
+      child: IntrinsicHeight(
+        child: StepperM3E(
+          currentStep: _currentStep,
+          type: StepperType.horizontal,
+          steps: [
+            StepperStepM3E(
+              title: 'Volunteer',
+              content: _buildVolunteerStep(),
+            ),
+            StepperStepM3E(
+              title: _isVolunteer ? 'Zip Code' : 'Username',
+              content: _buildUsernameStep(),
+            ),
+          ],
+          onStepTapped: (index) {
+            if (index <= _currentStep) {
+              setState(() {
+                _currentStep = index;
+                _fadeController.reset();
+                _fadeController.forward();
+              });
+            }
+          },
+          onStepContinue: _nextStep,
+          onStepCancel: _previousStep,
+        ),
       ),
     );
   }

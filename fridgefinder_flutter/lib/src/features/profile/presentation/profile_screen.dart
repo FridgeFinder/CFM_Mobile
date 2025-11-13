@@ -201,21 +201,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                   ref,
                                   profile.userId,
                                 ),
-                                icon: Icon(
-                                  Icons.delete_outline,
-                                  color: Theme.of(context).colorScheme.error,
-                                ),
-                                label: Text(
-                                  'Delete Account',
-                                  style: TextStyle(
-                                    color: Theme.of(context).colorScheme.error,
-                                  ),
-                                ),
+                                icon: const Icon(Icons.delete_outline),
+                                label: const Text('Delete Account'),
                                 style: OutlinedButton.styleFrom(
+                                  foregroundColor: Theme.of(context).colorScheme.error,
                                   side: BorderSide(
                                     color: Theme.of(context).colorScheme.error,
                                   ),
-                                  minimumSize: const Size.fromHeight(40),
                                 ),
                               ),
                             ),
@@ -658,26 +650,38 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               AuthorizationStatus.provisional) {
                         if (context.mounted) {
                           // If permanently denied, guide to settings
-                          final shouldOpenSettings = await showDialog<bool>(
+                          final shouldOpenSettings = await DialogM3E.showCustom<bool>(
                             context: context,
-                            builder: (context) => AlertDialog(
-                              title: const Text(
-                                'Notification Permission Required',
-                              ),
-                              content: const Text(
-                                'Push notifications are disabled. '
-                                'Please enable them in Settings to receive updates about your subscribed fridges.',
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () =>
-                                      Navigator.of(context).pop(false),
-                                  child: const Text('Cancel'),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Notification Permission Required',
+                                  style: M3ETypography.headlineSmall,
                                 ),
-                                TextButton(
-                                  onPressed: () =>
-                                      Navigator.of(context).pop(true),
-                                  child: const Text('Open Settings'),
+                                M3ESpacing.verticalMD,
+                                Text(
+                                  'Push notifications are disabled. '
+                                  'Please enable them in Settings to receive updates about your subscribed fridges.',
+                                  style: M3ETypography.bodyMedium,
+                                ),
+                                M3ESpacing.verticalXL,
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: [
+                                    TextButtonM3E(
+                                      onPressed: () =>
+                                          Navigator.of(context).pop(false),
+                                      child: const Text('Cancel'),
+                                    ),
+                                    M3ESpacing.horizontalXS,
+                                    FilledButtonM3E(
+                                      onPressed: () =>
+                                          Navigator.of(context).pop(true),
+                                      child: const Text('Open Settings'),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
@@ -791,24 +795,38 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             if (permission ==
                                 LocationPermission.deniedForever) {
                               // Guide to settings
-                              final shouldOpenSettings = await showDialog<bool>(
+                              final shouldOpenSettings = await DialogM3E.showCustom<bool>(
                                 context: context,
-                                builder: (context) => AlertDialog(
-                                  title: const Text('Enable Location Access'),
-                                  content: const Text(
-                                    'Geofencing requires location access to notify you when you\'re near fridges needing help.\n\n'
-                                    'Please tap "Open Settings" and enable location access for FridgeFinder.',
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () =>
-                                          Navigator.of(context).pop(false),
-                                      child: const Text('Cancel'),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Enable Location Access',
+                                      style: M3ETypography.headlineSmall,
                                     ),
-                                    ElevatedButton(
-                                      onPressed: () =>
-                                          Navigator.of(context).pop(true),
-                                      child: const Text('Open Settings'),
+                                    M3ESpacing.verticalMD,
+                                    Text(
+                                      'Geofencing requires location access to notify you when you\'re near fridges needing help.\n\n'
+                                      'Please tap "Open Settings" and enable location access for FridgeFinder.',
+                                      style: M3ETypography.bodyMedium,
+                                    ),
+                                    M3ESpacing.verticalXL,
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      children: [
+                                        TextButtonM3E(
+                                          onPressed: () =>
+                                              Navigator.of(context).pop(false),
+                                          child: const Text('Cancel'),
+                                        ),
+                                        M3ESpacing.horizontalXS,
+                                        FilledButtonM3E(
+                                          onPressed: () =>
+                                              Navigator.of(context).pop(true),
+                                          child: const Text('Open Settings'),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
@@ -848,24 +866,38 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         // Permanently denied, guide to settings
                         debugPrint('Location permission permanently denied');
                         if (context.mounted) {
-                          final shouldOpenSettings = await showDialog<bool>(
+                          final shouldOpenSettings = await DialogM3E.showCustom<bool>(
                             context: context,
-                            builder: (context) => AlertDialog(
-                              title: const Text('Enable Location Access'),
-                              content: const Text(
-                                'Geofencing requires location access to notify you when you\'re near fridges needing help.\n\n'
-                                'Please tap "Open Settings" and enable location access for FridgeFinder.',
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () =>
-                                      Navigator.of(context).pop(false),
-                                  child: const Text('Cancel'),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Enable Location Access',
+                                  style: M3ETypography.headlineSmall,
                                 ),
-                                ElevatedButton(
-                                  onPressed: () =>
-                                      Navigator.of(context).pop(true),
-                                  child: const Text('Open Settings'),
+                                M3ESpacing.verticalMD,
+                                Text(
+                                  'Geofencing requires location access to notify you when you\'re near fridges needing help.\n\n'
+                                  'Please tap "Open Settings" and enable location access for FridgeFinder.',
+                                  style: M3ETypography.bodyMedium,
+                                ),
+                                M3ESpacing.verticalXL,
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: [
+                                    TextButtonM3E(
+                                      onPressed: () =>
+                                          Navigator.of(context).pop(false),
+                                      child: const Text('Cancel'),
+                                    ),
+                                    M3ESpacing.horizontalXS,
+                                    FilledButtonM3E(
+                                      onPressed: () =>
+                                          Navigator.of(context).pop(true),
+                                      child: const Text('Open Settings'),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
@@ -999,42 +1031,62 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   void _showSignOutDialog(BuildContext context, WidgetRef ref) {
-    showDialog(
+    DialogM3E.showCustom(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Sign Out?'),
-        content: const Text('Are you sure you want to sign out?'),
-        actions: [
-          TextButtonM3E(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Sign Out?',
+            style: M3ETypography.headlineSmall,
           ),
-          TextButtonM3E(
-            onPressed: () async {
-              Navigator.of(context).pop();
-              try {
-                final repository = ref.read(authRepositoryProvider);
-                await repository.signOut();
+          M3ESpacing.verticalMD,
+          Text(
+            'Are you sure you want to sign out?',
+            style: M3ETypography.bodyMedium,
+          ),
+          M3ESpacing.verticalXL,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButtonM3E(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancel'),
+              ),
+              M3ESpacing.horizontalXS,
+              FilledButtonM3E(
+                onPressed: () async {
+                  Navigator.of(context).pop();
+                  try {
+                    final repository = ref.read(authRepositoryProvider);
+                    await repository.signOut();
 
-                // Invalidate providers to update UI
-                ref.invalidate(authUserProvider);
-                ref.invalidate(userProfileProvider);
-                ref.invalidate(isAuthenticatedProvider);
+                    // Invalidate providers to update UI
+                    ref.invalidate(authUserProvider);
+                    ref.invalidate(userProfileProvider);
+                    ref.invalidate(isAuthenticatedProvider);
 
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Signed out successfully')),
-                  );
-                }
-              } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error signing out: $e')),
-                  );
-                }
-              }
-            },
-            child: const Text('Sign Out'),
+                    if (context.mounted) {
+                      showSnackbarM3E(
+                        context: context,
+                        message: 'Signed out successfully',
+                      );
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      showSnackbarM3E(
+                        context: context,
+                        message: 'Error signing out: $e',
+                        backgroundColor: Theme.of(context).colorScheme.error,
+                        foregroundColor: Theme.of(context).colorScheme.onError,
+                      );
+                    }
+                  }
+                },
+                child: const Text('Sign Out'),
+              ),
+            ],
           ),
         ],
       ),
@@ -1046,24 +1098,42 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     WidgetRef ref,
     String userId,
   ) {
-    showDialog(
+    DialogM3E.showCustom(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Account?'),
-        content: const Text(
-          'Are you sure you want to delete your account? This will permanently delete your profile, subscriptions, and points. Your status reports will be anonymized but kept.',
-        ),
-        actions: [
-          TextButtonM3E(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Delete Account?',
+            style: M3ETypography.headlineSmall,
           ),
-          TextButtonM3E(
-            onPressed: () {
-              Navigator.of(context).pop();
-              _showFinalDeleteConfirmation(context, ref, userId);
-            },
-            child: const Text('Continue', style: TextStyle(color: Colors.red)),
+          M3ESpacing.verticalMD,
+          Text(
+            'Are you sure you want to delete your account? This will permanently delete your profile, subscriptions, and points. Your status reports will be anonymized but kept.',
+            style: M3ETypography.bodyMedium,
+          ),
+          M3ESpacing.verticalXL,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButtonM3E(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancel'),
+              ),
+              M3ESpacing.horizontalXS,
+              FilledButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _showFinalDeleteConfirmation(context, ref, userId);
+                },
+                style: FilledButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.error,
+                  foregroundColor: Theme.of(context).colorScheme.onError,
+                ),
+                child: const Text('Continue'),
+              ),
+            ],
           ),
         ],
       ),
@@ -1075,20 +1145,32 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     WidgetRef ref,
     String userId,
   ) {
-    showDialog(
+    DialogM3E.showCustom(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Final Confirmation'),
-        content: const Text(
-          'This action cannot be undone. Your account and all associated data will be permanently deleted.',
-        ),
-        actions: [
-          TextButtonM3E(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Final Confirmation',
+            style: M3ETypography.headlineSmall,
           ),
-          TextButtonM3E(
-            onPressed: () async {
+          M3ESpacing.verticalMD,
+          Text(
+            'This action cannot be undone. Your account and all associated data will be permanently deleted.',
+            style: M3ETypography.bodyMedium,
+          ),
+          M3ESpacing.verticalXL,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButtonM3E(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancel'),
+              ),
+              M3ESpacing.horizontalXS,
+              FilledButton(
+                onPressed: () async {
               // Get repository and user references FIRST, before any navigation
               final repository = ref.read(authRepositoryProvider);
               final authUser = ref.read(currentAuthUserProvider);
@@ -1097,8 +1179,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               if (user == null) {
                 if (context.mounted) {
                   Navigator.of(context).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Not authenticated')),
+                  showSnackbarM3E(
+                    context: context,
+                    message: 'Not authenticated',
                   );
                 }
                 return;
@@ -1118,8 +1201,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               if (reauthenticated != true) {
                 if (context.mounted) {
                   Navigator.of(context).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Account deletion cancelled')),
+                  showSnackbarM3E(
+                    context: context,
+                    message: 'Account deletion cancelled',
                   );
                 }
                 return;
@@ -1152,30 +1236,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               debugPrint('Context is mounted, showing loading indicator');
 
               // Show loading indicator
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Row(
-                    children: [
-                      SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicatorM3E.small(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      ),
-                      SizedBox(width: 16),
-                      Text('Deleting account...'),
-                    ],
-                  ),
-                  duration: Duration(seconds: 30),
-                ),
+              showSnackbarM3E(
+                context: context,
+                message: 'Deleting account...',
+                duration: SnackbarDuration.long_,
+                icon: const Icon(Icons.hourglass_bottom),
               );
 
               debugPrint('Loading indicator shown, calling deleteAccount');
-
-              // Get ScaffoldMessenger before deletion to ensure it persists
-              final scaffoldMessenger = ScaffoldMessenger.of(context);
 
               try {
                 debugPrint('About to call deleteAccount with userId: $userId');
@@ -1186,16 +1254,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   'Account deleted successfully from deleteAccount call',
                 );
 
-                // Clear loading indicator and show success message
-                // Use the messenger we captured before deletion
-                scaffoldMessenger.clearSnackBars();
-                scaffoldMessenger.showSnackBar(
-                  const SnackBar(
-                    content: Text('Account deleted successfully'),
+                // Show success message
+                if (context.mounted) {
+                  showSnackbarM3E(
+                    context: context,
+                    message: 'Account deleted successfully',
+                    icon: const Icon(Icons.check_circle),
                     backgroundColor: Colors.green,
-                    duration: Duration(seconds: 3),
-                  ),
-                );
+                    duration: SnackbarDuration.short_,
+                  );
+                }
 
                 debugPrint(
                   'Account deletion complete - Firebase will auto-update auth state',
@@ -1212,25 +1280,25 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         'Please try again. Your session may have expired.';
                   }
 
-                  // Clear any previous snackbars
-                  ScaffoldMessenger.of(context).clearSnackBars();
-
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(errorMessage),
-                      backgroundColor: Colors.red,
-                      duration: const Duration(seconds: 5),
-                    ),
+                  showSnackbarM3E(
+                    context: context,
+                    message: errorMessage,
+                    backgroundColor: Theme.of(context).colorScheme.error,
+                    foregroundColor: Theme.of(context).colorScheme.onError,
+                    duration: SnackbarDuration.long_,
                   );
                 }
               }
             },
-            child: const Text(
-              'Delete Account',
-              style: TextStyle(color: Colors.red),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onError,
             ),
+            child: const Text('Delete Account'),
           ),
         ],
+      ),
+    ],
       ),
     );
   }

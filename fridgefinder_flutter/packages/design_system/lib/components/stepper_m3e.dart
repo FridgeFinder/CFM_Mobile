@@ -141,18 +141,66 @@ class _StepperM3EState extends State<StepperM3E>
   }
 
   Widget _buildHorizontalStepper() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Column(
       children: [
-        // Step indicators
-        Row(
-          children: List.generate(
-            widget.steps.length,
-            (index) => Expanded(
-              child: _buildHorizontalStepIndicator(index),
+        // Step indicators with connector lines
+        Padding(
+          padding: M3ESpacing.symmetric(horizontal: M3ESpacing.md),
+          child: Row(
+            children: List.generate(
+              widget.steps.length * 2 - 1, // Include connector lines
+              (index) {
+                if (index.isEven) {
+                  // Step indicator
+                  final stepIndex = index ~/ 2;
+                  return Expanded(
+                    flex: 2,
+                    child: _buildHorizontalStepIndicator(stepIndex),
+                  );
+                } else {
+                  // Connector line between steps
+                  final stepIndex = index ~/ 2;
+                  final isCompleted = stepIndex < widget.currentStep;
+                  return Expanded(
+                    flex: 1,
+                    child: Padding(
+                      padding: M3ESpacing.only(
+                        left: M3ESpacing.xs,
+                        right: M3ESpacing.xs,
+                        top: 32, // Align with step circles
+                      ),
+                      child: AnimatedContainer(
+                        duration: M3EMotion.getDuration(M3EMotion.medium3),
+                        curve: M3EMotion.emphasizedDecelerate,
+                        height: 3,
+                        decoration: BoxDecoration(
+                          color: isCompleted
+                              ? colorScheme.primary
+                              : colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(2),
+                          // Subtle gradient for completed connectors
+                          gradient: isCompleted
+                              ? LinearGradient(
+                                  begin: Alignment.centerLeft,
+                                  end: Alignment.centerRight,
+                                  colors: [
+                                    colorScheme.primary,
+                                    colorScheme.primary.withValues(alpha: 0.8),
+                                  ],
+                                )
+                              : null,
+                        ),
+                      ),
+                    ),
+                  );
+                }
+              },
             ),
           ),
         ),
-        M3ESpacing.verticalXL,
+        M3ESpacing.verticalXXL, // More breathing room
         // Step content with SharedAxisZ transition
         Expanded(
           child: M3ETransitions.sharedAxisZ(
@@ -192,6 +240,7 @@ class _StepperM3EState extends State<StepperM3E>
     final isActive = index == widget.currentStep;
     final isCompleted = index < widget.currentStep;
     final isError = step.state == StepState.error;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return GestureDetector(
       onTap: widget.stepsTappable && (isCompleted || isActive)
@@ -199,56 +248,116 @@ class _StepperM3EState extends State<StepperM3E>
           : null,
       child: Column(
         children: [
-          // Step circle
+          // Step circle with enhanced animations and visual states
           AnimatedBuilder(
             animation: _stepControllers[index],
             builder: (context, child) {
+              // Enhanced scale animation for active state
+              final scale = isActive
+                  ? 1.0 + (_indicatorController.value * 0.15) // More pronounced scale
+                  : 1.0;
+
               return Transform.scale(
-                scale: isActive
-                    ? 1.0 + (_indicatorController.value * 0.1)
-                    : 1.0,
-                child: Container(
-                  width: 32,
-                  height: 32,
+                scale: scale,
+                child: AnimatedContainer(
+                  duration: M3EMotion.getDuration(M3EMotion.medium3),
+                  curve: M3EMotion.emphasizedDecelerate,
+                  width: isActive ? 40 : 32, // Larger when active
+                  height: isActive ? 40 : 32,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: _getStepColor(isActive, isCompleted, isError),
+                    // Enhanced elevation for active state
+                    boxShadow: isActive
+                        ? [
+                            BoxShadow(
+                              color: colorScheme.primary.withValues(alpha: 0.3),
+                              blurRadius: 12,
+                              spreadRadius: 2,
+                              offset: const Offset(0, 4),
+                            ),
+                          ]
+                        : isCompleted
+                            ? [
+                                BoxShadow(
+                                  color: colorScheme.primary.withValues(alpha: 0.15),
+                                  blurRadius: 6,
+                                  spreadRadius: 0,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ]
+                            : [],
+                    // Subtle border for inactive steps
+                    border: !isActive && !isCompleted && !isError
+                        ? Border.all(
+                            color: colorScheme.outline.withValues(alpha: 0.3),
+                            width: 2,
+                          )
+                        : null,
                   ),
                   child: Center(
-                    child: isCompleted
-                        ? Icon(
-                            Icons.check,
-                            color: Colors.white,
-                            size: 20,
-                          )
-                        : isError
-                            ? Icon(
-                                Icons.error,
-                                color: Colors.white,
-                                size: 20,
-                              )
-                            : Text(
-                                '${index + 1}',
-                                style: M3ETypography.labelMedium.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
+                    child: AnimatedSwitcher(
+                      duration: M3EMotion.getDuration(M3EMotion.medium2),
+                      transitionBuilder: (child, animation) {
+                        return ScaleTransition(
+                          scale: animation,
+                          child: FadeTransition(
+                            opacity: animation,
+                            child: child,
+                          ),
+                        );
+                      },
+                      child: isCompleted
+                          ? Icon(
+                              Icons.check_rounded,
+                              key: ValueKey('check_$index'),
+                              color: colorScheme.onPrimary,
+                              size: isActive ? 24 : 20,
+                            )
+                          : isError
+                              ? Icon(
+                                  Icons.error_rounded,
+                                  key: ValueKey('error_$index'),
+                                  color: colorScheme.onError,
+                                  size: isActive ? 24 : 20,
+                                )
+                              : Text(
+                                  '${index + 1}',
+                                  key: ValueKey('number_$index'),
+                                  style: M3ETypography.labelLarge.copyWith(
+                                    color: !isActive && !isCompleted
+                                        ? colorScheme.onSurfaceVariant.withValues(alpha: 0.6)
+                                        : colorScheme.onPrimary,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: isActive ? 18 : 16,
+                                  ),
                                 ),
-                              ),
+                    ),
                   ),
                 ),
               );
             },
           ),
-          M3ESpacing.verticalXXS,
-          // Step label
-          Text(
-            step.title,
-            style: M3ETypography.labelSmall.copyWith(
-              color: isActive || isCompleted
-                  ? Theme.of(context).colorScheme.primary
-                  : Theme.of(context).colorScheme.onSurfaceVariant,
+          M3ESpacing.verticalXS, // More breathing room
+          // Step label with enhanced typography
+          AnimatedDefaultTextStyle(
+            duration: M3EMotion.getDuration(M3EMotion.medium2),
+            curve: M3EMotion.emphasizedDecelerate,
+            style: M3ETypography.labelMedium.copyWith(
+              color: isActive
+                  ? colorScheme.primary
+                  : isCompleted
+                      ? colorScheme.primary.withValues(alpha: 0.7)
+                      : colorScheme.onSurfaceVariant,
+              fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+              fontSize: isActive ? 13 : 12,
             ),
-            textAlign: TextAlign.center,
+            child: Text(
+              step.title,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ],
       ),
@@ -261,113 +370,215 @@ class _StepperM3EState extends State<StepperM3E>
     final isCompleted = index < widget.currentStep;
     final isError = step.state == StepState.error;
     final isExpanded = widget.stepExpansion && isActive;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Column(
       children: [
-        // Step header
-        InkWell(
-          onTap: widget.stepsTappable && (isCompleted || isActive)
-              ? () => widget.onStepTapped?.call(index)
-              : null,
-          child: Row(
-            children: [
-              // Step circle
-              AnimatedBuilder(
-                animation: _stepControllers[index],
-                builder: (context, child) {
-                  return Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: _getStepColor(isActive, isCompleted, isError),
-                    ),
-                    child: Center(
-                      child: isCompleted
-                          ? Icon(
-                              Icons.check,
-                              color: Colors.white,
-                              size: 24,
-                            )
-                          : isError
-                              ? Icon(
-                                  Icons.error,
-                                  color: Colors.white,
-                                  size: 24,
-                                )
-                              : Text(
-                                  '${index + 1}',
-                                  style: M3ETypography.labelLarge.copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
+        // Step header with enhanced interactivity
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: widget.stepsTappable && (isCompleted || isActive)
+                ? () => widget.onStepTapped?.call(index)
+                : null,
+            borderRadius: BorderRadius.circular(M3ESpacing.md),
+            child: Padding(
+              padding: M3ESpacing.symmetric(
+                horizontal: M3ESpacing.sm,
+                vertical: M3ESpacing.sm,
+              ),
+              child: Row(
+                children: [
+                  // Step circle with enhanced animations
+                  AnimatedBuilder(
+                    animation: _stepControllers[index],
+                    builder: (context, child) {
+                      return AnimatedContainer(
+                        duration: M3EMotion.getDuration(M3EMotion.medium3),
+                        curve: M3EMotion.emphasizedDecelerate,
+                        width: isActive ? 48 : 40,
+                        height: isActive ? 48 : 40,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: _getStepColor(isActive, isCompleted, isError),
+                          // Enhanced elevation and glow for active state
+                          boxShadow: isActive
+                              ? [
+                                  BoxShadow(
+                                    color: colorScheme.primary.withValues(alpha: 0.4),
+                                    blurRadius: 16,
+                                    spreadRadius: 3,
+                                    offset: const Offset(0, 4),
                                   ),
-                                ),
-                    ),
-                  );
-                },
-              ),
-              M3ESpacing.horizontalMD,
-              // Step title and subtitle
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      step.title,
-                      style: M3ETypography.titleMedium.copyWith(
-                        color: isActive || isCompleted
-                            ? Theme.of(context).colorScheme.onSurface
-                            : Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    if (step.subtitle != null) ...[
-                      M3ESpacing.verticalXXS,
-                      Text(
-                        step.subtitle!,
-                        style: M3ETypography.bodySmall.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                ]
+                              : isCompleted
+                                  ? [
+                                      BoxShadow(
+                                        color: colorScheme.primary.withValues(alpha: 0.2),
+                                        blurRadius: 8,
+                                        spreadRadius: 1,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ]
+                                  : [],
+                          // Border for inactive steps
+                          border: !isActive && !isCompleted && !isError
+                              ? Border.all(
+                                  color: colorScheme.outline.withValues(alpha: 0.3),
+                                  width: 2,
+                                )
+                              : null,
                         ),
+                        child: Center(
+                          child: AnimatedSwitcher(
+                            duration: M3EMotion.getDuration(M3EMotion.medium2),
+                            transitionBuilder: (child, animation) {
+                              return ScaleTransition(
+                                scale: animation,
+                                child: FadeTransition(
+                                  opacity: animation,
+                                  child: child,
+                                ),
+                              );
+                            },
+                            child: isCompleted
+                                ? Icon(
+                                    Icons.check_rounded,
+                                    key: ValueKey('check_$index'),
+                                    color: colorScheme.onPrimary,
+                                    size: isActive ? 28 : 24,
+                                  )
+                                : isError
+                                    ? Icon(
+                                        Icons.error_rounded,
+                                        key: ValueKey('error_$index'),
+                                        color: colorScheme.onError,
+                                        size: isActive ? 28 : 24,
+                                      )
+                                    : Text(
+                                        '${index + 1}',
+                                        key: ValueKey('number_$index'),
+                                        style: M3ETypography.titleMedium.copyWith(
+                                          color: !isActive && !isCompleted
+                                              ? colorScheme.onSurfaceVariant.withValues(alpha: 0.6)
+                                              : colorScheme.onPrimary,
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: isActive ? 20 : 18,
+                                        ),
+                                      ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  M3ESpacing.horizontalLG, // More breathing room
+                  // Step title and subtitle with better typography
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        AnimatedDefaultTextStyle(
+                          duration: M3EMotion.getDuration(M3EMotion.medium2),
+                          curve: M3EMotion.emphasizedDecelerate,
+                          style: M3ETypography.titleMedium.copyWith(
+                            color: isActive
+                                ? colorScheme.onSurface
+                                : isCompleted
+                                    ? colorScheme.onSurface.withValues(alpha: 0.8)
+                                    : colorScheme.onSurfaceVariant,
+                            fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+                            fontSize: isActive ? 17 : 16,
+                          ),
+                          child: Text(step.title),
+                        ),
+                        if (step.subtitle != null) ...[
+                          M3ESpacing.verticalXXS,
+                          AnimatedOpacity(
+                            duration: M3EMotion.getDuration(M3EMotion.medium2),
+                            opacity: isActive ? 1.0 : 0.7,
+                            child: Text(
+                              step.subtitle!,
+                              style: M3ETypography.bodyMedium.copyWith(
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  // Active indicator chevron
+                  if (isActive)
+                    AnimatedRotation(
+                      duration: M3EMotion.getDuration(M3EMotion.medium2),
+                      turns: isExpanded ? 0.25 : 0,
+                      child: Icon(
+                        Icons.chevron_right_rounded,
+                        color: colorScheme.primary,
+                        size: 28,
                       ),
-                    ],
-                  ],
-                ),
+                    ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
-        // Step content (expandable)
+        // Step content (expandable) with smooth animation
         if (isExpanded) ...[
-          M3ESpacing.verticalMD,
-          M3ETransitions.sharedAxisZ(
-            animation: _contentController,
-            secondaryAnimation: _contentController,
-            child: step.content,
+          M3ESpacing.verticalLG,
+          Padding(
+            padding: M3ESpacing.only(left: 72), // Align with title
+            child: M3ETransitions.sharedAxisZ(
+              animation: _contentController,
+              secondaryAnimation: _contentController,
+              child: step.content,
+            ),
           ),
           // Controls for this step
-          if (widget.controlsBuilder != null)
-            widget.controlsBuilder!(
-              context,
-              ControlsDetails(
-                onStepContinue: widget.onStepContinue,
-                onStepCancel: widget.onStepCancel,
-                stepIndex: index,
-              ),
-            )
-          else
-            _buildDefaultControls(),
-        ],
-        // Connector line (except last step)
-        if (index < widget.steps.length - 1) ...[
-          M3ESpacing.verticalMD,
-          Container(
-            margin: EdgeInsets.only(left: 20),
-            width: 2,
-            height: 24,
-            color: isCompleted
-                ? Theme.of(context).colorScheme.primary
-                : Theme.of(context).colorScheme.surfaceContainerHighest,
+          Padding(
+            padding: M3ESpacing.only(left: 72),
+            child: widget.controlsBuilder != null
+                ? widget.controlsBuilder!(
+                    context,
+                    ControlsDetails(
+                      onStepContinue: widget.onStepContinue,
+                      onStepCancel: widget.onStepCancel,
+                      stepIndex: index,
+                    ),
+                  )
+                : _buildDefaultControls(),
           ),
-          M3ESpacing.verticalMD,
+        ],
+        // Enhanced connector line (except last step)
+        if (index < widget.steps.length - 1) ...[
+          M3ESpacing.verticalLG,
+          Padding(
+            padding: M3ESpacing.only(left: 43), // Center of circle
+            child: AnimatedContainer(
+              duration: M3EMotion.getDuration(M3EMotion.medium3),
+              curve: M3EMotion.emphasizedDecelerate,
+              width: 3, // Slightly thicker for better visibility
+              height: 32, // More space between steps
+              decoration: BoxDecoration(
+                color: isCompleted
+                    ? colorScheme.primary
+                    : colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(2),
+                // Subtle gradient for completed connectors
+                gradient: isCompleted
+                    ? LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          colorScheme.primary,
+                          colorScheme.primary.withValues(alpha: 0.8),
+                        ],
+                      )
+                    : null,
+              ),
+            ),
+          ),
+          M3ESpacing.verticalLG,
         ],
       ],
     );

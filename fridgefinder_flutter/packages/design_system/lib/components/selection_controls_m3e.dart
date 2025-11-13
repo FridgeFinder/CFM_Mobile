@@ -106,12 +106,13 @@ class _CheckboxM3EState extends State<CheckboxM3E>
     );
 
     if (widget.label != null) {
-      return CheckboxListTile(
-        value: widget.value,
-        onChanged: widget.onChanged,
+      return ListTile(
+        contentPadding: EdgeInsets.zero,
         title: Text(widget.label!),
-        controlAffinity: ListTileControlAffinity.leading,
-        secondary: interactiveCheckbox,
+        trailing: interactiveCheckbox,
+        onTap: widget.onChanged != null
+            ? () => widget.onChanged?.call(!widget.value)
+            : null,
       );
     }
 
@@ -306,17 +307,13 @@ class _RadioM3EState<T> extends State<RadioM3E<T>>
     );
 
     if (widget.label != null) {
-      return
-      // ignore: deprecated_member_use
-      RadioListTile<T>(
-        value: widget.value,
-        // ignore: deprecated_member_use
-        groupValue: widget.groupValue,
-        // ignore: deprecated_member_use
-        onChanged: widget.onChanged,
+      return ListTile(
+        contentPadding: EdgeInsets.zero,
         title: Text(widget.label!),
-        secondary: interactiveRadio,
-        controlAffinity: ListTileControlAffinity.trailing,
+        trailing: interactiveRadio,
+        onTap: widget.onChanged != null
+            ? () => widget.onChanged?.call(widget.value)
+            : null,
       );
     }
 

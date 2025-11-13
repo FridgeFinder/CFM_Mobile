@@ -125,9 +125,11 @@ class _SignInWidgetState extends ConsumerState<SignInWidget> {
           context: context,
           barrierDismissible: false,
           builder: (dialogContext) => Dialog(
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: SignUpForm(userCredential: credential),
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: SignUpForm(userCredential: credential),
+              ),
             ),
           ),
         );
@@ -217,9 +219,11 @@ class _SignInWidgetState extends ConsumerState<SignInWidget> {
           context: context,
           barrierDismissible: false,
           builder: (dialogContext) => Dialog(
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: SignUpForm(userCredential: credential),
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: SignUpForm(userCredential: credential),
+              ),
             ),
           ),
         );

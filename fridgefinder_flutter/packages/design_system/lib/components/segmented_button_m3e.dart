@@ -268,43 +268,58 @@ class SegmentedButtonM3E<T> extends StatelessWidget {
   /// Builds the M3E button style with proper specifications
   ButtonStyle _buildM3EStyle(BuildContext context, ColorScheme colorScheme) {
     return ButtonStyle(
-      // Background color: secondaryContainer when selected, transparent otherwise
+      // Background color: vibrant primaryContainer when selected, subtle surface otherwise
       backgroundColor: WidgetStateProperty.resolveWith<Color>(
         (Set<WidgetState> states) {
           if (states.contains(WidgetState.selected)) {
-            return colorScheme.secondaryContainer;
+            if (states.contains(WidgetState.pressed)) {
+              return colorScheme.primary.withValues(alpha: 0.15);
+            }
+            if (states.contains(WidgetState.hovered)) {
+              return colorScheme.primaryContainer;
+            }
+            return colorScheme.primaryContainer;
+          }
+          if (states.contains(WidgetState.hovered)) {
+            return colorScheme.surfaceContainerHighest;
           }
           return Colors.transparent;
         },
       ),
 
-      // Foreground color: onSecondaryContainer when selected, onSurface otherwise
+      // Foreground color: vibrant primary when selected, subtle when not
       foregroundColor: WidgetStateProperty.resolveWith<Color>(
         (Set<WidgetState> states) {
           if (states.contains(WidgetState.disabled)) {
             return colorScheme.onSurface.withValues(alpha: 0.38);
           }
           if (states.contains(WidgetState.selected)) {
-            return colorScheme.onSecondaryContainer;
+            return colorScheme.primary;
           }
-          return colorScheme.onSurface;
+          if (states.contains(WidgetState.hovered)) {
+            return colorScheme.onSurface;
+          }
+          return colorScheme.onSurfaceVariant;
         },
       ),
 
-      // Icon color: matches foreground color
+      // Icon color: matches foreground color with extra vibrancy
       iconColor: WidgetStateProperty.resolveWith<Color>(
         (Set<WidgetState> states) {
           if (states.contains(WidgetState.disabled)) {
             return colorScheme.onSurface.withValues(alpha: 0.38);
           }
           if (states.contains(WidgetState.selected)) {
-            return colorScheme.onSecondaryContainer;
+            return colorScheme.primary;
           }
-          return colorScheme.onSurface;
+          if (states.contains(WidgetState.hovered)) {
+            return colorScheme.onSurface;
+          }
+          return colorScheme.onSurfaceVariant;
         },
       ),
 
-      // Border side: outline color around entire group
+      // Border side: vibrant primary when selected, outline otherwise
       side: WidgetStateProperty.resolveWith<BorderSide>(
         (Set<WidgetState> states) {
           if (states.contains(WidgetState.disabled)) {
@@ -313,59 +328,77 @@ class SegmentedButtonM3E<T> extends StatelessWidget {
               width: 1.0,
             );
           }
+          if (states.contains(WidgetState.selected)) {
+            return BorderSide(
+              color: colorScheme.primary.withValues(alpha: 0.5),
+              width: 1.5,
+            );
+          }
           return BorderSide(
-            color: colorScheme.outline,
+            color: colorScheme.outline.withValues(alpha: 0.5),
             width: 1.0,
           );
         },
       ),
 
-      // Shape: First segment has left rounded, last has right rounded, middle is square
-      // Flutter's SegmentedButton handles this automatically with 20dp radius
+      // Shape: More rounded for expressiveness (24dp radius)
       shape: WidgetStateProperty.all<OutlinedBorder>(
         const RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(20.0)),
+          borderRadius: BorderRadius.all(Radius.circular(24.0)),
         ),
       ),
 
-      // Padding: 12-24px horizontal for comfortable tap targets
+      // Padding: More generous for better touch targets
       padding: WidgetStateProperty.all<EdgeInsetsGeometry>(
-        const EdgeInsets.symmetric(horizontal: 12.0, vertical: 0.0),
+        const EdgeInsets.symmetric(horizontal: 16.0, vertical: 0.0),
       ),
 
-      // Minimum size: 40dp height as per M3 spec
+      // Minimum size: 44dp height for better touch targets
       minimumSize: WidgetStateProperty.all<Size>(
-        const Size.fromHeight(40.0),
+        const Size.fromHeight(44.0),
       ),
 
       // Maximum size: Constrain height, allow width to grow
       maximumSize: WidgetStateProperty.all<Size>(
-        const Size.fromHeight(40.0),
+        const Size.fromHeight(44.0),
       ),
 
       // Tap target size: Padded for 48dp minimum touch target
       tapTargetSize: MaterialTapTargetSize.padded,
 
-      // Visual density: Compact for tight layouts
-      visualDensity: VisualDensity.compact,
+      // Visual density: Standard for comfortable interactions
+      visualDensity: VisualDensity.standard,
 
-      // Elevation: Flat design, no shadow
-      elevation: WidgetStateProperty.all<double>(0.0),
+      // Elevation: Subtle lift on selected for depth
+      elevation: WidgetStateProperty.resolveWith<double>(
+        (Set<WidgetState> states) {
+          if (states.contains(WidgetState.selected)) {
+            return 1.0;
+          }
+          return 0.0;
+        },
+      ),
 
       // Animation duration: Smooth, expressive transitions
       animationDuration: M3EMotion.medium3, // 350ms for more noticeable transitions
 
-      // Overlay color: State layers for press/hover/focus
+      // Overlay color: Vibrant state layers for press/hover/focus
       overlayColor: WidgetStateProperty.resolveWith<Color>(
         (Set<WidgetState> states) {
           if (states.contains(WidgetState.pressed)) {
-            return colorScheme.onSecondaryContainer.withValues(alpha: 0.12);
+            if (states.contains(WidgetState.selected)) {
+              return colorScheme.primary.withValues(alpha: 0.15);
+            }
+            return colorScheme.onSurface.withValues(alpha: 0.12);
           }
           if (states.contains(WidgetState.hovered)) {
-            return colorScheme.onSecondaryContainer.withValues(alpha: 0.08);
+            if (states.contains(WidgetState.selected)) {
+              return colorScheme.primary.withValues(alpha: 0.1);
+            }
+            return colorScheme.onSurface.withValues(alpha: 0.08);
           }
           if (states.contains(WidgetState.focused)) {
-            return colorScheme.onSecondaryContainer.withValues(alpha: 0.12);
+            return colorScheme.primary.withValues(alpha: 0.12);
           }
           return Colors.transparent;
         },
@@ -381,13 +414,25 @@ class SegmentedButtonM3E<T> extends StatelessWidget {
         },
       ),
 
-      // Text style: Body medium from theme
-      textStyle: WidgetStateProperty.all<TextStyle>(
-        Theme.of(context).textTheme.labelLarge ?? const TextStyle(),
+      // Text style: Enhanced with better weight for selected state
+      textStyle: WidgetStateProperty.resolveWith<TextStyle>(
+        (Set<WidgetState> states) {
+          final baseStyle = Theme.of(context).textTheme.labelLarge ?? const TextStyle();
+          if (states.contains(WidgetState.selected)) {
+            return baseStyle.copyWith(
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.15,
+            );
+          }
+          return baseStyle.copyWith(
+            fontWeight: FontWeight.w500,
+            letterSpacing: 0.1,
+          );
+        },
       ),
 
-      // Icon size: Standard 18dp for segmented buttons
-      iconSize: WidgetStateProperty.all<double>(18.0),
+      // Icon size: Standard 20dp for segmented buttons
+      iconSize: WidgetStateProperty.all<double>(20.0),
 
       // Alignment: Center content in each segment
       alignment: Alignment.center,

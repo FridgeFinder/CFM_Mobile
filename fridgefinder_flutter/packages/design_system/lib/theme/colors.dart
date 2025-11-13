@@ -7,18 +7,19 @@ import 'package:flutter/material.dart';
 class M3EColors {
   M3EColors._();
 
-  // Primary palette generated from app primary (#88B3FF)
+  // Primary palette - Vibrant M3E Electric Blue (#5B9FFF)
+  // Enhanced from original #88B3FF with higher saturation for M3 Expressive
   static const Color primaryTone0 = Color(0xFF000000);
-  static const Color primaryTone10 = Color(0xFF001A41);
-  static const Color primaryTone20 = Color(0xFF002D6C);
-  static const Color primaryTone30 = Color(0xFF004494);
-  static const Color primaryTone40 = Color(0xFF005CBC);
-  static const Color primaryTone50 = Color(0xFF0075E5);
-  static const Color primaryTone60 = Color(0xFF4A91FF);
-  static const Color primaryTone70 = Color(0xFF6FA7FF);
-  static const Color primaryTone80 = Color(0xFF88B3FF); // App primary!
-  static const Color primaryTone90 = Color(0xFFD3E3FF);
-  static const Color primaryTone95 = Color(0xFFECF2FF);
+  static const Color primaryTone10 = Color(0xFF001D3A);
+  static const Color primaryTone20 = Color(0xFF003062);
+  static const Color primaryTone30 = Color(0xFF00468A);
+  static const Color primaryTone40 = Color(0xFF2E6BC9);
+  static const Color primaryTone50 = Color(0xFF4882E6);
+  static const Color primaryTone60 = Color(0xFF5B9FFF); // New vibrant primary!
+  static const Color primaryTone70 = Color(0xFF7BB4FF);
+  static const Color primaryTone80 = Color(0xFF9BC7FF);
+  static const Color primaryTone90 = Color(0xFFD0E4FF);
+  static const Color primaryTone95 = Color(0xFFECF3FF);
   static const Color primaryTone99 = Color(0xFFFDFCFF);
   static const Color primaryTone100 = Color(0xFFFFFFFF);
 
@@ -140,11 +141,98 @@ class M3EColors {
     return Color.alphaBlend(layerColor, surface);
   }
 
-  /// Get primary color constant
-  static const Color primary = Color(0xFF88B3FF);
+  // Secondary palette - Vibrant M3E Pink/Magenta (#FF6B9D)
+  // Integrated from fridge status "few items" pink (#FFD4FF)
+  // Enhanced with higher saturation for M3 Expressive vibrancy
+  static const Color secondaryTone0 = Color(0xFF000000);
+  static const Color secondaryTone10 = Color(0xFF3E001F);
+  static const Color secondaryTone20 = Color(0xFF630033);
+  static const Color secondaryTone30 = Color(0xFF8B0049);
+  static const Color secondaryTone40 = Color(0xFFB71E5F);
+  static const Color secondaryTone50 = Color(0xFFE43876);
+  static const Color secondaryTone60 = Color(0xFFFF6B9D); // Vibrant pink!
+  static const Color secondaryTone70 = Color(0xFFFF8FB3);
+  static const Color secondaryTone80 = Color(0xFFFFB1CA);
+  static const Color secondaryTone90 = Color(0xFFFFD4E1);
+  static const Color secondaryTone95 = Color(0xFFFFEBF2);
+  static const Color secondaryTone99 = Color(0xFFFFFBFF);
+  static const Color secondaryTone100 = Color(0xFFFFFFFF);
+
+  // Tertiary palette - Vibrant M3E Green (#5FD65F)
+  // Integrated from fridge status "full" green (#97ED7D)
+  // Enhanced with higher saturation for M3 Expressive energy
+  static const Color tertiaryTone0 = Color(0xFF000000);
+  static const Color tertiaryTone10 = Color(0xFF002204);
+  static const Color tertiaryTone20 = Color(0xFF003909);
+  static const Color tertiaryTone30 = Color(0xFF00530F);
+  static const Color tertiaryTone40 = Color(0xFF1B7028);
+  static const Color tertiaryTone50 = Color(0xFF348E3F);
+  static const Color tertiaryTone60 = Color(0xFF5FD65F); // Vibrant green!
+  static const Color tertiaryTone70 = Color(0xFF7EE87E);
+  static const Color tertiaryTone80 = Color(0xFF9BF49B);
+  static const Color tertiaryTone90 = Color(0xFFB9FFB7);
+  static const Color tertiaryTone95 = Color(0xFFD9FFD6);
+  static const Color tertiaryTone99 = Color(0xFFF5FFF5);
+  static const Color tertiaryTone100 = Color(0xFFFFFFFF);
+
+  // Warning/Accent palette - Vibrant M3E Amber (#FFB300)
+  // Integrated from fridge status "many items" yellow (#FFE55C)
+  // Enhanced with more saturation for M3 Expressive boldness
+  static const Color warningTone0 = Color(0xFF000000);
+  static const Color warningTone10 = Color(0xFF2A1800);
+  static const Color warningTone20 = Color(0xFF442B00);
+  static const Color warningTone30 = Color(0xFF614000);
+  static const Color warningTone40 = Color(0xFF815600);
+  static const Color warningTone50 = Color(0xFFA36E00);
+  static const Color warningTone60 = Color(0xFFFFB300); // Vibrant amber!
+  static const Color warningTone70 = Color(0xFFFFCA3D);
+  static const Color warningTone80 = Color(0xFFFFDD71);
+  static const Color warningTone90 = Color(0xFFFFECA5);
+  static const Color warningTone95 = Color(0xFFFFF6D9);
+  static const Color warningTone99 = Color(0xFFFFFBF7);
+  static const Color warningTone100 = Color(0xFFFFFFFF);
+
+  // Alert palette - Vibrant M3E Coral/Orange (#FF7043)
+  // Integrated from fridge status "dirty" orange concept
+  // Balanced between error red and warning amber for attention-grabbing
+  static const Color alertTone0 = Color(0xFF000000);
+  static const Color alertTone10 = Color(0xFF3A0A00);
+  static const Color alertTone20 = Color(0xFF5C1900);
+  static const Color alertTone30 = Color(0xFF802900);
+  static const Color alertTone40 = Color(0xFFA93B0E);
+  static const Color alertTone50 = Color(0xFFD25227);
+  static const Color alertTone60 = Color(0xFFFF7043); // Vibrant coral!
+  static const Color alertTone70 = Color(0xFFFF8F6B);
+  static const Color alertTone80 = Color(0xFFFFAD93);
+  static const Color alertTone90 = Color(0xFFFFCCBA);
+  static const Color alertTone95 = Color(0xFFFFE5DC);
+  static const Color alertTone99 = Color(0xFFFFFBF9);
+  static const Color alertTone100 = Color(0xFFFFFFFF);
+
+  /// Get primary color constant - New vibrant electric blue
+  static const Color primary = Color(0xFF5B9FFF);
+
+  /// Get secondary color constant - Vibrant pink/magenta
+  static const Color secondary = Color(0xFFFF6B9D);
+
+  /// Get tertiary color constant - Vibrant green
+  static const Color tertiary = Color(0xFF5FD65F);
+
+  /// Get warning color constant - Vibrant amber
+  static const Color warning = Color(0xFFFFB300);
+
+  /// Get alert color constant - Vibrant coral/orange
+  static const Color alert = Color(0xFFFF7043);
 
   /// Get error color constant
   static const Color error = Color(0xFFBA1A1A);
+
+  // Fridge Status Colors - Original palette preserved for backward compatibility
+  // These integrate seamlessly with the new M3E Expressive palette
+  static const Color fridgeEmpty = Color(0xFFFFFFFF); // White
+  static const Color fridgeFewItems = Color(0xFFFFD4FF); // Light pink
+  static const Color fridgeManyItems = Color(0xFFFFE55C); // Light yellow
+  static const Color fridgeFull = Color(0xFF97ED7D); // Light green
 
   /// Create custom color scheme with specific primary color
   ///

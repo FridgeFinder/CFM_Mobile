@@ -12,8 +12,8 @@ class FridgeMarker extends StatefulWidget {
   static const double healthBarHeight = 6;
   static const double healthBarSpacing = 2;
 
-  /// Green color for subscribed fridges
-  static const Color subscribedGreen = Color(0xFF4CAF50);
+  /// Vibrant green color for subscribed fridges - matches tertiary color #5FD65F
+  static const Color subscribedGreen = Color(0xFF5FD65F);
 
   const FridgeMarker({
     super.key,

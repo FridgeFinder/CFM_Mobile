@@ -38,9 +38,10 @@ class _FridgeCardState extends State<FridgeCard>
         duration: const Duration(milliseconds: 1500),
         vsync: this,
       )..repeat(reverse: true);
-      _animation = Tween<double>(begin: 0.3, end: 0.7).animate(
-        CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-      );
+      _animation = Tween<double>(
+        begin: 0.3,
+        end: 0.7,
+      ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
     } else {
       _controller = AnimationController(vsync: this);
       _animation = const AlwaysStoppedAnimation(0.0);
@@ -78,6 +79,8 @@ class _FridgeCardState extends State<FridgeCard>
 
     return CardM3E(
       onTap: widget.onTap,
+      // Reduce padding from default 20dp to 12dp for more compact cards
+      padding: M3ESpacing.all(M3ESpacing.sm),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -101,13 +104,17 @@ class _FridgeCardState extends State<FridgeCard>
                               boxShadow: [
                                 BoxShadow(
                                   color: FridgeMarker.subscribedGreen
-                                      .withValues(alpha: _animation.value * 0.6),
+                                      .withValues(
+                                        alpha: _animation.value * 0.6,
+                                      ),
                                   blurRadius: 8,
                                   spreadRadius: 1,
                                 ),
                                 BoxShadow(
                                   color: FridgeMarker.subscribedGreen
-                                      .withValues(alpha: _animation.value * 0.4),
+                                      .withValues(
+                                        alpha: _animation.value * 0.4,
+                                      ),
                                   blurRadius: 12,
                                   spreadRadius: 2,
                                 ),
@@ -152,69 +159,57 @@ class _FridgeCardState extends State<FridgeCard>
               ),
             ],
           ),
-          M3ESpacing.verticalMD,
+          // Reduce spacing from 16dp to 4dp for more compact layout
+          M3ESpacing.verticalXXS,
 
           // Status, Food Level, and Distance Row
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Status with icon
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              // Status with icon - more compact layout
+              Row(
                 children: [
+                  Icon(statusIcon, size: 16, color: statusColor),
+                  M3ESpacing.horizontalXXS,
                   Text(
-                    'Status',
+                    widget.fridge.statusText,
                     style: M3ETypography.bodySmall.copyWith(
-                      color: Colors.grey[600],
+                      fontWeight: FontWeight.w500,
+                      color: statusColor,
                     ),
-                  ),
-                  Row(
-                    children: [
-                      Icon(statusIcon, size: 16, color: statusColor),
-                      M3ESpacing.horizontalXS,
-                      Text(
-                        widget.fridge.statusText,
-                        style: M3ETypography.bodyMedium.copyWith(
-                          fontWeight: FontWeight.w500,
-                          color: statusColor,
-                        ),
-                      ),
-                    ],
                   ),
                 ],
               ),
-              // Food Level
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
+              // Food Level - more compact layout
+              Row(
                 children: [
-                  Text(
-                    'Food Level',
-                    style: M3ETypography.bodySmall.copyWith(
-                      color: Colors.grey[600],
-                    ),
+                  Icon(
+                    Icons.kitchen_outlined,
+                    size: 16,
+                    color: Colors.grey[600],
                   ),
+                  M3ESpacing.horizontalXXS,
                   Text(
                     widget.fridge.foodLevelText,
-                    style: M3ETypography.bodyMedium.copyWith(
+                    style: M3ETypography.bodySmall.copyWith(
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                 ],
               ),
-              // Distance
+              // Distance - more compact layout
               if (widget.distanceKm != null)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                Row(
                   children: [
-                    Text(
-                      'Distance',
-                      style: M3ETypography.bodySmall.copyWith(
-                        color: Colors.grey[600],
-                      ),
+                    Icon(
+                      Icons.near_me_outlined,
+                      size: 16,
+                      color: Colors.grey[600],
                     ),
+                    M3ESpacing.horizontalXXS,
                     Text(
                       '${(widget.distanceKm! * 0.621371 * 10).round() / 10} mi',
-                      style: M3ETypography.bodyMedium.copyWith(
+                      style: M3ETypography.bodySmall.copyWith(
                         fontWeight: FontWeight.w500,
                       ),
                     ),

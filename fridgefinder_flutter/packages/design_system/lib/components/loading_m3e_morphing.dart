@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../theme/motion.dart';
 import '../theme/spacing.dart';
+import '../theme/colors.dart';
 
 /// M3E Morphing Shape Loading Indicator
 ///
@@ -99,36 +100,36 @@ class MorphingLoadingIndicatorM3E extends StatefulWidget {
     super.key,
     this.color,
     this.message,
-  })  : variant = MorphingVariant.shapeMorph,
-        size = 64.0,
-        fullscreen = true;
+  }) : variant = MorphingVariant.shapeMorph,
+       size = 64.0,
+       fullscreen = true;
 
   /// Fullscreen blob morph
   const MorphingLoadingIndicatorM3E.fullscreenBlobMorph({
     super.key,
     this.color,
     this.message,
-  })  : variant = MorphingVariant.blobMorph,
-        size = 64.0,
-        fullscreen = true;
+  }) : variant = MorphingVariant.blobMorph,
+       size = 64.0,
+       fullscreen = true;
 
   /// Inline shape morph (smaller, 48dp)
   const MorphingLoadingIndicatorM3E.inlineShapeMorph({
     super.key,
     this.color,
     this.message,
-  })  : variant = MorphingVariant.shapeMorph,
-        size = 48.0,
-        fullscreen = false;
+  }) : variant = MorphingVariant.shapeMorph,
+       size = 48.0,
+       fullscreen = false;
 
   /// Inline blob morph (smaller, 48dp)
   const MorphingLoadingIndicatorM3E.inlineBlobMorph({
     super.key,
     this.color,
     this.message,
-  })  : variant = MorphingVariant.blobMorph,
-        size = 48.0,
-        fullscreen = false;
+  }) : variant = MorphingVariant.blobMorph,
+       size = 48.0,
+       fullscreen = false;
 
   @override
   State<MorphingLoadingIndicatorM3E> createState() =>
@@ -139,10 +140,23 @@ class _MorphingLoadingIndicatorM3EState
     extends State<MorphingLoadingIndicatorM3E>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
+  late Color _randomColor;
+
+  // M3E vibrant color palette for random selection
+  static const List<Color> _m3ePalette = [
+    Color(0xFF5B9FFF), // Primary - Vibrant Electric Blue
+    Color(0xFFFF6B9D), // Secondary - Vibrant Pink/Magenta
+    Color(0xFF5FD65F), // Tertiary - Vibrant Green
+    Color(0xFFFFB300), // Warning - Vibrant Amber
+    Color(0xFFFF7043), // Alert - Vibrant Coral/Orange
+  ];
 
   @override
   void initState() {
     super.initState();
+    // Pick a random color from M3E palette
+    _randomColor = _m3ePalette[math.Random().nextInt(_m3ePalette.length)];
+
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2000),
@@ -157,8 +171,8 @@ class _MorphingLoadingIndicatorM3EState
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final effectiveColor = widget.color ?? colorScheme.primary;
+    // Use provided color, or random M3E palette color if not provided
+    final effectiveColor = _randomColor;
 
     Widget indicator;
     switch (widget.variant) {
@@ -209,8 +223,9 @@ class _MorphingLoadingIndicatorM3EState
           Text(
             widget.message!,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
+              color: effectiveColor, // Match the loading indicator color
+              fontWeight: FontWeight.w600,
+            ),
             textAlign: TextAlign.center,
           ),
         ],
@@ -267,10 +282,7 @@ class _ShapeMorphCustomPainter extends CustomPainter {
   final double progress;
   final Color color;
 
-  _ShapeMorphCustomPainter({
-    required this.progress,
-    required this.color,
-  });
+  _ShapeMorphCustomPainter({required this.progress, required this.color});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -301,7 +313,12 @@ class _ShapeMorphCustomPainter extends CustomPainter {
   }
 
   void _drawCircleToSquare(
-      Canvas canvas, Paint paint, Offset center, double radius, double t) {
+    Canvas canvas,
+    Paint paint,
+    Offset center,
+    double radius,
+    double t,
+  ) {
     // Apply emphasized decelerate curve
     final curvedT = M3EMotion.emphasizedDecelerate.transform(t);
 
@@ -341,7 +358,12 @@ class _ShapeMorphCustomPainter extends CustomPainter {
   }
 
   void _drawSquareToRounded(
-      Canvas canvas, Paint paint, Offset center, double radius, double t) {
+    Canvas canvas,
+    Paint paint,
+    Offset center,
+    double radius,
+    double t,
+  ) {
     final curvedT = M3EMotion.emphasizedDecelerate.transform(t);
     final cornerRadius = radius * 0.3 * curvedT;
 
@@ -354,7 +376,12 @@ class _ShapeMorphCustomPainter extends CustomPainter {
   }
 
   void _drawRoundedToSquare(
-      Canvas canvas, Paint paint, Offset center, double radius, double t) {
+    Canvas canvas,
+    Paint paint,
+    Offset center,
+    double radius,
+    double t,
+  ) {
     final curvedT = M3EMotion.emphasizedDecelerate.transform(t);
     final cornerRadius = radius * 0.3 * (1 - curvedT);
 
@@ -367,7 +394,12 @@ class _ShapeMorphCustomPainter extends CustomPainter {
   }
 
   void _drawSquareToCircle(
-      Canvas canvas, Paint paint, Offset center, double radius, double t) {
+    Canvas canvas,
+    Paint paint,
+    Offset center,
+    double radius,
+    double t,
+  ) {
     final curvedT = M3EMotion.emphasizedDecelerate.transform(t);
 
     final path = Path();
@@ -443,10 +475,7 @@ class _BlobMorphCustomPainter extends CustomPainter {
   final double progress;
   final Color color;
 
-  _BlobMorphCustomPainter({
-    required this.progress,
-    required this.color,
-  });
+  _BlobMorphCustomPainter({required this.progress, required this.color});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -475,10 +504,12 @@ class _BlobMorphCustomPainter extends CustomPainter {
       final wobble = math.sin(progress * 6 * math.pi + i * 1.2) * 0.1;
       final effectiveRadius = radius * (1 + wobble);
 
-      points.add(Offset(
-        center.dx + math.cos(angle) * effectiveRadius,
-        center.dy + math.sin(angle) * effectiveRadius,
-      ));
+      points.add(
+        Offset(
+          center.dx + math.cos(angle) * effectiveRadius,
+          center.dy + math.sin(angle) * effectiveRadius,
+        ),
+      );
     }
 
     // Draw smooth curves through points using quadratic bezier
@@ -519,10 +550,12 @@ class _BlobMorphCustomPainter extends CustomPainter {
       final radiusVariation = math.sin(progress * 4 * math.pi + i * 0.7) * 0.2;
       final radius = tintRadius * (1 + radiusVariation);
 
-      tintPoints.add(Offset(
-        center.dx + math.cos(angle) * radius,
-        center.dy + math.sin(angle) * radius,
-      ));
+      tintPoints.add(
+        Offset(
+          center.dx + math.cos(angle) * radius,
+          center.dy + math.sin(angle) * radius,
+        ),
+      );
     }
 
     tintPath.moveTo(tintPoints[0].dx, tintPoints[0].dy);
@@ -584,10 +617,7 @@ class _ConnectedDotsCustomPainter extends CustomPainter {
   final double progress;
   final Color color;
 
-  _ConnectedDotsCustomPainter({
-    required this.progress,
-    required this.color,
-  });
+  _ConnectedDotsCustomPainter({required this.progress, required this.color});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -601,10 +631,12 @@ class _ConnectedDotsCustomPainter extends CustomPainter {
       final angle = (i / 4) * 2 * math.pi + progress * 2 * math.pi;
       final distance =
           radius * (1 + math.sin(progress * 4 * math.pi + i) * 0.2);
-      dots.add(Offset(
-        center.dx + math.cos(angle) * distance,
-        center.dy + math.sin(angle) * distance,
-      ));
+      dots.add(
+        Offset(
+          center.dx + math.cos(angle) * distance,
+          center.dy + math.sin(angle) * distance,
+        ),
+      );
     }
 
     // Draw connecting lines
@@ -680,10 +712,7 @@ class _BreathingShapeCustomPainter extends CustomPainter {
   final double progress;
   final Color color;
 
-  _BreathingShapeCustomPainter({
-    required this.progress,
-    required this.color,
-  });
+  _BreathingShapeCustomPainter({required this.progress, required this.color});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -711,7 +740,11 @@ class _BreathingShapeCustomPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
 
     final rect = RRect.fromRectAndRadius(
-      Rect.fromCenter(center: Offset.zero, width: radius * 2, height: radius * 2),
+      Rect.fromCenter(
+        center: Offset.zero,
+        width: radius * 2,
+        height: radius * 2,
+      ),
       Radius.circular(cornerRadius),
     );
 
@@ -776,10 +809,7 @@ class _LiquidFlowCustomPainter extends CustomPainter {
   final double progress;
   final Color color;
 
-  _LiquidFlowCustomPainter({
-    required this.progress,
-    required this.color,
-  });
+  _LiquidFlowCustomPainter({required this.progress, required this.color});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -806,8 +836,13 @@ class _LiquidFlowCustomPainter extends CustomPainter {
     }
   }
 
-  void _drawLiquidBlob(Canvas canvas, Offset center, double radius,
-      double phase, Color color) {
+  void _drawLiquidBlob(
+    Canvas canvas,
+    Offset center,
+    double radius,
+    double phase,
+    Color color,
+  ) {
     final paint = Paint()
       ..color = color
       ..style = PaintingStyle.fill;
@@ -822,10 +857,12 @@ class _LiquidFlowCustomPainter extends CustomPainter {
       final wave = math.sin(phase * 6 * math.pi + i * 1.5) * 0.4;
       final r = radius * (0.7 + wave);
 
-      offsets.add(Offset(
-        center.dx + math.cos(angle) * r,
-        center.dy + math.sin(angle) * r,
-      ));
+      offsets.add(
+        Offset(
+          center.dx + math.cos(angle) * r,
+          center.dy + math.sin(angle) * r,
+        ),
+      );
     }
 
     path.moveTo(offsets[0].dx, offsets[0].dy);

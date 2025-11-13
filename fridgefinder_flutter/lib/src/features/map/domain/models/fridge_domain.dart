@@ -220,11 +220,13 @@ abstract class FridgeDomain with _$FridgeDomain {
     if (report != null) {
       switch (report.condition) {
         case FridgeCondition.good:
-          return report.foodPercentage > 0.5 ? Colors.green : Colors.orange;
+          return report.foodPercentage > 0.5
+              ? const Color(0xFF5FD65F)  // M3E Vibrant GREEN for good/high food
+              : const Color(0xFFFFB300); // M3E Vibrant AMBER for good/low food
         case FridgeCondition.dirty:
-          return Colors.yellow;
+          return const Color(0xFFFFB300); // M3E Vibrant AMBER for dirty/caution
         case FridgeCondition.outOfOrder:
-          return Colors.orange;
+          return const Color(0xFFFF7043); // M3E Vibrant CORAL for maintenance/alert
         case FridgeCondition
             .ghost: // Ghost fridges are filtered from API response
           return Colors

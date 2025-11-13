@@ -40,7 +40,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
   late MapController _mapController;
   late TextEditingController _searchController;
   late FocusNode _searchFocusNode;
-  bool _isSearchVisible = false;  // Controls search bar visibility with animation
+  bool _isSearchVisible =
+      false; // Controls search bar visibility with animation
   String? _currentRoute;
   String?
   _handlingNotificationId; // Track which notification we're currently handling
@@ -101,7 +102,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
   @override
   void dispose() {
     _log('🧹 dispose: Starting cleanup');
-    _logOutputTimer?.cancel(); // Cancel the timer to avoid pending timer errors in tests
+    _logOutputTimer
+        ?.cancel(); // Cancel the timer to avoid pending timer errors in tests
     _outputAllLogs(); // Output logs before disposal in case we never reach the timer
     _mapController.dispose();
     _searchController.dispose();
@@ -341,7 +343,9 @@ class _MapScreenState extends ConsumerState<MapScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Location not found: $query'),
-            backgroundColor: Colors.orange,
+            backgroundColor: const Color(
+              0xFFFFB300,
+            ), // M3E Vibrant AMBER for warning
           ),
         );
         return;
@@ -368,7 +372,9 @@ class _MapScreenState extends ConsumerState<MapScreen>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to search location: ${e.toString()}'),
-          backgroundColor: Colors.red,
+          backgroundColor: const Color(
+            0xFFFF7043,
+          ), // M3E Vibrant CORAL for error
         ),
       );
     }
@@ -410,8 +416,12 @@ class _MapScreenState extends ConsumerState<MapScreen>
         (themeMode == AppThemeMode.system &&
             MediaQuery.of(context).platformBrightness == Brightness.dark);
     final searchBarBg = isDarkMode
-        ? Colors.black.withValues(alpha: 0.7)  // Dark mode: semi-transparent black
-        : Colors.white.withValues(alpha: 0.9);  // Light mode: semi-transparent white
+        ? Colors.black.withValues(
+            alpha: 0.7,
+          ) // Dark mode: semi-transparent black
+        : Colors.white.withValues(
+            alpha: 0.9,
+          ); // Light mode: semi-transparent white
 
     final router = GoRouter.of(context);
     final currentRoute = router.routerDelegate.currentConfiguration.uri
@@ -479,386 +489,409 @@ class _MapScreenState extends ConsumerState<MapScreen>
             );
           },
           data: (fridges) {
-          _log(
-            '✅ fridgesAsync.when: DATA state - ${fridges.length} fridges loaded',
-          );
-
-          if (fridges.isEmpty) {
-            _log('⚠️ fridgesAsync.when: No fridges found, showing empty state');
-            return common_widgets.EmptyStateView(
-              title: 'No Fridges Found',
-              message: 'There are no community fridges in your area yet.',
-              icon: Icons.location_off,
-            );
-          }
-
-          // Determine initial map center: user location or first fridge
-          LatLng initialCenter = LatLng(
-            fridges[0].location.geoLat,
-            fridges[0].location.geoLng,
-          );
-          _log(
-            '📌 Initial center set to first fridge: (${fridges[0].location.geoLat}, ${fridges[0].location.geoLng})',
-          );
-
-          if (userLocationAsync.value != null) {
-            initialCenter = userLocationAsync.value!.position;
             _log(
-              '📍 Initial center updated to user location: (${initialCenter.latitude}, ${initialCenter.longitude})',
+              '✅ fridgesAsync.when: DATA state - ${fridges.length} fridges loaded',
             );
-          } else {
-            _log('📍 User location not available, using first fridge location');
-          }
 
-          _log(
-            '🗺️ Building FlutterMap widget with ${filteredFridges.length} markers',
-          );
-          _log(
-            '🎯 Map options: center=(${initialCenter.latitude}, ${initialCenter.longitude}), zoom=13.0',
-          );
+            if (fridges.isEmpty) {
+              _log(
+                '⚠️ fridgesAsync.when: No fridges found, showing empty state',
+              );
+              return common_widgets.EmptyStateView(
+                title: 'No Fridges Found',
+                message: 'There are no community fridges in your area yet.',
+                icon: Icons.location_off,
+              );
+            }
 
-          WidgetsBinding.instance.addPostFrameCallback((_) {
+            // Determine initial map center: user location or first fridge
+            LatLng initialCenter = LatLng(
+              fridges[0].location.geoLat,
+              fridges[0].location.geoLng,
+            );
             _log(
-              '✅ Widget tree built successfully - FlutterMap widget rendered',
+              '📌 Initial center set to first fridge: (${fridges[0].location.geoLat}, ${fridges[0].location.geoLng})',
             );
-          });
 
-          return Stack(
-            children: [
-              FlutterMap(
-                mapController: _mapController,
-                options: MapOptions(
-                  initialCenter: initialCenter,
-                  initialZoom: 13.0,
-                  maxZoom: 18.0,
-                  minZoom: 10.0,
-                  onTap: (tapPosition, latLng) {
-                    // Unfocus search when tapping on the map
-                    FocusScope.of(context).unfocus();
-                  },
-                  onMapEvent: (event) {
-                    _log('🎪 MapEvent: ${event.runtimeType}');
-                  },
-                ),
-                children: [
-                  // Tile layer with caching
-                  Builder(
-                    builder: (context) {
-                      _log('🧱 Building TileLayer');
-                      // Use MapTiler Streets if API key is available, otherwise fallback to OpenStreetMap
-                      final tileUrl = MapConstants.getMapTilerStreetsUrl() ??
-                          MapConstants.openStreetMapUrl;
-                      final isMapTiler = tileUrl.contains('maptiler');
-                      _log('🗺️ Using tile URL: ${isMapTiler ? 'MapTiler Streets' : 'OpenStreetMap'}');
-                      // Note: Attribution is required by MapTiler and OpenStreetMap terms of service
-                      // Attribution: © MapTiler © OpenStreetMap contributors (when using MapTiler)
-                      // Attribution: © OpenStreetMap contributors (when using OpenStreetMap)
-                      return TileLayer(
-                        urlTemplate: tileUrl,
-                        userAgentPackageName: 'com.example.fridgefinder',
-                        tileProvider: ref.watch(cachedTileProviderProvider),
-                      );
+            if (userLocationAsync.value != null) {
+              initialCenter = userLocationAsync.value!.position;
+              _log(
+                '📍 Initial center updated to user location: (${initialCenter.latitude}, ${initialCenter.longitude})',
+              );
+            } else {
+              _log(
+                '📍 User location not available, using first fridge location',
+              );
+            }
+
+            _log(
+              '🗺️ Building FlutterMap widget with ${filteredFridges.length} markers',
+            );
+            _log(
+              '🎯 Map options: center=(${initialCenter.latitude}, ${initialCenter.longitude}), zoom=13.0',
+            );
+
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _log(
+                '✅ Widget tree built successfully - FlutterMap widget rendered',
+              );
+            });
+
+            return Stack(
+              children: [
+                FlutterMap(
+                  mapController: _mapController,
+                  options: MapOptions(
+                    initialCenter: initialCenter,
+                    initialZoom: 13.0,
+                    maxZoom: 18.0,
+                    minZoom: 10.0,
+                    onTap: (tapPosition, latLng) {
+                      // Unfocus search when tapping on the map
+                      FocusScope.of(context).unfocus();
+                    },
+                    onMapEvent: (event) {
+                      _log('🎪 MapEvent: ${event.runtimeType}');
                     },
                   ),
-                  // User location marker with pulsating circle
-                  userLocationStream.when(
-                    data: (userLocation) {
-                      if (userLocation != null) {
+                  children: [
+                    // Tile layer with caching
+                    Builder(
+                      builder: (context) {
+                        _log('🧱 Building TileLayer');
+                        // Use MapTiler Streets if API key is available, otherwise fallback to OpenStreetMap
+                        final tileUrl =
+                            MapConstants.getMapTilerStreetsUrl() ??
+                            MapConstants.openStreetMapUrl;
+                        final isMapTiler = tileUrl.contains('maptiler');
                         _log(
-                          '👤 Building user location marker at (${userLocation.position.latitude}, ${userLocation.position.longitude})',
+                          '🗺️ Using tile URL: ${isMapTiler ? 'MapTiler Streets' : 'OpenStreetMap'}',
                         );
-                        return MarkerLayer(
-                          markers: [
-                            Marker(
-                              point: userLocation.position,
-                              child: UserLocationIndicator(),
-                            ),
-                          ],
+                        // Note: Attribution is required by MapTiler and OpenStreetMap terms of service
+                        // Attribution: © MapTiler © OpenStreetMap contributors (when using MapTiler)
+                        // Attribution: © OpenStreetMap contributors (when using OpenStreetMap)
+                        return TileLayer(
+                          urlTemplate: tileUrl,
+                          userAgentPackageName: 'com.example.fridgefinder',
+                          tileProvider: ref.watch(cachedTileProviderProvider),
                         );
-                      }
-                      _log('👤 User location is null, skipping marker');
-                      return const SizedBox.shrink();
-                    },
-                    loading: () {
-                      _log('👤 User location stream: LOADING');
-                      return const SizedBox.shrink();
-                    },
-                    error: (error, _) {
-                      _log('👤 User location stream: ERROR - $error');
-                      return const SizedBox.shrink();
-                    },
-                  ),
-                  // Fridge markers with clustering - use filtered fridges
-                  Builder(
-                    builder: (context) {
-                      _log(
-                        '🏪 Building MarkerClusterLayer with ${filteredFridges.length} fridge markers',
-                      );
-                      return MarkerClusterLayerWidget(
-                        options: MarkerClusterLayerOptions(
-                          maxClusterRadius: 40,
-                          size: const Size(50, 50),
-                          markers: () {
-                            // Create set of subscribed fridge IDs for O(1) lookup
-                            final subscribedFridgeIds = subscriptionsAsync.when(
-                              data: (subscriptions) =>
-                                  subscriptions.map((s) => s.fridgeId).toSet(),
-                              loading: () => <String>{},
-                              error: (_, _) => <String>{},
-                            );
-
-                            return filteredFridges
-                                .map(
-                                  (fridge) => Marker(
-                                    point: LatLng(
-                                      fridge.location.geoLat,
-                                      fridge.location.geoLng,
-                                    ),
-                                    width: FridgeMarker.markerSize,
-                                    height: FridgeMarker.markerSize,
-                                    child: FridgeMarker(
-                                      fridge: fridge,
-                                      isSubscribed: subscribedFridgeIds
-                                          .contains(fridge.id),
-                                    ),
-                                  ),
-                                )
-                                .toList();
-                          }(),
-                          builder: (context, markers) {
-                            return FridgeClusterWidget(
-                              markerCount: markers.length,
-                              isDarkMode:
-                                  Theme.of(context).brightness ==
-                                  Brightness.dark,
-                            );
-                          },
-                          onMarkerTap: (marker) {
-                            // Find the fridge corresponding to this marker
-                            final markerPoint = marker.point;
-                            final fridge = filteredFridges.firstWhere(
-                              (fridge) =>
-                                  fridge.location.geoLat ==
-                                      markerPoint.latitude &&
-                                  fridge.location.geoLng ==
-                                      markerPoint.longitude,
-                            );
-                            _showFridgeProfile(fridge);
-                          },
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
-              // Always-visible filter pills at top of map
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.black.withValues(alpha: 0.3),
-                        Colors.transparent,
-                      ],
+                      },
                     ),
-                  ),
-                  child: const FilterPillsRow(),
-                ),
-              ),
-              // Search bar - overlays above map, below filter pills
-              // Animated visibility with M3E motion
-              Positioned(
-                top: 48, // Below the filter pills row (height 48)
-                left: M3ESpacing.md,
-                right: M3ESpacing.md,
-                child: AnimatedContainer(
-                  duration: M3EMotion.medium3,  // 350ms M3E duration
-                  curve: _isSearchVisible
-                      ? M3EMotion.emphasizedDecelerate  // Expanding
-                      : M3EMotion.emphasizedAccelerate,  // Collapsing
-                  height: _isSearchVisible ? 64.0 : 0.0,  // Animate height
-                  child: _isSearchVisible
-                      ? Padding(
-                          padding: const EdgeInsets.only(bottom: M3ESpacing.xs),
-                          child: SearchBarM3E(
-                            controller: _searchController,
-                            hintText: 'Search by name or location...',
-                            leadingIcon: Icons.search,
-                            expandedByDefault: false,
-                            backgroundColor: searchBarBg,  // Theme-aware background
-                            onChanged: (query) {
-                              ref.read(mapFilterProvider.notifier).setSearchQuery(query);
-                            },
-                            onSubmitted: _searchLocation,
-                          ),
-                        )
-                      : const SizedBox.shrink(),  // Hidden state
-                ),
-              ),
-              // Center to user location button (above search button)
-              Positioned(
-                bottom: 80,
-                right: 16,
-                child: FloatingActionButton(
-                  foregroundColor: Colors.white,
-                  onPressed: () async {
-                    // If location access is disabled, request permission first
-                    if (!locationAccessEnabled) {
-                      final result = await ref
-                          .read(locationAccessProvider.notifier)
-                          .setAccessWithPermission(true);
-
-                      if (result['success'] != true) {
-                        if (context.mounted) {
-                          if (result['openSettings'] == true) {
-                            // Guide user to settings
-                            final shouldOpenSettings = await showDialog<bool>(
-                              context: context,
-                              builder: (context) => AlertDialog(
-                                title: const Text(
-                                  'Location Permission Required',
-                                ),
-                                content: const Text(
-                                  'Location access is disabled. '
-                                  'Please enable it in Settings to center the map on your location.',
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () =>
-                                        Navigator.of(context).pop(false),
-                                    child: const Text('Cancel'),
-                                  ),
-                                  TextButton(
-                                    onPressed: () =>
-                                        Navigator.of(context).pop(true),
-                                    child: const Text('Open Settings'),
-                                  ),
-                                ],
+                    // User location marker with pulsating circle
+                    userLocationStream.when(
+                      data: (userLocation) {
+                        if (userLocation != null) {
+                          _log(
+                            '👤 Building user location marker at (${userLocation.position.latitude}, ${userLocation.position.longitude})',
+                          );
+                          return MarkerLayer(
+                            markers: [
+                              Marker(
+                                point: userLocation.position,
+                                child: UserLocationIndicator(),
                               ),
-                            );
-
-                            if (shouldOpenSettings == true) {
-                              await openAppSettings();
-                            }
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Location permission denied. Enable in settings to use this feature.',
-                                ),
-                                duration: Duration(seconds: 3),
-                              ),
-                            );
-                          }
+                            ],
+                          );
                         }
-                        return;
-                      }
-                      // Permission granted and toggle turned on
-                      // Wait for location data to be fetched
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Getting your location...'),
-                            duration: Duration(seconds: 2),
+                        _log('👤 User location is null, skipping marker');
+                        return const SizedBox.shrink();
+                      },
+                      loading: () {
+                        _log('👤 User location stream: LOADING');
+                        return const SizedBox.shrink();
+                      },
+                      error: (error, _) {
+                        _log('👤 User location stream: ERROR - $error');
+                        return const SizedBox.shrink();
+                      },
+                    ),
+                    // Fridge markers with clustering - use filtered fridges
+                    Builder(
+                      builder: (context) {
+                        _log(
+                          '🏪 Building MarkerClusterLayer with ${filteredFridges.length} fridge markers',
+                        );
+                        return MarkerClusterLayerWidget(
+                          options: MarkerClusterLayerOptions(
+                            maxClusterRadius: 40,
+                            size: const Size(50, 50),
+                            markers: () {
+                              // Create set of subscribed fridge IDs for O(1) lookup
+                              final subscribedFridgeIds = subscriptionsAsync
+                                  .when(
+                                    data: (subscriptions) => subscriptions
+                                        .map((s) => s.fridgeId)
+                                        .toSet(),
+                                    loading: () => <String>{},
+                                    error: (_, _) => <String>{},
+                                  );
+
+                              return filteredFridges
+                                  .map(
+                                    (fridge) => Marker(
+                                      point: LatLng(
+                                        fridge.location.geoLat,
+                                        fridge.location.geoLng,
+                                      ),
+                                      width: FridgeMarker.markerSize,
+                                      height: FridgeMarker.markerSize,
+                                      child: FridgeMarker(
+                                        fridge: fridge,
+                                        isSubscribed: subscribedFridgeIds
+                                            .contains(fridge.id),
+                                      ),
+                                    ),
+                                  )
+                                  .toList();
+                            }(),
+                            builder: (context, markers) {
+                              return FridgeClusterWidget(
+                                markerCount: markers.length,
+                                isDarkMode:
+                                    Theme.of(context).brightness ==
+                                    Brightness.dark,
+                              );
+                            },
+                            onMarkerTap: (marker) {
+                              // Find the fridge corresponding to this marker
+                              final markerPoint = marker.point;
+                              final fridge = filteredFridges.firstWhere(
+                                (fridge) =>
+                                    fridge.location.geoLat ==
+                                        markerPoint.latitude &&
+                                    fridge.location.geoLng ==
+                                        markerPoint.longitude,
+                              );
+                              _showFridgeProfile(fridge);
+                            },
                           ),
                         );
-                      }
+                      },
+                    ),
+                  ],
+                ),
+                // Always-visible filter pills at top of map
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.black.withValues(alpha: 0.3),
+                          Colors.transparent,
+                        ],
+                      ),
+                    ),
+                    child: const FilterPillsRow(),
+                  ),
+                ),
+                // Search bar - overlays above map, below filter pills
+                // Animated visibility with M3E motion
+                Positioned(
+                  top: 64, // Below the filter pills row (height 48)
+                  left: M3ESpacing.md,
+                  right: M3ESpacing.md,
+                  child: AnimatedContainer(
+                    duration: M3EMotion.medium3, // 350ms M3E duration
+                    curve: _isSearchVisible
+                        ? M3EMotion
+                              .emphasizedDecelerate // Expanding
+                        : M3EMotion.emphasizedAccelerate, // Collapsing
+                    height: _isSearchVisible ? 64.0 : 0.0, // Animate height
+                    child: _isSearchVisible
+                        ? Padding(
+                            padding: const EdgeInsets.only(
+                              bottom: M3ESpacing.xs,
+                            ),
+                            child: SearchBarM3E(
+                              controller: _searchController,
+                              hintText: 'Search by name or location...',
+                              leadingIcon: Icons.search,
+                              expandedByDefault: false,
+                              backgroundColor:
+                                  searchBarBg, // Theme-aware background
+                              onChanged: (query) {
+                                ref
+                                    .read(mapFilterProvider.notifier)
+                                    .setSearchQuery(query);
+                              },
+                              onSubmitted: _searchLocation,
+                            ),
+                          )
+                        : const SizedBox.shrink(), // Hidden state
+                  ),
+                ),
+                // Center to user location button (above search button)
+                Positioned(
+                  bottom: 80,
+                  right: 16,
+                  child: FABM3E(
+                    icon: Icons.my_location,
+                    tooltip: 'Center on my location',
+                    onPressed: () async {
+                      // If location access is disabled, request permission first
+                      if (!locationAccessEnabled) {
+                        final result = await ref
+                            .read(locationAccessProvider.notifier)
+                            .setAccessWithPermission(true);
 
-                      // Give the location provider time to fetch the location
-                      // Check periodically for up to 5 seconds
-                      int attempts = 0;
-                      while (attempts < 10) {
-                        await Future.delayed(const Duration(milliseconds: 500));
-
-                        // Re-read the latest location state
-                        final updatedLocation = ref
-                            .read(userLocationProvider)
-                            .whenOrNull(data: (location) => location);
-
-                        if (updatedLocation != null) {
+                        if (result['success'] != true) {
                           if (context.mounted) {
-                            _mapController.move(updatedLocation.position, 15.0);
+                            if (result['openSettings'] == true) {
+                              // Guide user to settings
+                              final shouldOpenSettings = await showDialog<bool>(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: const Text(
+                                    'Location Permission Required',
+                                  ),
+                                  content: const Text(
+                                    'Location access is disabled. '
+                                    'Please enable it in Settings to center the map on your location.',
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.of(context).pop(false),
+                                      child: const Text('Cancel'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.of(context).pop(true),
+                                      child: const Text('Open Settings'),
+                                    ),
+                                  ],
+                                ),
+                              );
+
+                              if (shouldOpenSettings == true) {
+                                await openAppSettings();
+                              }
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Location permission denied. Enable in settings to use this feature.',
+                                  ),
+                                  duration: Duration(seconds: 3),
+                                ),
+                              );
+                            }
                           }
                           return;
                         }
-                        attempts++;
-                      }
-
-                      // Location still not available after 5 seconds
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Unable to get location. Please try again.',
+                        // Permission granted and toggle turned on
+                        // Wait for location data to be fetched
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Getting your location...'),
+                              duration: Duration(seconds: 2),
                             ),
-                            duration: Duration(seconds: 2),
-                          ),
-                        );
-                      }
-                      return;
-                    }
+                          );
+                        }
 
-                    // Location access already enabled - center map to user location if available
-                    if (userLocationAsync.value != null) {
-                      _mapController.move(
-                        userLocationAsync.value!.position,
-                        15.0,
-                      );
-                    } else {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Getting your location...'),
-                            duration: Duration(seconds: 2),
+                        // Give the location provider time to fetch the location
+                        // Check periodically for up to 5 seconds
+                        int attempts = 0;
+                        while (attempts < 10) {
+                          await Future.delayed(
+                            const Duration(milliseconds: 500),
+                          );
+
+                          // Re-read the latest location state
+                          final updatedLocation = ref
+                              .read(userLocationProvider)
+                              .whenOrNull(data: (location) => location);
+
+                          if (updatedLocation != null) {
+                            if (context.mounted) {
+                              _mapController.move(
+                                updatedLocation.position,
+                                15.0,
+                              );
+                            }
+                            return;
+                          }
+                          attempts++;
+                        }
+
+                        // Location still not available after 5 seconds
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Unable to get location. Please try again.',
+                              ),
+                              duration: Duration(seconds: 2),
+                            ),
+                          );
+                        }
+                        return;
+                      }
+
+                      // Location access already enabled - center map to user location if available
+                      if (userLocationAsync.value != null) {
+                        _mapController.move(
+                          userLocationAsync.value!.position,
+                          15.0,
+                        );
+                      } else {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Getting your location...'),
+                              duration: Duration(seconds: 2),
+                            ),
+                          );
+                        }
+                      }
+                    },
+                  ),
+                ),
+                // Filter status indicator at bottom left
+                const FilterStatusIndicator(),
+                // Search toggle button in bottom right
+                Positioned(
+                  bottom: 16,
+                  right: 16,
+                  child: FloatingActionButton(
+                    foregroundColor: Colors.white,
+                    onPressed: _toggleSearchBar,
+                    child: AnimatedSwitcher(
+                      duration: M3EMotion.medium3,
+                      switchInCurve: M3EMotion.emphasizedDecelerate,
+                      switchOutCurve: M3EMotion.emphasizedAccelerate,
+                      transitionBuilder: (child, animation) {
+                        // M3E shape morph: scale + fade + rotation
+                        return ScaleTransition(
+                          scale: animation,
+                          child: RotationTransition(
+                            turns: Tween<double>(
+                              begin: 0.125,
+                              end: 0.0,
+                            ).animate(animation),
+                            child: FadeTransition(
+                              opacity: animation,
+                              child: child,
+                            ),
                           ),
                         );
-                      }
-                    }
-                  },
-                  child: const Icon(Icons.my_location),
-                ),
-              ),
-              // Filter status indicator at bottom left
-              const FilterStatusIndicator(),
-              // Search toggle button in bottom right
-              Positioned(
-                bottom: 16,
-                right: 16,
-                child: FloatingActionButton(
-                  foregroundColor: Colors.white,
-                  onPressed: _toggleSearchBar,
-                  child: AnimatedSwitcher(
-                    duration: M3EMotion.medium3,
-                    switchInCurve: M3EMotion.emphasizedDecelerate,
-                    switchOutCurve: M3EMotion.emphasizedAccelerate,
-                    transitionBuilder: (child, animation) {
-                      // M3E shape morph: scale + fade + rotation
-                      return ScaleTransition(
-                        scale: animation,
-                        child: RotationTransition(
-                          turns: Tween<double>(begin: 0.125, end: 0.0).animate(animation),
-                          child: FadeTransition(
-                            opacity: animation,
-                            child: child,
-                          ),
-                        ),
-                      );
-                    },
-                    child: Icon(
-                      _isSearchVisible ? Icons.arrow_downward : Icons.search,
-                      key: ValueKey(_isSearchVisible),
+                      },
+                      child: Icon(
+                        _isSearchVisible ? Icons.arrow_downward : Icons.search,
+                        key: ValueKey(_isSearchVisible),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
-          );
-        },
+              ],
+            );
+          },
         ),
       ),
     );

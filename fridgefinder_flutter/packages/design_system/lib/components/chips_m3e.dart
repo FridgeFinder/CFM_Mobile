@@ -1,17 +1,27 @@
 import 'package:flutter/material.dart';
 import '../theme/motion.dart';
 
-/// M3E Filter Chip with selection bounce and hover lift
+/// M3E Filter Chip with vibrant selection states and expressive animations
 ///
 /// Features:
-/// - Selection bounce animation (scale 1.0 → 1.05 → 1.0)
-/// - Hover lift (elevation +1dp)
+/// - Vibrant primary color for selected state with enhanced visual distinction
+/// - Selection bounce animation (scale 1.0 → 1.05 → 1.0) with overshoot
+/// - Elevated shadow on selected state (2dp with colored shadow)
+/// - Hover lift with background color change (elevation +1dp)
 /// - Press feedback (scale 0.95)
+/// - Custom-built design with AnimatedContainer for full control
+/// - Enhanced borders with vibrant primary accent when selected
+/// - Better padding and touch targets (18px horizontal, 10px vertical)
+/// - Smooth 300ms transitions with emphasized decelerate curve
+/// - Check circle icon when selected (replaces standard checkmark)
+/// - Larger icons (20px) with proper spacing (6px)
+/// - Custom semantic colors for filter meaning (green for full/subscribed, amber for many, etc.)
 class FilterChipM3E extends StatefulWidget {
   final String label;
   final bool selected;
   final ValueChanged<bool>? onSelected;
   final IconData? icon;
+  final Color? color;
 
   const FilterChipM3E({
     super.key,
@@ -19,6 +29,7 @@ class FilterChipM3E extends StatefulWidget {
     required this.selected,
     this.onSelected,
     this.icon,
+    this.color,
   });
 
   @override
@@ -75,6 +86,23 @@ class _FilterChipM3EState extends State<FilterChipM3E>
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final brightness = Theme.of(context).brightness;
+
+    // Use custom color if provided, otherwise default to primary
+    final baseColor = widget.color ?? colorScheme.primary;
+
+    // Generate appropriate container color based on the base color
+    // For light mode: lighter tint (blend with white) with slight transparency
+    // For dark mode: darker tint (blend with dark surface) with slight transparency
+    final containerColor = brightness == Brightness.light
+        ? Color.lerp(baseColor, Colors.white, 0.85)!.withValues(alpha: 0.85)
+        : Color.lerp(baseColor, colorScheme.surface, 0.7)!.withValues(alpha: 0.85);
+
+    // Generate appropriate text color for contrast
+    // Use darker shade in light mode, lighter shade in dark mode
+    final onContainerColor = brightness == Brightness.light
+        ? Color.lerp(baseColor, Colors.black, 0.4)!
+        : Color.lerp(baseColor, Colors.white, 0.6)!;
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
@@ -93,17 +121,68 @@ class _FilterChipM3EState extends State<FilterChipM3E>
             return Transform.scale(
               scale: scale,
               child: Material(
-                elevation: _isHovered ? 1.0 : 0.0,
-                borderRadius: BorderRadius.circular(8),
+                elevation: widget.selected ? 2.0 : (_isHovered ? 1.0 : 0.0),
+                borderRadius: BorderRadius.circular(12),
+                shadowColor: widget.selected
+                    ? baseColor.withValues(alpha: 0.3)
+                    : Colors.transparent,
                 color: Colors.transparent,
-                child: FilterChip(
-                  label: Text(widget.label),
-                  selected: widget.selected,
-                  onSelected: widget.onSelected,
-                  avatar: widget.icon != null ? Icon(widget.icon, size: 18) : null,
-                  showCheckmark: widget.icon == null,
-                  selectedColor: colorScheme.secondaryContainer,
-                  checkmarkColor: colorScheme.onSecondaryContainer,
+                child: AnimatedContainer(
+                  duration: M3EMotion.getDuration(M3EMotion.medium2),
+                  curve: M3EMotion.emphasizedDecelerate,
+                  decoration: BoxDecoration(
+                    color: widget.selected
+                        ? containerColor
+                        : (_isHovered
+                            ? colorScheme.surfaceContainerHighest.withValues(alpha: 0.85)
+                            : colorScheme.surfaceContainerLow.withValues(alpha: 0.85)),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: widget.selected
+                          ? baseColor.withValues(alpha: 0.5)
+                          : colorScheme.outline.withValues(alpha: 0.3),
+                      width: widget.selected ? 1.5 : 1.0,
+                    ),
+                  ),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: widget.icon != null ? 14 : 18,
+                    vertical: 10,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (widget.icon == null && widget.selected) ...[
+                        Icon(
+                          Icons.check_circle,
+                          size: 18,
+                          color: baseColor,
+                        ),
+                        const SizedBox(width: 6),
+                      ],
+                      if (widget.icon != null) ...[
+                        Icon(
+                          widget.icon,
+                          size: 20,
+                          color: widget.selected
+                              ? baseColor
+                              : baseColor.withValues(alpha: 0.6), // Dimmed semantic color when unselected
+                        ),
+                        const SizedBox(width: 6),
+                      ],
+                      AnimatedDefaultTextStyle(
+                        duration: M3EMotion.getDuration(M3EMotion.medium2),
+                        curve: M3EMotion.emphasizedDecelerate,
+                        style: Theme.of(context).textTheme.labelLarge!.copyWith(
+                          color: widget.selected
+                              ? onContainerColor
+                              : colorScheme.onSurface,
+                          fontWeight: widget.selected ? FontWeight.w600 : FontWeight.w500,
+                          letterSpacing: 0.1,
+                        ),
+                        child: Text(widget.label),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             );
@@ -114,12 +193,18 @@ class _FilterChipM3EState extends State<FilterChipM3E>
   }
 }
 
-/// M3E Input Chip with delete animation and hover lift
+/// M3E Input Chip with vibrant hover states and smooth delete animation
 ///
 /// Features:
-/// - Delete icon fade-out animation
-/// - Hover lift (elevation +1dp)
-/// - Press feedback
+/// - Vibrant secondary color hover state for visual feedback
+/// - Custom avatar display in circular primaryContainer
+/// - Smooth delete animation with scale-down and fade-out
+/// - Hover lift with elevation and color change (2dp on hover)
+/// - Custom delete button with error color on hover
+/// - Enhanced borders with secondary accent on hover
+/// - Better padding and touch targets
+/// - Smooth 300ms transitions with emphasized decelerate curve
+/// - Larger icons (18-20px) with proper spacing
 class InputChipM3E extends StatefulWidget {
   final String label;
   final VoidCallback? onDeleted;
@@ -183,19 +268,93 @@ class _InputChipM3EState extends State<InputChipM3E>
         animation: _deleteAnimation,
         builder: (context, child) {
           return Transform.scale(
-            scale: _isDeleting ? _deleteAnimation.value : 1.0,
+            scale: _isDeleting ? (1.0 - _deleteAnimation.value * 0.2) : 1.0,
             child: Opacity(
               opacity: _isDeleting ? 1.0 - _deleteAnimation.value : 1.0,
               child: Material(
-                elevation: _isHovered ? 1.0 : 0.0,
-                borderRadius: BorderRadius.circular(8),
+                elevation: _isHovered ? 2.0 : 0.0,
+                borderRadius: BorderRadius.circular(12),
+                shadowColor: colorScheme.primary.withValues(alpha: 0.15),
                 color: Colors.transparent,
-                child: InputChip(
-                  label: Text(widget.label),
-                  onDeleted: widget.onDeleted != null ? _handleDelete : null,
-                  onPressed: widget.onPressed,
-                  avatar: widget.avatar != null ? Icon(widget.avatar, size: 18) : null,
-                  deleteIconColor: colorScheme.onSurfaceVariant,
+                child: AnimatedContainer(
+                  duration: M3EMotion.getDuration(M3EMotion.medium2),
+                  curve: M3EMotion.emphasizedDecelerate,
+                  decoration: BoxDecoration(
+                    color: _isHovered
+                        ? colorScheme.secondaryContainer
+                        : colorScheme.surfaceContainerLow,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: _isHovered
+                          ? colorScheme.secondary.withValues(alpha: 0.4)
+                          : colorScheme.outline.withValues(alpha: 0.3),
+                      width: 1.0,
+                    ),
+                  ),
+                  padding: EdgeInsets.only(
+                    left: widget.avatar != null ? 6 : 16,
+                    right: 8,
+                    top: 8,
+                    bottom: 8,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (widget.avatar != null) ...[
+                        Container(
+                          width: 28,
+                          height: 28,
+                          decoration: BoxDecoration(
+                            color: colorScheme.primaryContainer,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            widget.avatar,
+                            size: 18,
+                            color: colorScheme.primary,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                      ],
+                      AnimatedDefaultTextStyle(
+                        duration: M3EMotion.getDuration(M3EMotion.medium2),
+                        curve: M3EMotion.emphasizedDecelerate,
+                        style: Theme.of(context).textTheme.labelLarge!.copyWith(
+                          color: _isHovered
+                              ? colorScheme.onSecondaryContainer
+                              : colorScheme.onSurface,
+                          fontWeight: FontWeight.w500,
+                          letterSpacing: 0.1,
+                        ),
+                        child: Text(widget.label),
+                      ),
+                      if (widget.onDeleted != null) ...[
+                        const SizedBox(width: 8),
+                        GestureDetector(
+                          onTap: _handleDelete,
+                          child: MouseRegion(
+                            cursor: SystemMouseCursors.click,
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: _isHovered
+                                    ? colorScheme.error.withValues(alpha: 0.1)
+                                    : Colors.transparent,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.close,
+                                size: 18,
+                                color: _isHovered
+                                    ? colorScheme.error
+                                    : colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -206,7 +365,18 @@ class _InputChipM3EState extends State<InputChipM3E>
   }
 }
 
-/// M3E Assist Chip with hover lift and press feedback
+/// M3E Assist Chip with vibrant tertiary hover states and expressive press feedback
+///
+/// Features:
+/// - Vibrant tertiary (green) color on hover for positive, action-oriented feel
+/// - Primary color on press for clear interaction feedback
+/// - Smooth press animation with scale-down (0.95)
+/// - Hover lift with elevation and color change (2dp on hover)
+/// - Enhanced borders with tertiary accent on hover
+/// - Better padding and touch targets (16px horizontal, 10px vertical)
+/// - Smooth 300ms transitions with emphasized decelerate curve
+/// - Larger icons (20px) with proper spacing (8px)
+/// - Dynamic text weight (w600 when pressed, w500 otherwise)
 class AssistChipM3E extends StatefulWidget {
   final String label;
   final VoidCallback? onPressed;
@@ -255,6 +425,8 @@ class _AssistChipM3EState extends State<AssistChipM3E>
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
@@ -278,13 +450,62 @@ class _AssistChipM3EState extends State<AssistChipM3E>
             return Transform.scale(
               scale: _isPressed ? _scaleAnimation.value : 1.0,
               child: Material(
-                elevation: _isHovered ? 1.0 : 0.0,
-                borderRadius: BorderRadius.circular(8),
+                elevation: _isHovered ? 2.0 : 0.0,
+                borderRadius: BorderRadius.circular(12),
+                shadowColor: colorScheme.primary.withValues(alpha: 0.2),
                 color: Colors.transparent,
-                child: ActionChip(
-                  label: Text(widget.label),
-                  onPressed: widget.onPressed,
-                  avatar: widget.icon != null ? Icon(widget.icon, size: 18) : null,
+                child: AnimatedContainer(
+                  duration: M3EMotion.getDuration(M3EMotion.medium2),
+                  curve: M3EMotion.emphasizedDecelerate,
+                  decoration: BoxDecoration(
+                    color: _isPressed
+                        ? colorScheme.primaryContainer
+                        : (_isHovered
+                            ? colorScheme.tertiaryContainer
+                            : colorScheme.surfaceContainerLow),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: _isHovered
+                          ? colorScheme.tertiary.withValues(alpha: 0.4)
+                          : colorScheme.outline.withValues(alpha: 0.3),
+                      width: 1.0,
+                    ),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (widget.icon != null) ...[
+                        Icon(
+                          widget.icon,
+                          size: 20,
+                          color: _isPressed
+                              ? colorScheme.primary
+                              : (_isHovered
+                                  ? colorScheme.tertiary
+                                  : colorScheme.onSurfaceVariant),
+                        ),
+                        const SizedBox(width: 8),
+                      ],
+                      AnimatedDefaultTextStyle(
+                        duration: M3EMotion.getDuration(M3EMotion.medium2),
+                        curve: M3EMotion.emphasizedDecelerate,
+                        style: Theme.of(context).textTheme.labelLarge!.copyWith(
+                          color: _isPressed
+                              ? colorScheme.onPrimaryContainer
+                              : (_isHovered
+                                  ? colorScheme.onTertiaryContainer
+                                  : colorScheme.onSurface),
+                          fontWeight: _isPressed ? FontWeight.w600 : FontWeight.w500,
+                          letterSpacing: 0.1,
+                        ),
+                        child: Text(widget.label),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             );

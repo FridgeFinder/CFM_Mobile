@@ -6,7 +6,6 @@ import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:design_system/design_system.dart';
 import '../../map/domain/models/fridge_domain.dart';
-import '../../map/presentation/widgets/fridge_marker.dart';
 import '../../map/presentation/controllers/fridge_list_controller.dart';
 import './widgets/status_update_form.dart';
 import '../../../core/providers/location_provider.dart';
@@ -186,7 +185,7 @@ class _FridgeProfileSheetState extends ConsumerState<FridgeProfileSheet>
                                     shape: BoxShape.circle,
                                     boxShadow: [
                                       BoxShadow(
-                                        color: FridgeMarker.subscribedGreen
+                                        color: M3EColors.tertiary // Vibrant GREEN #5FD65F
                                             .withValues(
                                               alpha: _glowAnimation.value * 0.6,
                                             ),
@@ -194,7 +193,7 @@ class _FridgeProfileSheetState extends ConsumerState<FridgeProfileSheet>
                                         spreadRadius: 1,
                                       ),
                                       BoxShadow(
-                                        color: FridgeMarker.subscribedGreen
+                                        color: M3EColors.tertiary // Vibrant GREEN #5FD65F
                                             .withValues(
                                               alpha: _glowAnimation.value * 0.4,
                                             ),
@@ -301,17 +300,29 @@ class _FridgeProfileSheetState extends ConsumerState<FridgeProfileSheet>
                         isFridgeSubscribedProvider(fridge.id),
                       );
 
-                      // If not authenticated, show subscribe button
+                      // If not authenticated, show subscribe button with GREEN tertiary color
                       if (!isAuthenticated) {
                         return SizedBox(
                           width: double.infinity,
-                          child: FilledButtonM3E(
+                          child: FilledButton(
                             onPressed: () =>
                                 _showSignInAndSubscribeDialog(context, ref),
-                            icon: Icons.favorite_border,
-                            child: Text(
-                              'Subscribe',
-                              style: M3ETypography.labelLarge,
+                            style: FilledButton.styleFrom(
+                              backgroundColor: M3EColors.tertiary, // GREEN #5FD65F for positive subscribe action
+                              foregroundColor: Colors.black87, // Dark text for contrast on light green
+                              minimumSize: const Size(0, 40),
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.favorite_border, size: 24, color: Colors.black87),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Subscribe',
+                                  style: M3ETypography.labelLarge.copyWith(color: Colors.black87),
+                                ),
+                              ],
                             ),
                           ),
                         );
@@ -351,15 +362,27 @@ class _FridgeProfileSheetState extends ConsumerState<FridgeProfileSheet>
                                     ),
                                     SizedBox(width: M3ESpacing.sm), // 12dp between buttons
                                     Expanded(
-                                      child: OutlinedButtonM3E(
+                                      child: OutlinedButton(
                                         onPressed: () =>
                                             _showUnsubscribeDialog(context, ref),
-                                        icon: Icons.favorite,
-                                        child: Text(
-                                          'Unsubscribe',
-                                          style: M3ETypography.labelLarge.copyWith(
-                                            color: Theme.of(context).colorScheme.error,
-                                          ),
+                                        style: OutlinedButton.styleFrom(
+                                          foregroundColor: M3EColors.secondary, // PINK for favorite/heart action
+                                          side: BorderSide(color: M3EColors.secondary),
+                                          minimumSize: const Size(0, 40),
+                                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                        ),
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Icon(Icons.favorite, size: 24, color: M3EColors.secondary),
+                                            const SizedBox(width: 8),
+                                            Text(
+                                              'Unsubscribe',
+                                              style: M3ETypography.labelLarge.copyWith(
+                                                color: M3EColors.secondary,
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
                                     ),
@@ -367,13 +390,25 @@ class _FridgeProfileSheetState extends ConsumerState<FridgeProfileSheet>
                                 )
                               : SizedBox(
                                   width: double.infinity,
-                                  child: FilledButtonM3E(
+                                  child: FilledButton(
                                     onPressed: () =>
                                         _showSubscribeDialog(context, ref),
-                                    icon: Icons.favorite_border,
-                                    child: Text(
-                                      'Subscribe',
-                                      style: M3ETypography.labelLarge,
+                                    style: FilledButton.styleFrom(
+                                      backgroundColor: M3EColors.tertiary, // GREEN #5FD65F for positive subscribe action
+                                      foregroundColor: Colors.black87,
+                                      minimumSize: const Size(0, 40),
+                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(Icons.favorite_border, size: 24, color: Colors.black87),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          'Subscribe',
+                                          style: M3ETypography.labelLarge.copyWith(color: Colors.black87),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 );

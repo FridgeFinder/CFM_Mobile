@@ -7,7 +7,7 @@ import '../theme/motion.dart';
 ///
 /// Utilities for showing bottom sheets with proper M3E styling.
 class BottomSheetM3E {
-  /// Show a modal bottom sheet
+  /// Show a modal bottom sheet with enhanced M3E styling
   static Future<T?> showModal<T>({
     required BuildContext context,
     required Widget child,
@@ -16,18 +16,33 @@ class BottomSheetM3E {
     bool enableDrag = true,
     Color? backgroundColor,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return showModalBottomSheet<T>(
       context: context,
       isScrollControlled: isScrollControlled,
       isDismissible: isDismissible,
       enableDrag: enableDrag,
-      backgroundColor: backgroundColor,
+      backgroundColor: backgroundColor ?? colorScheme.surfaceContainerLow,
       shape: M3EShapes.bottomSheet,
+      elevation: 3, // Enhanced elevation for better depth perception
+      clipBehavior: Clip.antiAlias,
       transitionAnimationController: AnimationController(
         vsync: Navigator.of(context),
         duration: M3EMotionPatterns.bottomSheetFallback,
       ),
-      builder: (context) => child,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          // Subtle top border for visual separation
+          border: Border(
+            top: BorderSide(
+              color: colorScheme.primary.withValues(alpha: 0.1),
+              width: 2,
+            ),
+          ),
+        ),
+        child: child,
+      ),
     );
   }
 
@@ -135,12 +150,29 @@ class _DragHandleM3EState extends State<DragHandleM3E>
       animation: Listenable.merge([_widthAnimation, _heightAnimation]),
       builder: (context, child) {
         return Container(
-          margin: EdgeInsets.only(top: M3ESpacing.sm, bottom: M3ESpacing.xs),
+          margin: EdgeInsets.only(
+            top: M3ESpacing.md, // More breathing room
+            bottom: M3ESpacing.md,
+          ),
           width: _widthAnimation.value,
           height: _heightAnimation.value,
           decoration: BoxDecoration(
-            color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
-            borderRadius: BorderRadius.circular(2),
+            // More vibrant color when dragging
+            color: widget.isDragging
+                ? colorScheme.primary.withValues(alpha: 0.6)
+                : colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+            borderRadius: BorderRadius.circular(M3ESpacing.xxs / 2),
+            // Subtle glow when dragging
+            boxShadow: widget.isDragging
+                ? [
+                    BoxShadow(
+                      color: colorScheme.primary.withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      spreadRadius: 1,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
           ),
         );
       },
@@ -233,22 +265,56 @@ class _SpringBottomSheetState extends State<_SpringBottomSheet> {
 
 /// M3E Bottom Sheet Content Wrapper
 ///
-/// Provides consistent padding for bottom sheet content.
+/// Provides consistent padding and enhanced styling for bottom sheet content.
 class BottomSheetContentM3E extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry? padding;
+  final bool showDivider;
 
   const BottomSheetContentM3E({
     super.key,
     required this.child,
     this.padding,
+    this.showDivider = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: padding ?? M3ESpacing.bottomSheetContentPadding,
-      child: child,
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Optional subtle divider for visual separation
+        if (showDivider) ...[
+          Container(
+            height: 1,
+            margin: M3ESpacing.symmetric(
+              horizontal: M3ESpacing.xl,
+              vertical: M3ESpacing.xs,
+            ),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.transparent,
+                  colorScheme.outlineVariant.withValues(alpha: 0.5),
+                  Colors.transparent,
+                ],
+              ),
+            ),
+          ),
+          M3ESpacing.verticalSM,
+        ],
+        // Content with enhanced padding
+        Padding(
+          padding: padding ??
+              M3ESpacing.symmetric(
+                horizontal: M3ESpacing.xl, // More generous horizontal padding
+                vertical: M3ESpacing.lg,
+              ),
+          child: child,
+        ),
+      ],
     );
   }
 }

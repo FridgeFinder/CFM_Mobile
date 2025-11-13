@@ -6,12 +6,38 @@ import 'colors.dart';
 /// Provides complete color scheme generation with full tonal palettes,
 /// semantic colors, and proper dark mode tone mapping.
 ///
-/// Primary Color: #88B3FF (Light Blue)
+/// M3E Vibrant Palette:
+/// - Primary: #5B9FFF (Vibrant Electric Blue) - Enhanced from #88B3FF
+/// - Secondary: #FF6B9D (Vibrant Pink/Magenta) - Inspired by fridge "few items"
+/// - Tertiary: #5FD65F (Vibrant Green) - Inspired by fridge "full" status
+/// - Warning: #FFB300 (Vibrant Amber) - Inspired by fridge "many items"
+/// - Alert: #FF7043 (Vibrant Coral/Orange) - For attention-grabbing alerts
+/// - Error: #BA1A1A (Material Red) - Standard error color
+///
+/// This palette follows M3 Expressive guidelines with bold, saturated colors
+/// that create a joyful, energetic aesthetic while maintaining accessibility.
 class M3EColorSchemes {
   M3EColorSchemes._();
 
-  /// App primary color (#88B3FF)
-  static const Color primaryColor = Color(0xFF88B3FF);
+  /// App primary color - Vibrant Electric Blue (#5B9FFF)
+  /// Enhanced from original #88B3FF with higher saturation
+  static const Color primaryColor = Color(0xFF5B9FFF);
+
+  /// Secondary color - Vibrant Pink/Magenta (#FF6B9D)
+  /// Harmonizes with fridge status pink while adding vibrancy
+  static const Color secondaryColor = Color(0xFFFF6B9D);
+
+  /// Tertiary color - Vibrant Green (#5FD65F)
+  /// Harmonizes with fridge "full" status while adding energy
+  static const Color tertiaryColor = Color(0xFF5FD65F);
+
+  /// Warning color - Vibrant Amber (#FFB300)
+  /// Harmonizes with fridge "many items" yellow with more saturation
+  static const Color warningColor = Color(0xFFFFB300);
+
+  /// Alert color - Vibrant Coral/Orange (#FF7043)
+  /// For attention-grabbing alerts and dirty/servicing states
+  static const Color alertColor = Color(0xFFFF7043);
 
   /// Error color (#BA1A1A)
   static const Color errorColor = Color(0xFFBA1A1A);
@@ -258,9 +284,55 @@ class M3EColorSchemes {
   static ColorScheme createCustomScheme({
     required Color primary,
     required Brightness brightness,
+    Color? secondary,
+    Color? tertiary,
   }) {
+    // Use ColorScheme.fromSeed with multiple seed colors for richer palette
     return ColorScheme.fromSeed(
       seedColor: primary,
+      secondary: secondary,
+      tertiary: tertiary,
+      brightness: brightness,
+    );
+  }
+
+  /// Create the FridgeFinder M3E Expressive scheme with full color system
+  ///
+  /// This generates a cohesive palette using:
+  /// - Primary: Vibrant blue for brand identity
+  /// - Secondary: Vibrant pink for accents and complementary UI
+  /// - Tertiary: Vibrant green harmonizing with success/full states
+  ///
+  /// The palette integrates seamlessly with fridge status colors.
+  static ColorScheme createFridgeFinderScheme({
+    required Brightness brightness,
+  }) {
+    return ColorScheme.fromSeed(
+      seedColor: primaryColor,
+      secondary: secondaryColor,
+      tertiary: tertiaryColor,
+      brightness: brightness,
+    );
+  }
+
+  /// Generate color scheme for warning states
+  ///
+  /// Useful for creating themed surfaces or components that need
+  /// warning-level emphasis (e.g., low stock alerts)
+  static ColorScheme warningScheme({required Brightness brightness}) {
+    return ColorScheme.fromSeed(
+      seedColor: warningColor,
+      brightness: brightness,
+    );
+  }
+
+  /// Generate color scheme for alert states
+  ///
+  /// Useful for attention-grabbing components that need
+  /// urgent but not error-level emphasis (e.g., maintenance needed)
+  static ColorScheme alertScheme({required Brightness brightness}) {
+    return ColorScheme.fromSeed(
+      seedColor: alertColor,
       brightness: brightness,
     );
   }
@@ -278,5 +350,104 @@ class M3EColorSchemes {
         ? darkScheme.primary
         : lightScheme.primary;
   }
+
+  /// Get semantic color for fridge status with M3E vibrancy
+  ///
+  /// Maps fridge status colors to M3E palette for cohesive theming:
+  /// - Empty/White: Uses surface colors
+  /// - Few items/Pink: Harmonizes with secondary pink
+  /// - Many items/Yellow: Harmonizes with warning amber
+  /// - Full/Green: Harmonizes with tertiary green
+  static Color getStatusColor({
+    required String status,
+    required ColorScheme scheme,
+  }) {
+    switch (status.toLowerCase()) {
+      case 'empty':
+        return scheme.surface;
+      case 'few':
+      case 'fewitems':
+        return scheme.secondary;
+      case 'many':
+      case 'manyitems':
+        return scheme.tertiary;
+      case 'full':
+        return tertiaryColor;
+      default:
+        return scheme.primary;
+    }
+  }
 }
+
+/// M3E Expressive Color Usage Guide
+///
+/// PRIMARY (#5B9FFF - Vibrant Electric Blue)
+/// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+/// - Main brand color and app identity
+/// - Primary buttons and FABs
+/// - App bar backgrounds
+/// - Key interactive elements
+/// - Progress indicators
+/// - Selected states
+/// - Links and primary CTAs
+///
+/// SECONDARY (#FF6B9D - Vibrant Pink/Magenta)
+/// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+/// - Accents and complementary UI
+/// - Secondary buttons
+/// - Chips and badges
+/// - Toggle states
+/// - Fridge "few items" status theming
+/// - Playful, friendly UI elements
+/// - Notification indicators
+///
+/// TERTIARY (#5FD65F - Vibrant Green)
+/// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+/// - Success states and confirmations
+/// - Positive feedback
+/// - Fridge "full" status theming
+/// - Completion indicators
+/// - Growth/positive metrics
+/// - Available/active states
+///
+/// WARNING (#FFB300 - Vibrant Amber)
+/// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+/// - Caution and warning states
+/// - Moderate urgency alerts
+/// - Fridge "many items" status theming
+/// - Attention-needed indicators
+/// - Pending/in-progress states
+///
+/// ALERT (#FF7043 - Vibrant Coral/Orange)
+/// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+/// - High attention, non-critical alerts
+/// - Fridge "dirty" or "needs servicing" states
+/// - Maintenance notifications
+/// - Time-sensitive information
+/// - Between warning and error severity
+///
+/// ERROR (#BA1A1A - Material Red)
+/// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+/// - Critical errors and failures
+/// - Form validation errors
+/// - Destructive actions
+/// - System failures
+///
+/// ACCESSIBILITY NOTES
+/// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+/// All colors meet WCAG AA standards when used properly:
+/// - Use tone 40 on tone 99 for light mode text
+/// - Use tone 80 on tone 10 for dark mode text
+/// - Large text (18pt+): minimum 3:1 contrast
+/// - Normal text: minimum 4.5:1 contrast
+/// - UI components: minimum 3:1 contrast
+///
+/// M3 EXPRESSIVE GUIDELINES
+/// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+/// This palette follows M3 Expressive principles:
+/// - Bold, saturated colors for energy and joy
+/// - High contrast for visual impact
+/// - Vibrant complementary color relationships
+/// - Harmonious integration of functional status colors
+/// - Cohesive brand identity through color storytelling
 

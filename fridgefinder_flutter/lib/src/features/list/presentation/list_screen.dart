@@ -67,7 +67,9 @@ class _ListScreenState extends ConsumerState<ListScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Location not found: $query'),
-            backgroundColor: Colors.orange,
+            backgroundColor: const Color(
+              0xFFFFB300,
+            ), // M3E Vibrant AMBER for warning
           ),
         );
         return;
@@ -96,7 +98,9 @@ class _ListScreenState extends ConsumerState<ListScreen>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to search location: ${e.toString()}'),
-          backgroundColor: Colors.red,
+          backgroundColor: const Color(
+            0xFFFF7043,
+          ), // M3E Vibrant CORAL for error
         ),
       );
     }
@@ -151,219 +155,223 @@ class _ListScreenState extends ConsumerState<ListScreen>
           data: (_) {
             return filterStateAsync.when(
               data: (filterState) {
-              if (_searchController.text != filterState.searchQuery) {
-                _searchController.value = TextEditingValue(
-                  text: filterState.searchQuery,
-                  selection: TextSelection.collapsed(
-                    offset: filterState.searchQuery.length,
-                  ),
+                if (_searchController.text != filterState.searchQuery) {
+                  _searchController.value = TextEditingValue(
+                    text: filterState.searchQuery,
+                    selection: TextSelection.collapsed(
+                      offset: filterState.searchQuery.length,
+                    ),
+                  );
+                }
+
+                // Compute subscribedFridgeIds ONCE at the beginning to use for both filtering and green glow
+                final subscribedFridgeIds = subscriptionsAsync.when(
+                  data: (subs) => subs.map((s) => s.fridgeId).toSet(),
+                  loading: () => <String>{},
+                  error: (_, _) => <String>{},
                 );
-              }
 
-              // Compute subscribedFridgeIds ONCE at the beginning to use for both filtering and green glow
-              final subscribedFridgeIds = subscriptionsAsync.when(
-                data: (subs) => subs.map((s) => s.fridgeId).toSet(),
-                loading: () => <String>{},
-                error: (_, _) => <String>{},
-              );
+                // Apply filter conditions first, then subscribed filter, then location proximity, then fuzzy search
+                // If no conditions selected, show all fridges (same as map view)
+                var filtered = filterState.selectedConditions.isEmpty
+                    ? fridgesWithDistance
+                    : fridgesWithDistance.where((fridgeWithDistance) {
+                        return filterState.selectedConditions.any((
+                          filterCondition,
+                        ) {
+                          return filterCondition.matches(
+                            fridgeWithDistance.fridge,
+                          );
+                        });
+                      }).toList();
 
-              // Apply filter conditions first, then subscribed filter, then location proximity, then fuzzy search
-              // If no conditions selected, show all fridges (same as map view)
-              var filtered = filterState.selectedConditions.isEmpty
-                  ? fridgesWithDistance
-                  : fridgesWithDistance.where((fridgeWithDistance) {
-                      return filterState.selectedConditions.any((
-                        filterCondition,
-                      ) {
-                        return filterCondition.matches(
-                          fridgeWithDistance.fridge,
+                // Apply subscribed filter if active
+                if (filterState.subscribedOnly) {
+                  filtered = filtered.where((fridgeWithDistance) {
+                    return subscribedFridgeIds.contains(
+                      fridgeWithDistance.fridge.id,
+                    );
+                  }).toList();
+                }
+
+                // Apply location proximity filter if location is selected
+                if (_selectedLocation != null) {
+                  filtered = filtered.where((fridgeWithDistance) {
+                    final fridge = fridgeWithDistance.fridge;
+                    final fridgeLocation = LatLng(
+                      fridge.location.geoLat,
+                      fridge.location.geoLng,
+                    );
+                    final distance =
+                        distance_utils.DistanceCalculator.calculateDistanceInKm(
+                          _selectedLocation!,
+                          fridgeLocation,
                         );
-                      });
-                    }).toList();
+                    return distance <= _locationProximityKm;
+                  }).toList();
+                }
 
-              // Apply subscribed filter if active
-              if (filterState.subscribedOnly) {
-                filtered = filtered.where((fridgeWithDistance) {
-                  return subscribedFridgeIds.contains(
-                    fridgeWithDistance.fridge.id,
-                  );
-                }).toList();
-              }
-
-              // Apply location proximity filter if location is selected
-              if (_selectedLocation != null) {
-                filtered = filtered.where((fridgeWithDistance) {
-                  final fridge = fridgeWithDistance.fridge;
-                  final fridgeLocation = LatLng(
-                    fridge.location.geoLat,
-                    fridge.location.geoLng,
-                  );
-                  final distance =
-                      distance_utils.DistanceCalculator.calculateDistanceInKm(
-                        _selectedLocation!,
-                        fridgeLocation,
-                      );
-                  return distance <= _locationProximityKm;
-                }).toList();
-              }
-
-              // Apply fuzzy search if query is not empty (and no location selected)
-              // Don't fuzzy search when location is active
-              if (filterState.searchQuery.isNotEmpty &&
-                  _selectedLocation == null) {
-                final searchQuery = filterState.searchQuery.toLowerCase();
-                filtered = filtered.where((fridgeWithDistance) {
-                  final fridge = fridgeWithDistance.fridge;
-                  return fridge.name.toLowerCase().contains(searchQuery) ||
-                      fridge.location.city.toLowerCase().contains(
-                        searchQuery,
-                      ) ||
-                      fridge.location.state.toLowerCase().contains(searchQuery);
-                }).toList();
-              }
+                // Apply fuzzy search if query is not empty (and no location selected)
+                // Don't fuzzy search when location is active
+                if (filterState.searchQuery.isNotEmpty &&
+                    _selectedLocation == null) {
+                  final searchQuery = filterState.searchQuery.toLowerCase();
+                  filtered = filtered.where((fridgeWithDistance) {
+                    final fridge = fridgeWithDistance.fridge;
+                    return fridge.name.toLowerCase().contains(searchQuery) ||
+                        fridge.location.city.toLowerCase().contains(
+                          searchQuery,
+                        ) ||
+                        fridge.location.state.toLowerCase().contains(
+                          searchQuery,
+                        );
+                  }).toList();
+                }
 
                 return Column(
                   children: [
                     // Filter Pills - shared with map view
                     const FilterPillsRow(),
 
-                  // Search Bar with M3E styling
-                  Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: M3ESpacing.md,
-                      vertical: M3ESpacing.xs,
-                    ),
-                    child: SearchBarM3E(
-                      controller: _searchController,
-                      hintText: 'Search by name or location...',
-                      leadingIcon: Icons.search,
-                      expandedByDefault: true,
-                      onChanged: (query) {
-                        ref
-                            .read(mapFilterProvider.notifier)
-                            .setSearchQuery(query);
-                      },
-                      onSubmitted: _searchLocation,
-                    ),
-                  ),
-
-                  // Location pill (shown when location is selected)
-                  if (_locationName != null)
+                    // Search Bar with M3E styling
                     Padding(
-                      padding: EdgeInsets.fromLTRB(
-                        M3ESpacing.sm,
-                        0,
-                        M3ESpacing.sm,
-                        M3ESpacing.sm,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: M3ESpacing.md,
+                        vertical: M3ESpacing.xs,
                       ),
-                      child: Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: M3ESpacing.sm,
-                          vertical: M3ESpacing.xs,
+                      child: SearchBarM3E(
+                        controller: _searchController,
+                        hintText: 'Search by name or location...',
+                        leadingIcon: Icons.search,
+                        expandedByDefault: true,
+                        onChanged: (query) {
+                          ref
+                              .read(mapFilterProvider.notifier)
+                              .setSearchQuery(query);
+                        },
+                        onSubmitted: _searchLocation,
+                      ),
+                    ),
+
+                    // Location pill (shown when location is selected)
+                    if (_locationName != null)
+                      Padding(
+                        padding: EdgeInsets.fromLTRB(
+                          M3ESpacing.sm,
+                          0,
+                          M3ESpacing.sm,
+                          M3ESpacing.sm,
                         ),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.blue, width: 1.5),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.location_on,
-                              size: 18,
-                              color: Colors.blue,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Near: $_locationName',
-                                style: const TextStyle(
-                                  color: Colors.blue,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                            IconButton(
-                              icon: const Icon(
-                                Icons.close,
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: M3ESpacing.sm,
+                            vertical: M3ESpacing.xs,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.blue, width: 1.5),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.location_on,
                                 size: 18,
                                 color: Colors.blue,
                               ),
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
-                              onPressed: _clearLocation,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                  // List of Fridges
-                  Expanded(
-                    child: filtered.isEmpty
-                        ? Center(
-                            child: common_widgets.EmptyStateView(
-                              title:
-                                  filterState.searchQuery.isEmpty &&
-                                      filterState.selectedConditions.isEmpty
-                                  ? 'No Fridges Found'
-                                  : 'No results',
-                              message:
-                                  filterState.searchQuery.isEmpty &&
-                                      filterState.selectedConditions.isEmpty
-                                  ? 'There are no community fridges in your area yet.'
-                                  : 'No fridges match your filters.',
-                              icon: Icons.search_off,
-                              action:
-                                  filterState.searchQuery.isNotEmpty ||
-                                      filterState.selectedConditions.isNotEmpty
-                                  ? ElevatedButton(
-                                      onPressed: () {
-                                        _searchController.clear();
-                                        final notifier = ref.read(
-                                          mapFilterProvider.notifier,
-                                        );
-                                        notifier.clearSearch();
-                                        notifier.deselectAllConditions();
-                                      },
-                                      child: const Text('Clear Filters'),
-                                    )
-                                  : null,
-                            ),
-                          )
-                        : ListView.builder(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: M3ESpacing.md,
-                            ),
-                            itemCount: filtered.length,
-                            itemBuilder: (context, index) {
-                              final fridgeWithDistance = filtered[index];
-                              // Use the pre-computed subscribedFridgeIds for green glow
-
-                              // Wrap each card with staggered entrance animation
-                              return M3ETransitions.listItemEntrance(
-                                animation: _listAnimationController,
-                                index: index,
-                                totalItems: filtered.length.clamp(
-                                  0,
-                                  10,
-                                ), // Limit stagger to first 10
-                                child: FridgeCard(
-                                  fridge: fridgeWithDistance.fridge,
-                                  distanceKm: fridgeWithDistance.distanceKm,
-                                  isSubscribed: subscribedFridgeIds.contains(
-                                    fridgeWithDistance.fridge.id,
-                                  ),
-                                  onTap: () => _showFridgeProfile(
-                                    context,
-                                    ref,
-                                    fridgeWithDistance.fridge,
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Near: $_locationName',
+                                  style: const TextStyle(
+                                    color: Colors.blue,
+                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
-                              );
-                            },
+                              ),
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.close,
+                                  size: 18,
+                                  color: Colors.blue,
+                                ),
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                                onPressed: _clearLocation,
+                              ),
+                            ],
                           ),
+                        ),
+                      ),
+
+                    // List of Fridges
+                    Expanded(
+                      child: filtered.isEmpty
+                          ? Center(
+                              child: common_widgets.EmptyStateView(
+                                title:
+                                    filterState.searchQuery.isEmpty &&
+                                        filterState.selectedConditions.isEmpty
+                                    ? 'No Fridges Found'
+                                    : 'No results',
+                                message:
+                                    filterState.searchQuery.isEmpty &&
+                                        filterState.selectedConditions.isEmpty
+                                    ? 'There are no community fridges in your area yet.'
+                                    : 'No fridges match your filters.',
+                                icon: Icons.search_off,
+                                action:
+                                    filterState.searchQuery.isNotEmpty ||
+                                        filterState
+                                            .selectedConditions
+                                            .isNotEmpty
+                                    ? ElevatedButton(
+                                        onPressed: () {
+                                          _searchController.clear();
+                                          final notifier = ref.read(
+                                            mapFilterProvider.notifier,
+                                          );
+                                          notifier.clearSearch();
+                                          notifier.deselectAllConditions();
+                                        },
+                                        child: const Text('Clear Filters'),
+                                      )
+                                    : null,
+                              ),
+                            )
+                          : ListView.separated(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: M3ESpacing.md,
+                              ),
+                              separatorBuilder: (context, index) =>
+                                  M3ESpacing.verticalSM,
+                              itemCount: filtered.length,
+                              itemBuilder: (context, index) {
+                                final fridgeWithDistance = filtered[index];
+                                // Wrap each card with staggered entrance animation
+                                return M3ETransitions.listItemEntrance(
+                                  animation: _listAnimationController,
+                                  index: index,
+                                  totalItems: filtered.length.clamp(
+                                    0,
+                                    10,
+                                  ), // Limit stagger to first 10
+                                  child: FridgeCard(
+                                    fridge: fridgeWithDistance.fridge,
+                                    distanceKm: fridgeWithDistance.distanceKm,
+                                    isSubscribed: subscribedFridgeIds.contains(
+                                      fridgeWithDistance.fridge.id,
+                                    ),
+                                    onTap: () => _showFridgeProfile(
+                                      context,
+                                      ref,
+                                      fridgeWithDistance.fridge,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
                     ),
                   ],
                 );

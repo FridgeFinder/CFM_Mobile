@@ -7,12 +7,12 @@ import '../../features/map/presentation/controllers/filter_condition.dart';
 /// Mirrors the logic from CFM_Frontend/src/components/organisms/browse/model/markersFrom.js
 class FridgeIconUtils {
   // Colors for pin markers based on food percentage levels
-  // Matches pinColor values from CFM_Frontend/src/theme/palette.js
+  // Updated to use M3E vibrant semantic colors for better visual hierarchy
   static const Map<int, Color> colorFromFoodLevel = {
-    0: Color(0xFFFFFFFF), // itemsEmpty - white
-    1: Color(0xFFFFD4FF), // itemsFew - pink
-    2: Color(0xFFFFE55C), // itemsMany - yellow
-    3: Color(0xFF97ED7D), // itemsFull - green
+    0: Color(0xFFFFFFFF), // itemsEmpty - white (unchanged, neutral)
+    1: Color(0xFFFF6B9D), // itemsFew - M3E Vibrant PINK (secondary) - few items
+    2: Color(0xFFFFB300), // itemsMany - M3E Vibrant AMBER (warning) - many items
+    3: Color(0xFF5FD65F), // itemsFull - M3E Vibrant GREEN (tertiary) - full/positive
   };
 
   // SVG template constants
@@ -202,15 +202,15 @@ class FridgeIconUtils {
     }
   }
 
-  /// Get status color for list view
+  /// Get status color for list view - Using M3E vibrant semantic colors
   static Color getStatusColor(FridgeCondition condition) {
     switch (condition) {
       case FridgeCondition.good:
-        return Colors.green;
+        return const Color(0xFF5FD65F); // M3E Vibrant GREEN - success/positive state
       case FridgeCondition.dirty:
-        return Colors.orange;
+        return const Color(0xFFFF7043); // M3E Vibrant CORAL - needs attention but not critical
       case FridgeCondition.outOfOrder:
-        return Colors.red;
+        return const Color(0xFFFF7043); // M3E Vibrant CORAL - maintenance/alert state
       case FridgeCondition.ghost: // Ghost fridges are filtered from API response
         return Colors.purple; // Kept for exhaustive switch, but ghost fridges are filtered out
       case FridgeCondition.notAtLocation:
@@ -251,27 +251,27 @@ class FridgeIconUtils {
   static String _generateConditionPillSvg(FilterCondition condition) {
     switch (condition) {
       case FilterCondition.full:
-        // Green pin with smile (full food >= 75%)
+        // Vibrant GREEN pin with smile (full food >= 75%)
         return generatePinSvg(
-          pinColor: const Color(0xFF97ED7D), // green
+          pinColor: const Color(0xFF5FD65F), // M3E Vibrant GREEN
           isSmileFace: true,
           hasDecoration: false,
           decorationSvg: '',
         );
 
       case FilterCondition.manyItems:
-        // Yellow pin with smile (many items 50-74%)
+        // Vibrant AMBER pin with smile (many items 50-74%)
         return generatePinSvg(
-          pinColor: const Color(0xFFFFE55C), // yellow
+          pinColor: const Color(0xFFFFB300), // M3E Vibrant AMBER
           isSmileFace: true,
           hasDecoration: false,
           decorationSvg: '',
         );
 
       case FilterCondition.fewItems:
-        // Pink pin with smile (few items 1-49%)
+        // Vibrant PINK pin with smile (few items 1-49%)
         return generatePinSvg(
-          pinColor: const Color(0xFFFFD4FF), // pink
+          pinColor: const Color(0xFFFF6B9D), // M3E Vibrant PINK
           isSmileFace: true,
           hasDecoration: false,
           decorationSvg: '',

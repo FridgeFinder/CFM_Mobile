@@ -154,11 +154,13 @@ class _SegmentedButtonEnhancedM3EState<T> extends State<SegmentedButtonEnhancedM
                   widget.onSelectionChanged?.call(newSelection);
                 },
                 child: Container(
-                  height: 40,
+                  height: 44,
                   decoration: BoxDecoration(
                     border: Border.all(
-                      color: colorScheme.outline,
-                      width: 1.0,
+                      color: isSelected
+                          ? colorScheme.primary.withValues(alpha: 0.5)
+                          : colorScheme.outline.withValues(alpha: 0.5),
+                      width: isSelected ? 1.5 : 1.0,
                     ),
                     borderRadius: _getSegmentBorderRadius(index),
                   ),
@@ -168,30 +170,31 @@ class _SegmentedButtonEnhancedM3EState<T> extends State<SegmentedButtonEnhancedM
                       children: [
                         if (widget.showSelectedIcon && isSelected)
                           Icon(
-                            Icons.check,
+                            Icons.check_circle,
                             size: 18,
-                            color: colorScheme.onSecondaryContainer,
+                            color: colorScheme.primary,
                           ),
-                        if (widget.showSelectedIcon && isSelected) const SizedBox(width: 4),
+                        if (widget.showSelectedIcon && isSelected) const SizedBox(width: 6),
                         if (segment.icon != null) ...[
                           IconTheme(
                             data: IconThemeData(
-                              size: 18,
+                              size: 20,
                               color: isSelected
-                                  ? colorScheme.onSecondaryContainer
-                                  : colorScheme.onSurface,
+                                  ? colorScheme.primary
+                                  : colorScheme.onSurfaceVariant,
                             ),
                             child: segment.icon!,
                           ),
-                          if (segment.label != null) const SizedBox(width: 4),
+                          if (segment.label != null) const SizedBox(width: 6),
                         ],
                         if (segment.label != null)
                           DefaultTextStyle(
                             style: Theme.of(context).textTheme.labelLarge?.copyWith(
                               color: isSelected
-                                  ? colorScheme.onSecondaryContainer
+                                  ? colorScheme.primary
                                   : colorScheme.onSurface,
                               fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                              letterSpacing: isSelected ? 0.15 : 0.1,
                             ) ?? const TextStyle(),
                             child: segment.label!,
                           ),
@@ -226,15 +229,24 @@ class _SegmentedButtonEnhancedM3EState<T> extends State<SegmentedButtonEnhancedM
                     return Positioned(
                       left: left,
                       width: segmentWidth,
-                      height: 40,
+                      height: 44,
                       child: IgnorePointer(
                         child: Container(
-                          margin: const EdgeInsets.all(1),
+                          margin: const EdgeInsets.all(2),
                           decoration: BoxDecoration(
-                            color: colorScheme.secondaryContainer.withValues(
+                            color: colorScheme.primaryContainer.withValues(
                               alpha: _indicatorAnimations[index].value,
                             ),
                             borderRadius: _morphAnimations[index].value,
+                            boxShadow: [
+                              BoxShadow(
+                                color: colorScheme.primary.withValues(
+                                  alpha: _indicatorAnimations[index].value * 0.2,
+                                ),
+                                blurRadius: 4,
+                                offset: const Offset(0, 1),
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -255,18 +267,18 @@ class _SegmentedButtonEnhancedM3EState<T> extends State<SegmentedButtonEnhancedM
 
     if (isFirst && isLast) {
       // Single segment
-      return BorderRadius.circular(20);
+      return BorderRadius.circular(24);
     } else if (isFirst) {
       // First segment
       return const BorderRadius.only(
-        topLeft: Radius.circular(20),
-        bottomLeft: Radius.circular(20),
+        topLeft: Radius.circular(24),
+        bottomLeft: Radius.circular(24),
       );
     } else if (isLast) {
       // Last segment
       return const BorderRadius.only(
-        topRight: Radius.circular(20),
-        bottomRight: Radius.circular(20),
+        topRight: Radius.circular(24),
+        bottomRight: Radius.circular(24),
       );
     } else {
       // Middle segment

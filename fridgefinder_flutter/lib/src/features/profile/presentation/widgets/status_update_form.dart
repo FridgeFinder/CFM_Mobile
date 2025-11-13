@@ -64,7 +64,7 @@ class _StatusUpdateFormState extends ConsumerState<StatusUpdateForm> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to pick image: ${e.toString()}'),
-          backgroundColor: Colors.orange,
+          backgroundColor: const Color(0xFFFFB300), // M3E Vibrant AMBER for warning
         ),
       );
     }
@@ -125,7 +125,7 @@ class _StatusUpdateFormState extends ConsumerState<StatusUpdateForm> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Status update submitted for ${widget.fridge.name}'),
-          backgroundColor: Colors.green,
+          backgroundColor: const Color(0xFF5FD65F), // M3E Vibrant GREEN for success
         ),
       );
 
@@ -144,7 +144,7 @@ class _StatusUpdateFormState extends ConsumerState<StatusUpdateForm> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to submit update: ${e.toString()}'),
-          backgroundColor: Colors.red,
+          backgroundColor: const Color(0xFFFF7043), // M3E Vibrant CORAL for errors
         ),
       );
     }
@@ -262,18 +262,24 @@ class _StatusUpdateFormState extends ConsumerState<StatusUpdateForm> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Food Level: ${_getFoodLevelLabel()}',
+            'Food Level',
             style: M3ETypography.labelLarge,
           ),
-          SliderM3E(
-            value: _foodPercentage,
-            onChanged: (value) {
-              setState(() => _foodPercentage = value);
-            },
-            min: 0,
-            max: 1,
-            divisions: 3,
-            label: _getFoodLevelLabel(),
+          // Fixed height container to prevent layout shifts when tooltip appears
+          SizedBox(
+            height: 80, // Tall enough to accommodate slider + tooltip
+            child: SliderM3E(
+              value: _foodPercentage,
+              onChanged: (value) {
+                setState(() => _foodPercentage = value);
+              },
+              min: 0,
+              max: 1,
+              divisions: 3,
+              showValueLabel: false, // Remove the number above the slider
+              activeColor: _getFoodLevelColor(_foodPercentage),
+              thumbColor: _getFoodLevelColor(_foodPercentage),
+            ),
           ),
           SizedBox(height: M3ESpacing.xxs),
           Row(
@@ -368,12 +374,32 @@ class _StatusUpdateFormState extends ConsumerState<StatusUpdateForm> {
     );
   }
 
-  String _getFoodLevelLabel() {
-    // Convert to API level (0-3) for display
-    if (_foodPercentage >= 0.75) return 'Full';
-    if (_foodPercentage >= 0.5) return 'Many Items';
-    if (_foodPercentage > 0) return 'Few Items';
-    return 'Empty';
+  /// Get the color for the slider based on food percentage
+  /// Colors transition smoothly between food level colors matching the map markers
+  Color _getFoodLevelColor(double percentage) {
+    // M3E vibrant semantic colors matching FridgeIconUtils
+    const emptyColor = Color(0xFFFFFFFF); // White - empty
+    const fewItemsColor = Color(0xFFFF6B9D); // Vibrant pink - few items
+    const manyItemsColor = Color(0xFFFFB300); // Vibrant amber - many items
+    const fullColor = Color(0xFF5FD65F); // Vibrant green - full
+
+    // Smooth color interpolation between levels
+    if (percentage >= 0.75) {
+      // Between Many Items and Full (0.75 - 1.0)
+      final t = (percentage - 0.75) / 0.25;
+      return Color.lerp(manyItemsColor, fullColor, t)!;
+    } else if (percentage >= 0.5) {
+      // Between Few Items and Many Items (0.5 - 0.75)
+      final t = (percentage - 0.5) / 0.25;
+      return Color.lerp(fewItemsColor, manyItemsColor, t)!;
+    } else if (percentage > 0) {
+      // Between Empty and Few Items (0 - 0.5)
+      final t = percentage / 0.5;
+      return Color.lerp(emptyColor, fewItemsColor, t)!;
+    } else {
+      // Empty
+      return emptyColor;
+    }
   }
 
   String _conditionLabel(FridgeCondition condition) {

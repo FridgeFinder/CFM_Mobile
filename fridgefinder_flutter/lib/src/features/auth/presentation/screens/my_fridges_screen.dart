@@ -5,6 +5,7 @@ import 'package:design_system/design_system.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/providers/subscriptions_provider.dart';
 import '../../../../core/utils/app_logger.dart';
+import '../../../../core/utils/fridge_icon_utils.dart';
 import '../../../map/presentation/controllers/fridge_list_controller.dart';
 import '../../../map/presentation/widgets/fridge_marker.dart';
 import '../../../profile/presentation/fridge_profile_sheet.dart';
@@ -164,39 +165,96 @@ class MyFridgesScreen extends ConsumerWidget {
                 );
               }
 
-              return ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: subscribedFridges.length,
-                itemBuilder: (context, index) {
-                  final fridge = subscribedFridges[index];
+              return Container(
+                color: Theme.of(context).colorScheme.surface,
+                child: ListView.builder(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: M3ESpacing.md,
+                    vertical: M3ESpacing.sm,
+                  ),
+                  itemCount: subscribedFridges.length,
+                  itemBuilder: (context, index) {
+                    final fridge = subscribedFridges[index];
+                    final report = fridge.latestFridgeReport;
+                    final statusIcon = report != null
+                        ? FridgeIconUtils.getStatusIcon(report.condition)
+                        : Icons.help;
+                    final statusColor = report != null
+                        ? FridgeIconUtils.getStatusColor(report.condition)
+                        : Colors.grey;
 
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    child: ListTile(
-                      leading: Icon(
-                        Icons.kitchen,
-                        color: FridgeMarker.subscribedGreen,
+                    return Padding(
+                      padding: M3ESpacing.only(bottom: M3ESpacing.sm),
+                      child: ListTileM3E(
+                        leading: SizedBox(
+                          width: 40,
+                          height: 40,
+                          child: FridgeIconUtils.getFridgeIcon(
+                            fridge: fridge,
+                            size: 40,
+                          ),
+                        ),
+                        title: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                fridge.name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            Icon(
+                              Icons.favorite,
+                              color: FridgeMarker.subscribedGreen,
+                              size: 20,
+                            ),
+                          ],
+                        ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              fridge.location.shortAddress,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            M3ESpacing.verticalXXS,
+                            Row(
+                              children: [
+                                Icon(statusIcon, size: 14, color: statusColor),
+                                M3ESpacing.horizontalXXS,
+                                Text(
+                                  fridge.statusText,
+                                  style: TextStyle(
+                                    color: statusColor,
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                M3ESpacing.horizontalSM,
+                                Text(
+                                  'Food: ${fridge.foodLevelText}',
+                                  style: const TextStyle(fontSize: 12),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        onTap: () {
+                          ref
+                              .read(selectedFridgeIdProvider.notifier)
+                              .setSelectedFridgeId(fridge.id);
+                          showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            builder: (context) =>
+                                FridgeProfileSheet(fridge: fridge),
+                          );
+                        },
                       ),
-                      title: Text(fridge.name),
-                      subtitle: Text(fridge.location.shortAddress),
-                      trailing: Icon(
-                        Icons.favorite,
-                        color: FridgeMarker.subscribedGreen,
-                      ),
-                      onTap: () {
-                        ref
-                            .read(selectedFridgeIdProvider.notifier)
-                            .setSelectedFridgeId(fridge.id);
-                        showModalBottomSheet(
-                          context: context,
-                          isScrollControlled: true,
-                          builder: (context) =>
-                              FridgeProfileSheet(fridge: fridge),
-                        );
-                      },
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               );
             },
           );

@@ -124,7 +124,7 @@ class _NotificationPreferencesDialogState
         messenger.showSnackBar(
           const SnackBar(
             content: Text('Notification preferences updated'),
-            backgroundColor: Colors.green,
+            backgroundColor: Color(0xFF5FD65F), // M3E Vibrant GREEN for success
           ),
         );
       }
@@ -134,7 +134,7 @@ class _NotificationPreferencesDialogState
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error updating preferences: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: const Color(0xFFFF7043), // M3E Vibrant CORAL for error
           ),
         );
       }
@@ -170,7 +170,7 @@ class _NotificationPreferencesDialogState
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: const Color(0xFFFF7043), // M3E Vibrant CORAL for error
           ),
         );
       }
