@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:design_system/design_system.dart';
 
-/// Bottom navigation bar for main navigation
+/// Bottom navigation bar for main navigation using M3E components
 class AppBottomNavBar extends ConsumerWidget {
   final String currentRoute;
 
@@ -16,45 +17,38 @@ class AppBottomNavBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final primaryColor = theme.colorScheme.primary;
-    final surfaceColor = theme.colorScheme.surface;
-    final onSurfaceVariant = theme.colorScheme.onSurfaceVariant;
-
-    return BottomNavigationBar(
-      items: [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.map, color: onSurfaceVariant),
-          activeIcon: Icon(Icons.map, color: primaryColor, size: 28),
-          label: 'Map',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.list, color: onSurfaceVariant),
-          activeIcon: Icon(Icons.list, color: primaryColor, size: 28),
-          label: 'List',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.favorite, color: onSurfaceVariant),
-          activeIcon: Icon(Icons.favorite, color: primaryColor, size: 28),
-          label: 'My Fridges',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.person, color: onSurfaceVariant),
-          activeIcon: Icon(Icons.person, color: primaryColor, size: 28),
-          label: 'Profile',
-        ),
-      ],
-      currentIndex: _getIndexForRoute(currentRoute),
-      type: BottomNavigationBarType.fixed,
-      backgroundColor: surfaceColor,
-      selectedItemColor: primaryColor,
-      unselectedItemColor: onSurfaceVariant,
-      elevation: 8.0,
-      enableFeedback: true,
-      onTap: (index) {
+    return NavigationBarM3E(
+      selectedIndex: _getIndexForRoute(currentRoute),
+      onDestinationSelected: (index) {
         final routes = ['/', '/list', '/my-fridges', '/profile'];
         _navigate(context, routes[index]);
       },
+      destinations: const [
+        NavigationDestination(
+          icon: Icon(Icons.map_outlined),
+          selectedIcon: Icon(Icons.map),
+          label: 'Map',
+          tooltip: 'View fridges on map',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.list_outlined),
+          selectedIcon: Icon(Icons.list),
+          label: 'List',
+          tooltip: 'Browse fridge list',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.favorite_outline),
+          selectedIcon: Icon(Icons.favorite),
+          label: 'My Fridges',
+          tooltip: 'Your subscribed fridges',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.person_outline),
+          selectedIcon: Icon(Icons.person),
+          label: 'Profile',
+          tooltip: 'Settings and profile',
+        ),
+      ],
     );
   }
 

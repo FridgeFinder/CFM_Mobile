@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'src/routing/router.dart';
-import 'src/core/theme/app_theme.dart';
+import 'src/core/theme/m3e_theme.dart';
 import 'src/core/providers/theme_provider.dart';
 import 'src/core/providers/notification_providers.dart';
 import 'src/core/providers/notification_navigation_provider.dart';
@@ -94,8 +94,9 @@ class _FridgeFinderAppState extends ConsumerState<FridgeFinderApp> {
 
     return MaterialApp.router(
       title: 'FridgeFinder',
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
+      // M3E Theme Configuration
+      theme: M3ETheme.lightTheme,
+      darkTheme: M3ETheme.darkTheme,
       themeMode: _toFlutterThemeMode(themeMode),
       routerConfig: router,
       debugShowCheckedModeBanner: false,

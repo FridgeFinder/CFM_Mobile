@@ -70,6 +70,8 @@ class FridgeIconUtils {
   }
 
   /// Get the appropriate icon widget for a fridge
+  /// If a report exists, icon is based on food level and condition decorations
+  /// If no report exists, shows a dashed white pin
   static Widget getFridgeIcon({
     required FridgeDomain fridge,
     required double size,
@@ -127,19 +129,7 @@ class FridgeIconUtils {
       }
     }
 
-    // No report - use verified status
-    if (!fridge.verified) {
-      return _buildPinIcon(
-        color: const Color(0xFFD3D3D3), // fridgeNotAtLocation gray from palette
-        size: size,
-        isSmileFace: true,
-        hasDecoration: false,
-        decoration: '',
-        dashed: true,
-      );
-    }
-
-    // Verified but no report - show dashed pin with white background
+    // No report - show dashed pin with white background
     return _buildPinIcon(
       color: const Color(0xFFFFFFFF), // white for no report
       size: size,

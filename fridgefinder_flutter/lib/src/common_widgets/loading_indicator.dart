@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:design_system/design_system.dart';
+import 'loading_messages.dart';
 
 /// Centered loading indicator widget
 class LoadingIndicator extends StatelessWidget {
@@ -9,6 +10,8 @@ class LoadingIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LoadingIndicatorM3E(message: message);
+    return LoadingIndicatorM3E(
+      message: message ?? getRandomLoadingMessage(),
+    );
   }
 }

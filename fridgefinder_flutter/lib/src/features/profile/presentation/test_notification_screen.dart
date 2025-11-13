@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:design_system/design_system.dart';
 import '../../../core/utils/test_notification_utils.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/notification_providers.dart';
@@ -11,6 +12,7 @@ import '../../../core/providers/notification_navigation_provider.dart';
 import '../../../core/services/local_notification_service.dart';
 import '../../../features/map/data/repositories/fridge_repository.dart';
 import '../../../core/utils/app_logger.dart';
+import '../../../common_widgets/loading_messages.dart';
 
 /// Debug screen for testing push notifications and geofencing
 /// Only available in debug mode
@@ -367,7 +369,7 @@ class _TestNotificationScreenState
     return Scaffold(
       appBar: AppBar(title: const Text('Test Notifications')),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? LoadingIndicatorM3E(message: getRandomLoadingMessage())
           : SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Column(

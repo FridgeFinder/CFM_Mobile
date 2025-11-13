@@ -81,7 +81,7 @@ Widget createAccountTestApp({
   UserProfile? mockProfile;
   if (isAuthenticated) {
     mockProfile = UserProfile(
-      userId: authenticatedUser!.uid,
+      userId: authenticatedUser.uid,
       username: authenticatedUser.email?.split('@').first ?? 'TestUser',
       isVolunteer: volunteerPoints > 0,
       points: volunteerPoints,

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'firebase_options.dart';
 import 'app.dart';
 import 'src/core/utils/app_logger.dart';
@@ -25,6 +26,14 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 void main() async {
   // Ensure Flutter is initialized
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Load environment variables from .env file
+  try {
+    await dotenv.load(fileName: '.env');
+    logger.i('Environment variables loaded successfully');
+  } catch (e) {
+    logger.w('Failed to load .env file: $e. Continuing without environment variables.');
+  }
 
   // Initialize Firebase
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);

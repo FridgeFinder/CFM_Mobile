@@ -212,7 +212,7 @@ abstract class FridgeDomain with _$FridgeDomain {
       _$FridgeDomainFromJson(json);
 
   /// Get marker color based on latest report condition and food level
-  /// If no report is available, uses verified status to determine color
+  /// If no report is available, returns blue
   Color get markerColor {
     final report = latestFridgeReport;
 
@@ -234,14 +234,12 @@ abstract class FridgeDomain with _$FridgeDomain {
       }
     }
 
-    // If no report, use verification status
-    return verified ? Colors.blue : Colors.grey;
+    // If no report, return blue
+    return Colors.blue;
   }
 
   /// Get status text for UI display
   String get statusText {
-    if (!verified) return 'Unverified';
-
     final report = latestFridgeReport;
     if (report == null) return 'No recent updates';
 

@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$SubscriptionPreferences {
 
- String get fridgeId;@JsonKey(toJson: _dateTimeToJson, fromJson: _dateTimeFromJson) DateTime get subscribedAt;@JsonKey(toJson: _notificationPreferencesToJson) NotificationPreferences get notificationPreferences;
+ String get fridgeId; DateTime get subscribedAt; NotificationPreferences get notificationPreferences;
 /// Create a copy of SubscriptionPreferences
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -48,7 +48,7 @@ abstract mixin class $SubscriptionPreferencesCopyWith<$Res>  {
   factory $SubscriptionPreferencesCopyWith(SubscriptionPreferences value, $Res Function(SubscriptionPreferences) _then) = _$SubscriptionPreferencesCopyWithImpl;
 @useResult
 $Res call({
- String fridgeId,@JsonKey(toJson: _dateTimeToJson, fromJson: _dateTimeFromJson) DateTime subscribedAt,@JsonKey(toJson: _notificationPreferencesToJson) NotificationPreferences notificationPreferences
+ String fridgeId, DateTime subscribedAt, NotificationPreferences notificationPreferences
 });
 
 
@@ -164,7 +164,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String fridgeId, @JsonKey(toJson: _dateTimeToJson, fromJson: _dateTimeFromJson)  DateTime subscribedAt, @JsonKey(toJson: _notificationPreferencesToJson)  NotificationPreferences notificationPreferences)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String fridgeId,  DateTime subscribedAt,  NotificationPreferences notificationPreferences)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _SubscriptionPreferences() when $default != null:
 return $default(_that.fridgeId,_that.subscribedAt,_that.notificationPreferences);case _:
@@ -185,7 +185,7 @@ return $default(_that.fridgeId,_that.subscribedAt,_that.notificationPreferences)
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String fridgeId, @JsonKey(toJson: _dateTimeToJson, fromJson: _dateTimeFromJson)  DateTime subscribedAt, @JsonKey(toJson: _notificationPreferencesToJson)  NotificationPreferences notificationPreferences)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String fridgeId,  DateTime subscribedAt,  NotificationPreferences notificationPreferences)  $default,) {final _that = this;
 switch (_that) {
 case _SubscriptionPreferences():
 return $default(_that.fridgeId,_that.subscribedAt,_that.notificationPreferences);case _:
@@ -205,7 +205,7 @@ return $default(_that.fridgeId,_that.subscribedAt,_that.notificationPreferences)
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String fridgeId, @JsonKey(toJson: _dateTimeToJson, fromJson: _dateTimeFromJson)  DateTime subscribedAt, @JsonKey(toJson: _notificationPreferencesToJson)  NotificationPreferences notificationPreferences)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String fridgeId,  DateTime subscribedAt,  NotificationPreferences notificationPreferences)?  $default,) {final _that = this;
 switch (_that) {
 case _SubscriptionPreferences() when $default != null:
 return $default(_that.fridgeId,_that.subscribedAt,_that.notificationPreferences);case _:
@@ -220,12 +220,12 @@ return $default(_that.fridgeId,_that.subscribedAt,_that.notificationPreferences)
 @JsonSerializable()
 
 class _SubscriptionPreferences extends SubscriptionPreferences {
-  const _SubscriptionPreferences({required this.fridgeId, @JsonKey(toJson: _dateTimeToJson, fromJson: _dateTimeFromJson) required this.subscribedAt, @JsonKey(toJson: _notificationPreferencesToJson) this.notificationPreferences = const NotificationPreferences()}): super._();
+  const _SubscriptionPreferences({required this.fridgeId, required this.subscribedAt, this.notificationPreferences = const NotificationPreferences()}): super._();
   factory _SubscriptionPreferences.fromJson(Map<String, dynamic> json) => _$SubscriptionPreferencesFromJson(json);
 
 @override final  String fridgeId;
-@override@JsonKey(toJson: _dateTimeToJson, fromJson: _dateTimeFromJson) final  DateTime subscribedAt;
-@override@JsonKey(toJson: _notificationPreferencesToJson) final  NotificationPreferences notificationPreferences;
+@override final  DateTime subscribedAt;
+@override@JsonKey() final  NotificationPreferences notificationPreferences;
 
 /// Create a copy of SubscriptionPreferences
 /// with the given fields replaced by the non-null parameter values.
@@ -260,7 +260,7 @@ abstract mixin class _$SubscriptionPreferencesCopyWith<$Res> implements $Subscri
   factory _$SubscriptionPreferencesCopyWith(_SubscriptionPreferences value, $Res Function(_SubscriptionPreferences) _then) = __$SubscriptionPreferencesCopyWithImpl;
 @override @useResult
 $Res call({
- String fridgeId,@JsonKey(toJson: _dateTimeToJson, fromJson: _dateTimeFromJson) DateTime subscribedAt,@JsonKey(toJson: _notificationPreferencesToJson) NotificationPreferences notificationPreferences
+ String fridgeId, DateTime subscribedAt, NotificationPreferences notificationPreferences
 });
 
 

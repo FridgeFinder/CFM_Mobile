@@ -167,7 +167,6 @@ void main() {
     testWidgets('MULTI-005: Different Users on Different Devices',
         (WidgetTester tester) async {
       final testUserA = TestUser(uid: 'test-user-a', email: 'testa@example.com');
-      final testUserB = TestUser(uid: 'test-user-b', email: 'testb@example.com');
 
       // Device A with User A
       await tester.pumpWidget(createMultiDeviceTestApp(

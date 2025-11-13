@@ -34,15 +34,17 @@ class EmptyStateView extends StatelessWidget {
             M3ESpacing.verticalMD,
             Text(
               title,
-              style: Theme.of(context).textTheme.titleLarge,
+              style: M3ETypography.headlineSmall.copyWith(
+                color: colorScheme.onSurface,
+              ),
               textAlign: TextAlign.center,
             ),
             M3ESpacing.verticalXS,
             Text(
               message,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
+              style: M3ETypography.bodyLarge.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
               textAlign: TextAlign.center,
             ),
             if (action != null) ...[M3ESpacing.verticalMD, action!],

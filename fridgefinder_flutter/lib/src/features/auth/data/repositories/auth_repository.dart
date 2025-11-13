@@ -146,21 +146,10 @@ class AuthRepository {
       GoogleSignInAccount? googleUser = await _googleSignIn.attemptLightweightAuthentication();
       
       // If lightweight auth fails, use authenticate() which shows native UI
-      if (googleUser == null) {
-        try {
-          googleUser = await _googleSignIn.authenticate();
-          if (googleUser == null) {
-            // User cancelled
-            throw Exception('Google sign-in was cancelled');
-          }
-        } catch (e) {
-          logger.e('Google sign-in error: $e');
-          rethrow;
-        }
-      }
+      googleUser ??= await _googleSignIn.authenticate();
 
       // Get authentication tokens
-      final googleAuth = await googleUser.authentication;
+      final googleAuth = googleUser.authentication;
 
       // Create a new credential (using only idToken as accessToken is not available in new API)
       final credential = firebase_auth.GoogleAuthProvider.credential(
@@ -322,20 +311,10 @@ class AuthRepository {
       GoogleSignInAccount? googleUser = await _googleSignIn.attemptLightweightAuthentication();
 
       // If lightweight auth fails, use authenticate() which shows native UI
-      if (googleUser == null) {
-        try {
-          googleUser = await _googleSignIn.authenticate();
-          if (googleUser == null) {
-            throw Exception('Google re-authentication was cancelled');
-          }
-        } catch (e) {
-          logger.e('Google re-authentication error: $e');
-          rethrow;
-        }
-      }
+      googleUser ??= await _googleSignIn.authenticate();
 
       // Get authentication tokens
-      final googleAuth = await googleUser.authentication;
+      final googleAuth = googleUser.authentication;
 
       // Create credential
       final credential = firebase_auth.GoogleAuthProvider.credential(

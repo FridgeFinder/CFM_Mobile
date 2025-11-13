@@ -10,7 +10,7 @@ _SubscriptionPreferences _$SubscriptionPreferencesFromJson(
   Map<String, dynamic> json,
 ) => _SubscriptionPreferences(
   fridgeId: json['fridgeId'] as String,
-  subscribedAt: _dateTimeFromJson(json['subscribedAt'] as String),
+  subscribedAt: DateTime.parse(json['subscribedAt'] as String),
   notificationPreferences: json['notificationPreferences'] == null
       ? const NotificationPreferences()
       : NotificationPreferences.fromJson(
@@ -22,10 +22,8 @@ Map<String, dynamic> _$SubscriptionPreferencesToJson(
   _SubscriptionPreferences instance,
 ) => <String, dynamic>{
   'fridgeId': instance.fridgeId,
-  'subscribedAt': _dateTimeToJson(instance.subscribedAt),
-  'notificationPreferences': _notificationPreferencesToJson(
-    instance.notificationPreferences,
-  ),
+  'subscribedAt': instance.subscribedAt.toIso8601String(),
+  'notificationPreferences': instance.notificationPreferences,
 };
 
 _NotificationPreferences _$NotificationPreferencesFromJson(

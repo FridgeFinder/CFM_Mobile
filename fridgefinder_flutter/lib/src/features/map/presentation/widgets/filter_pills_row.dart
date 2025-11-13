@@ -99,7 +99,7 @@ class FilterPillsRow extends ConsumerWidget {
       ),
       decoration: BoxDecoration(
         border: Border.all(color: borderColor, width: 2.0),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(M3EShapes.full),
         color: backgroundColor,
       ),
       child: Stack(
@@ -149,7 +149,7 @@ class FilterPillsRow extends ConsumerWidget {
         onTap: onPressed,
         child: Container(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(M3EShapes.full),
             boxShadow: [
               BoxShadow(
                 color: color.withValues(alpha: 0.4),

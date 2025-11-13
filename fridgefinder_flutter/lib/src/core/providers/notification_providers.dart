@@ -24,7 +24,7 @@ FCMService fcmService(Ref ref) {
         }
       },
       loading: () {},
-      error: (_, __) {},
+      error: (error, stackTrace) {},
     );
   });
 

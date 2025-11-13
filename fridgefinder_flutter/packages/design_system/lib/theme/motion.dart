@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/physics.dart';
 import 'package:flutter/animation.dart';
+import 'motion_settings.dart';
 
 /// Material 3 Expressive Motion System
 ///
@@ -12,40 +13,145 @@ class M3EMotion {
   M3EMotion._();
 
   // ============================================================================
-  // SPRING PHYSICS (M3E Expressive)
+  // SPRING PHYSICS (M3E Expressive) - Research-Backed Constants
+  // ============================================================================
+  //
+  // M3E uses two stiffness levels:
+  // - StiffnessMedium: 1,500 (default for most animations)
+  // - StiffnessHigh: 10,000 (fast, responsive micro-interactions)
+  //
+  // Damping Ratio determines bounce:
+  // - Expressive (0.2-0.5): Noticeable overshoot, playful, consumer apps
+  // - Standard (0.75-1.0): Minimal/no bounce, professional, business tools
+  //
+  // Formula: damping = dampingRatio × 2 × √(mass × stiffness)
   // ============================================================================
 
-  /// Expressive spring - More bouncy, playful (stiffness: 250, damping: 25)
-  /// Use for: Emphasized actions, delightful interactions, attention-grabbing moments
-  static const SpringDescription expressiveSpring = SpringDescription(
+  // ---------------------------------------------------------------------------
+  // SPATIAL TOKENS (WITH BOUNCE) - For position, size, orientation, shape
+  // ---------------------------------------------------------------------------
+
+  /// Expressive Fast Spatial: High stiffness (10,000), low damping (0.3)
+  /// Use for: Quick micro-interactions with playful bounce (switches, chips)
+  /// Duration: ~150-200ms with visible overshoot
+  static const SpringDescription expressiveFastSpatial = SpringDescription(
     mass: 1.0,
-    stiffness: 250.0,
-    damping: 25.0,
+    stiffness: 10000.0, // StiffnessHigh
+    damping: 60.0, // dampingRatio 0.3
   );
 
-  /// Standard spring - Balanced, smooth (stiffness: 300, damping: 30)
-  /// Use for: Most UI transitions, general interactions
-  static const SpringDescription standardSpring = SpringDescription(
+  /// Expressive Default Spatial: Medium stiffness (1,500), medium damping (0.5)
+  /// Use for: Standard expressive transitions (cards, dialogs, FABs)
+  /// Duration: ~400-500ms with moderate bounce
+  static const SpringDescription expressiveDefaultSpatial = SpringDescription(
     mass: 1.0,
-    stiffness: 300.0,
-    damping: 30.0,
+    stiffness: 1500.0, // StiffnessMedium
+    damping: 54.77, // dampingRatio 0.5 (medium bouncy)
   );
 
-  /// Gentle spring - Slow, soft settling (stiffness: 200, damping: 26)
-  /// Use for: Large surfaces, bottom sheets, drawers
-  static const SpringDescription gentleSpring = SpringDescription(
+  /// Expressive Slow Spatial: Medium stiffness (1,500), low damping (0.3)
+  /// Use for: Full-screen transitions, bottom sheets with emphasis
+  /// Duration: ~600-800ms with more pronounced bounce
+  static const SpringDescription expressiveSlowSpatial = SpringDescription(
     mass: 1.0,
-    stiffness: 200.0,
-    damping: 26.0,
+    stiffness: 1500.0,
+    damping: 32.86, // dampingRatio 0.3 (more bouncy)
   );
 
-  /// Responsive spring - Quick, snappy (stiffness: 400, damping: 35)
-  /// Use for: Small components, toggles, chips, buttons
-  static const SpringDescription responsiveSpring = SpringDescription(
+  /// Standard Fast Spatial: High stiffness (10,000), critical damping (1.0)
+  /// Use for: Quick, professional micro-interactions (toggles, buttons)
+  /// Duration: ~100-150ms with no bounce
+  static const SpringDescription standardFastSpatial = SpringDescription(
     mass: 1.0,
-    stiffness: 400.0,
-    damping: 35.0,
+    stiffness: 10000.0,
+    damping: 200.0, // dampingRatio 1.0 (critically damped, no bounce)
   );
+
+  /// Standard Default Spatial: Medium stiffness (1,500), near-critical damping (0.85)
+  /// Use for: Professional UI transitions (modals, navigation)
+  /// Duration: ~300-400ms with minimal bounce
+  static const SpringDescription standardDefaultSpatial = SpringDescription(
+    mass: 1.0,
+    stiffness: 1500.0,
+    damping: 65.83, // dampingRatio 0.85
+  );
+
+  /// Standard Slow Spatial: Medium stiffness (1,500), high damping (0.75)
+  /// Use for: Large surface movements in business contexts
+  /// Duration: ~500-600ms with very subtle bounce
+  static const SpringDescription standardSlowSpatial = SpringDescription(
+    mass: 1.0,
+    stiffness: 1500.0,
+    damping: 58.09, // dampingRatio 0.75
+  );
+
+  // ---------------------------------------------------------------------------
+  // EFFECT TOKENS (NO BOUNCE) - For color, opacity
+  // ---------------------------------------------------------------------------
+
+  /// Expressive Fast Effect: High stiffness (10,000), overdamped (1.2)
+  /// Use for: Quick color/opacity changes with smooth deceleration
+  /// Duration: ~100-150ms with smooth ease-out
+  static const SpringDescription expressiveFastEffect = SpringDescription(
+    mass: 1.0,
+    stiffness: 10000.0,
+    damping: 240.0, // dampingRatio 1.2 (overdamped, smooth)
+  );
+
+  /// Expressive Default Effect: Medium stiffness (1,500), overdamped (1.2)
+  /// Use for: Standard color/opacity transitions
+  /// Duration: ~250-350ms with smooth ease-out
+  static const SpringDescription expressiveDefaultEffect = SpringDescription(
+    mass: 1.0,
+    stiffness: 1500.0,
+    damping: 92.95, // dampingRatio 1.2
+  );
+
+  /// Expressive Slow Effect: Medium stiffness (1,500), heavily overdamped (1.5)
+  /// Use for: Gradual color shifts, fade transitions
+  /// Duration: ~400-500ms with very smooth deceleration
+  static const SpringDescription expressiveSlowEffect = SpringDescription(
+    mass: 1.0,
+    stiffness: 1500.0,
+    damping: 116.19, // dampingRatio 1.5
+  );
+
+  /// Standard Effect (All Speeds): Critical damping for professional feel
+  /// Use for: Any color/opacity change in business/professional contexts
+  /// Duration: Varies by stiffness, always smooth with no bounce
+  static const SpringDescription standardFastEffect = SpringDescription(
+    mass: 1.0,
+    stiffness: 10000.0,
+    damping: 200.0, // dampingRatio 1.0
+  );
+
+  static const SpringDescription standardDefaultEffect = SpringDescription(
+    mass: 1.0,
+    stiffness: 1500.0,
+    damping: 77.46, // dampingRatio 1.0
+  );
+
+  static const SpringDescription standardSlowEffect = SpringDescription(
+    mass: 1.0,
+    stiffness: 1500.0,
+    damping: 77.46, // dampingRatio 1.0
+  );
+
+  // ---------------------------------------------------------------------------
+  // LEGACY SPRINGS (Backwards compatibility - use new tokens above)
+  // ---------------------------------------------------------------------------
+
+  /// @deprecated Use expressiveDefaultSpatial instead
+  static const SpringDescription expressiveSpring = expressiveDefaultSpatial;
+
+  /// @deprecated Use standardDefaultSpatial instead
+  static const SpringDescription standardSpring = standardDefaultSpatial;
+
+  /// @deprecated Use standardSlowSpatial instead
+  static const SpringDescription gentleSpring = standardSlowSpatial;
+
+  /// @deprecated Use expressiveFastSpatial or standardFastSpatial instead
+  static const SpringDescription responsiveSpring = expressiveFastSpatial;
 
   // ============================================================================
   // DURATIONS (Fallback for platforms without spring support)
@@ -78,24 +184,61 @@ class M3EMotion {
   // ============================================================================
   // EASING CURVES (Duration-based fallback)
   // ============================================================================
+  //
+  // M3E introduces overshoot curves where y-values exceed 1.0, creating bounce
+  // These approximate spring physics when springs aren't available
+  // ============================================================================
+
+  // ---------------------------------------------------------------------------
+  // OVERSHOOT CURVES (M3E Expressive Fallbacks)
+  // ---------------------------------------------------------------------------
+
+  /// Expressive Fast Overshoot: Quick with noticeable bounce
+  /// Cubic bezier: (0.34, 1.56, 0.64, 1.0) - y2=1.56 creates 56% overshoot
+  /// Approximates expressiveFastSpatial spring (dampingRatio 0.3)
+  static const Curve expressiveFastOvershoot = Cubic(0.34, 1.56, 0.64, 1.0);
+
+  /// Expressive Default Overshoot: Standard timing with moderate bounce
+  /// Cubic bezier: (0.05, 1.35, 0.3, 1.0) - y2=1.35 creates 35% overshoot
+  /// Approximates expressiveDefaultSpatial spring (dampingRatio 0.5)
+  static const Curve expressiveDefaultOvershoot = Cubic(0.05, 1.35, 0.3, 1.0);
+
+  /// Expressive Slow Overshoot: Gradual with pronounced bounce
+  /// Cubic bezier: (0.0, 1.45, 0.2, 1.0) - y2=1.45 creates 45% overshoot
+  /// Approximates expressiveSlowSpatial spring (dampingRatio 0.3)
+  static const Curve expressiveSlowOvershoot = Cubic(0.0, 1.45, 0.2, 1.0);
+
+  // ---------------------------------------------------------------------------
+  // SMOOTH CURVES (Standard/Effect Fallbacks)
+  // ---------------------------------------------------------------------------
 
   /// Standard easing - Ease in and out with emphasis on acceleration
   /// Cubic bezier: (0.2, 0.0, 0, 1.0)
+  /// No overshoot, professional feel for business contexts
   static const Curve standard = Cubic(0.2, 0.0, 0, 1.0);
 
   /// Emphasized easing - More pronounced acceleration/deceleration
   /// Cubic bezier: (0.0, 0.0, 0, 1.0) - Emphasizes the final deceleration
+  /// Recommended for most M3E transitions without bounce
   static const Curve emphasized = Cubic(0.0, 0.0, 0, 1.0);
 
   /// Emphasized decelerate - Quick start, gentle landing
   /// Cubic bezier: (0.05, 0.7, 0.1, 1.0)
+  /// Great for entrances and appearing elements
   static const Curve emphasizedDecelerate = Cubic(0.05, 0.7, 0.1, 1.0);
 
   /// Emphasized accelerate - Gentle start, quick exit
   /// Cubic bezier: (0.3, 0.0, 0.8, 0.15)
+  /// Great for exits and disappearing elements
   static const Curve emphasizedAccelerate = Cubic(0.3, 0.0, 0.8, 0.15);
 
+  /// Effect Smooth - Overdamped feel for color/opacity (no overshoot)
+  /// Cubic bezier: (0.4, 0.0, 0.2, 1.0)
+  /// Use for effect tokens when springs aren't available
+  static const Curve effectSmooth = Cubic(0.4, 0.0, 0.2, 1.0);
+
   /// Legacy easing (from M2) - Keep for backwards compatibility
+  /// Cubic bezier: (0.4, 0.0, 0.2, 1.0)
   static const Curve legacy = Cubic(0.4, 0.0, 0.2, 1.0);
 
   // ============================================================================
@@ -146,6 +289,36 @@ class M3EMotion {
       curve: curve ?? emphasized,
       reverseCurve: reverseCurve ?? emphasized,
     );
+  }
+
+  // ============================================================================
+  // ACCESSIBILITY HELPERS (Reduce Motion)
+  // ============================================================================
+
+  /// Get motion-aware duration respecting user accessibility preferences
+  static Duration getDuration(Duration normal) {
+    return MotionSettings.getDuration(normal);
+  }
+
+  /// Get motion-aware duration with optional partial reduction
+  static Duration getDurationReduced(
+    Duration normal, {
+    double percentageWhenReduced = 0.3,
+  }) {
+    return MotionSettings.getDurationReduced(
+      normal,
+      percentageWhenReduced: percentageWhenReduced,
+    );
+  }
+
+  /// Get motion-aware curve respecting user accessibility preferences
+  static Curve getCurve(Curve normal) {
+    return MotionSettings.getCurve(normal);
+  }
+
+  /// Get motion-aware spring respecting user accessibility preferences
+  static SpringDescription getSpring(SpringDescription normal) {
+    return MotionSettings.getSpring(normal);
   }
 }
 

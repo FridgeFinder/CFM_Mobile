@@ -34,15 +34,17 @@ class ErrorView extends StatelessWidget {
             M3ESpacing.verticalMD,
             Text(
               title,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: colorScheme.error,
-                  ),
+              style: M3ETypography.headlineSmall.copyWith(
+                color: colorScheme.error,
+              ),
               textAlign: TextAlign.center,
             ),
             M3ESpacing.verticalXS,
             Text(
               message,
-              style: Theme.of(context).textTheme.bodyMedium,
+              style: M3ETypography.bodyLarge.copyWith(
+                color: colorScheme.onSurface,
+              ),
               textAlign: TextAlign.center,
             ),
             if (onRetry != null) ...[

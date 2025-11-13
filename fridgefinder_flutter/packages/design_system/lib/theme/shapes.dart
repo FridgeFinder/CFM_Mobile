@@ -9,7 +9,12 @@ class M3EShapes {
   M3EShapes._();
 
   // ============================================================================
-  // CORNER RADIUS SCALE
+  // CORNER RADIUS SCALE (Material 3 Expressive)
+  // ============================================================================
+  //
+  // M3E uses a 10-step granularity scale from 0dp (sharp) to fully rounded.
+  // Common values: 4dp, 8dp, 12dp, 16dp, 20dp, 24dp, 28dp
+  // Expressive designs intentionally mix sharp and rounded shapes for tension.
   // ============================================================================
 
   /// No rounding (0dp) - Used for: Dividers, some text fields in filled state
@@ -24,11 +29,27 @@ class M3EShapes {
   /// Small (8dp) - Used for: Buttons, badges, filled text fields
   static const double small = 8.0;
 
+  /// Small Plus (10dp) - Used for: Medium emphasis cards, compact components
+  /// M3E addition for finer granularity between small and medium
+  static const double smallPlus = 10.0;
+
   /// Medium (12dp) - Used for: Cards, outlined text fields, search bars, chips
   static const double medium = 12.0;
 
+  /// Medium Plus (14dp) - Used for: Emphasized cards, list items
+  /// M3E addition for transitional rounding
+  static const double mediumPlus = 14.0;
+
   /// Large (16dp) - Used for: FABs, extended FABs, navigation drawer items
   static const double large = 16.0;
+
+  /// Large Plus (20dp) - Used for: Prominent cards, hero surfaces
+  /// M3E addition for more expressive surfaces
+  static const double largePlus = 20.0;
+
+  /// Extra Large Minus (24dp) - Used for: Large modals, sheets with emphasis
+  /// M3E addition for nuanced hierarchy
+  static const double extraLargeMinus = 24.0;
 
   /// Extra large (28dp) - Used for: Dialogs, bottom sheets, modals
   static const double extraLarge = 28.0;

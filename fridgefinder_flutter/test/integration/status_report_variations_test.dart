@@ -3,8 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:fridgefinder_app/src/features/map/presentation/controllers/fridge_list_controller.dart';
-import 'package:fridgefinder_app/src/features/auth/domain/models/subscription_preferences.dart';
-import 'package:fridgefinder_app/src/core/providers/subscriptions_provider.dart';
 import 'package:fridgefinder_app/src/core/providers/auth_provider.dart';
 import 'package:fridgefinder_app/src/routing/router.dart';
 import '../fixtures/fridge_fixtures.dart';

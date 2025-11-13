@@ -43,21 +43,12 @@ abstract class UserSettings with _$UserSettings {
 
   const factory UserSettings({
     @Default(true) bool notificationsEnabled,
-    @JsonKey(name: 'notificationFrequency', fromJson: _notificationFrequencyFromJson, toJson: _notificationFrequencyToJson)
     @Default(NotificationFrequency.immediate) NotificationFrequency notificationFrequency,
     @Default(false) bool geofencingEnabled,
   }) = _UserSettings;
 
   factory UserSettings.fromJson(Map<String, dynamic> json) =>
       _$UserSettingsFromJson(json);
-}
-
-NotificationFrequency _notificationFrequencyFromJson(String json) {
-  return NotificationFrequency.fromString(json);
-}
-
-String _notificationFrequencyToJson(NotificationFrequency frequency) {
-  return frequency.value;
 }
 
 /// User profile model stored in Realtime Database
@@ -74,40 +65,12 @@ abstract class UserProfile with _$UserProfile {
     String? zipCode,
     @Default(0) int points,
     String? fcmToken,
-    @JsonKey(fromJson: _userSettingsFromJson, toJson: _userSettingsToJson)
     @Default(UserSettings()) UserSettings settings,
-    @JsonKey(fromJson: _dateTimeFromJson, toJson: _dateTimeToJson)
     required DateTime createdAt,
-    @JsonKey(fromJson: _dateTimeFromJsonNullable, toJson: _dateTimeToJsonNullable)
     DateTime? lastLoginAt,
   }) = _UserProfile;
 
   factory UserProfile.fromJson(Map<String, dynamic> json) =>
       _$UserProfileFromJson(json);
-}
-
-DateTime _dateTimeFromJson(String json) {
-  return DateTime.parse(json);
-}
-
-String _dateTimeToJson(DateTime dateTime) {
-  return dateTime.toIso8601String();
-}
-
-DateTime? _dateTimeFromJsonNullable(String? json) {
-  return json != null ? DateTime.parse(json) : null;
-}
-
-String? _dateTimeToJsonNullable(DateTime? dateTime) {
-  return dateTime?.toIso8601String();
-}
-
-// Helper functions for UserSettings serialization
-UserSettings _userSettingsFromJson(Map<String, dynamic> json) {
-  return UserSettings.fromJson(json);
-}
-
-Map<String, dynamic> _userSettingsToJson(UserSettings settings) {
-  return settings.toJson();
 }
 

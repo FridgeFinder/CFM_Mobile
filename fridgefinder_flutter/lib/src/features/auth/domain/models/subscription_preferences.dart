@@ -10,20 +10,13 @@ abstract class SubscriptionPreferences with _$SubscriptionPreferences {
 
   const factory SubscriptionPreferences({
     required String fridgeId,
-    @JsonKey(toJson: _dateTimeToJson, fromJson: _dateTimeFromJson)
     required DateTime subscribedAt,
-    @JsonKey(toJson: _notificationPreferencesToJson)
     @Default(NotificationPreferences()) NotificationPreferences notificationPreferences,
   }) = _SubscriptionPreferences;
 
   factory SubscriptionPreferences.fromJson(Map<String, dynamic> json) =>
       _$SubscriptionPreferencesFromJson(json);
 }
-
-// Helper functions for serialization
-String _dateTimeToJson(DateTime dateTime) => dateTime.toIso8601String();
-DateTime _dateTimeFromJson(String json) => DateTime.parse(json);
-Map<String, dynamic> _notificationPreferencesToJson(NotificationPreferences prefs) => prefs.toJson();
 
 /// Individual notification preference settings
 @freezed

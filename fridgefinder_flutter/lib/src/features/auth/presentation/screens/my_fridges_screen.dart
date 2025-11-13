@@ -10,6 +10,7 @@ import '../../../map/presentation/widgets/fridge_marker.dart';
 import '../../../profile/presentation/fridge_profile_sheet.dart';
 import '../widgets/sign_in_widget.dart';
 import '../../../../common_widgets/index.dart' as common_widgets;
+import '../../../../common_widgets/loading_messages.dart';
 
 /// My Fridges screen showing user's subscribed fridges
 class MyFridgesScreen extends ConsumerWidget {
@@ -36,20 +37,15 @@ class MyFridgesScreen extends ConsumerWidget {
                 ),
                 M3ESpacing.verticalXL,
                 Text(
-                  'My Fridges',
-                  style: Theme.of(context).textTheme.headlineMedium,
-                ),
-                M3ESpacing.verticalMD,
-                Text(
                   'Subscribe to specific fridges to receive updates on food availability or when fridges need re-stocking or cleaning.',
                   textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyMedium,
+                  style: M3ETypography.bodyMedium,
                 ),
                 M3ESpacing.verticalXS,
                 Text(
                   'This option is available for both people looking for food and volunteers.',
                   textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  style: M3ETypography.bodySmall.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
@@ -76,8 +72,8 @@ class MyFridgesScreen extends ConsumerWidget {
 
     return Scaffold(
       body: subscriptionsAsync.when(
-        loading: () => const common_widgets.LoadingIndicator(
-          message: 'Loading your fridges...',
+        loading: () => LoadingIndicatorM3E(
+          message: getRandomLoadingMessage(),
         ),
         error: (error, stackTrace) {
           logger.e('Error loading subscriptions: $error');
@@ -90,7 +86,7 @@ class MyFridgesScreen extends ConsumerWidget {
           if (subscriptions.isEmpty) {
             return Center(
               child: Padding(
-                padding: const EdgeInsets.all(24.0),
+                padding: M3ESpacing.all(M3ESpacing.xl),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -99,22 +95,22 @@ class MyFridgesScreen extends ConsumerWidget {
                       size: 64,
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
-                    const SizedBox(height: 24),
+                    M3ESpacing.verticalXL,
                     Text(
                       'No Subscribed Fridges',
-                      style: Theme.of(context).textTheme.headlineMedium,
+                      style: M3ETypography.headlineMedium,
                     ),
-                    const SizedBox(height: 16),
+                    M3ESpacing.verticalMD,
                     Text(
                       'Subscribe to fridges to receive notifications about food availability, cleaning needs, and more.',
                       textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyMedium,
+                      style: M3ETypography.bodyMedium,
                     ),
-                    const SizedBox(height: 32),
-                    ElevatedButton.icon(
+                    M3ESpacing.verticalXXL,
+                    FilledButtonM3E(
+                      icon: Icons.map,
                       onPressed: () => context.go('/'),
-                      icon: const Icon(Icons.map),
-                      label: const Text('Browse Fridges'),
+                      child: const Text('Browse Fridges'),
                     ),
                   ],
                 ),
@@ -123,8 +119,8 @@ class MyFridgesScreen extends ConsumerWidget {
           }
 
           return fridgesAsync.when(
-            loading: () => const common_widgets.LoadingIndicator(
-              message: 'Loading fridge details...',
+            loading: () => LoadingIndicatorM3E(
+              message: getRandomLoadingMessage(),
             ),
             error: (error, stackTrace) => common_widgets.ErrorView(
               message: 'Failed to load fridge details',
@@ -132,7 +128,9 @@ class MyFridgesScreen extends ConsumerWidget {
             ),
             data: (allFridges) {
               // Filter fridges to only show subscribed ones
-              final subscribedFridgeIds = subscriptions.map((s) => s.fridgeId).toSet();
+              final subscribedFridgeIds = subscriptions
+                  .map((s) => s.fridgeId)
+                  .toSet();
               final subscribedFridges = allFridges
                   .where((fridge) => subscribedFridgeIds.contains(fridge.id))
                   .toList();
@@ -140,7 +138,7 @@ class MyFridgesScreen extends ConsumerWidget {
               if (subscribedFridges.isEmpty) {
                 return Center(
                   child: Padding(
-                    padding: const EdgeInsets.all(24.0),
+                    padding: M3ESpacing.all(M3ESpacing.xl),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -149,16 +147,16 @@ class MyFridgesScreen extends ConsumerWidget {
                           size: 64,
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
-                        const SizedBox(height: 24),
+                        M3ESpacing.verticalXL,
                         Text(
                           'No Subscribed Fridges',
-                          style: Theme.of(context).textTheme.headlineMedium,
+                          style: M3ETypography.headlineMedium,
                         ),
-                        const SizedBox(height: 16),
+                        M3ESpacing.verticalMD,
                         Text(
                           'Some of your subscribed fridges may no longer be available.',
                           textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.bodyMedium,
+                          style: M3ETypography.bodyMedium,
                         ),
                       ],
                     ),
@@ -186,12 +184,14 @@ class MyFridgesScreen extends ConsumerWidget {
                         color: FridgeMarker.subscribedGreen,
                       ),
                       onTap: () {
-                        ref.read(selectedFridgeIdProvider.notifier)
+                        ref
+                            .read(selectedFridgeIdProvider.notifier)
                             .setSelectedFridgeId(fridge.id);
                         showModalBottomSheet(
                           context: context,
                           isScrollControlled: true,
-                          builder: (context) => FridgeProfileSheet(fridge: fridge),
+                          builder: (context) =>
+                              FridgeProfileSheet(fridge: fridge),
                         );
                       },
                     ),
@@ -205,4 +205,3 @@ class MyFridgesScreen extends ConsumerWidget {
     );
   }
 }
-

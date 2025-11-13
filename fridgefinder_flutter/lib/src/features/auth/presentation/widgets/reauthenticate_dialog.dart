@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:design_system/design_system.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/utils/app_logger.dart';
 
@@ -137,7 +138,8 @@ class _ReauthenticateDialogState extends ConsumerState<ReauthenticateDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Verify Your Identity'),
+      shape: M3EShapes.dialog,
+      title: Text('Verify Your Identity', style: M3ETypography.headlineSmall),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -145,94 +147,93 @@ class _ReauthenticateDialogState extends ConsumerState<ReauthenticateDialog> {
           children: [
             Text(
               'For security reasons, please verify your identity before proceeding.',
-              style: Theme.of(context).textTheme.bodyMedium,
+              style: M3ETypography.bodyMedium,
             ),
-            const SizedBox(height: 24),
+            M3ESpacing.verticalXL,
 
             if (_errorMessage != null) ...[
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: M3ESpacing.all(M3ESpacing.sm),
                 decoration: BoxDecoration(
                   color: Colors.red.shade50,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(M3EShapes.small),
                   border: Border.all(color: Colors.red.shade200),
                 ),
                 child: Row(
                   children: [
                     Icon(Icons.error_outline, color: Colors.red.shade700, size: 20),
-                    const SizedBox(width: 8),
+                    M3ESpacing.horizontalXS,
                     Expanded(
                       child: Text(
                         _errorMessage!,
-                        style: TextStyle(color: Colors.red.shade700, fontSize: 13),
+                        style: M3ETypography.bodySmall.copyWith(
+                          color: Colors.red.shade700,
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
+              M3ESpacing.verticalMD,
             ],
 
             if (_isPhoneAuth && !_isCodeSent) ...[
               Text(
                 'A verification code will be sent to:',
-                style: Theme.of(context).textTheme.bodySmall,
+                style: M3ETypography.bodySmall,
               ),
-              const SizedBox(height: 8),
+              M3ESpacing.verticalXS,
               Text(
                 widget.user.phoneNumber ?? '',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                style: M3ETypography.titleMedium.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 24),
-              ElevatedButton(
+              M3ESpacing.verticalXL,
+              FilledButtonM3E(
                 onPressed: _isLoading ? null : _reauthenticateWithPhone,
                 child: _isLoading
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 20,
                         height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                        child: CircularProgressIndicatorM3E.small(),
                       )
                     : const Text('Send Verification Code'),
               ),
             ] else if (_isPhoneAuth && _isCodeSent) ...[
               Text(
                 'Enter the verification code sent to:',
-                style: Theme.of(context).textTheme.bodySmall,
+                style: M3ETypography.bodySmall,
               ),
-              const SizedBox(height: 4),
+              M3ESpacing.verticalXXS,
               Text(
                 widget.user.phoneNumber ?? '',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                style: M3ETypography.bodyMedium.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              const SizedBox(height: 16),
-              TextField(
+              M3ESpacing.verticalMD,
+              TextFieldM3E(
                 controller: _codeController,
-                decoration: const InputDecoration(
-                  labelText: 'Verification Code',
-                  hintText: '123456',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.lock),
-                ),
+                labelText: 'Verification Code',
+                hintText: '123456',
+                prefixIcon: Icons.lock,
                 keyboardType: TextInputType.number,
-                maxLength: 6,
+                maxLines: 1,
               ),
-              const SizedBox(height: 16),
-              ElevatedButton(
+              M3ESpacing.verticalMD,
+              FilledButtonM3E(
                 onPressed: _isLoading ? null : _verifyCode,
                 child: _isLoading
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 20,
                         height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                        child: CircularProgressIndicatorM3E.small(),
                       )
                     : const Text('Verify Code'),
               ),
-              const SizedBox(height: 8),
-              TextButton(
+              M3ESpacing.verticalXS,
+              TextButtonM3E(
                 onPressed: () {
                   setState(() {
                     _isCodeSent = false;
@@ -246,39 +247,39 @@ class _ReauthenticateDialogState extends ConsumerState<ReauthenticateDialog> {
             ] else if (_isGoogleAuth) ...[
               Text(
                 'Signed in with:',
-                style: Theme.of(context).textTheme.bodySmall,
+                style: M3ETypography.bodySmall,
               ),
-              const SizedBox(height: 8),
+              M3ESpacing.verticalXS,
               Row(
                 children: [
                   const Icon(Icons.g_mobiledata, size: 32),
-                  const SizedBox(width: 8),
+                  M3ESpacing.horizontalXS,
                   Expanded(
                     child: Text(
                       widget.user.email ?? '',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      style: M3ETypography.titleMedium.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
-              ElevatedButton.icon(
+              M3ESpacing.verticalXL,
+              FilledButtonM3E(
+                icon: Icons.g_mobiledata,
                 onPressed: _isLoading ? null : _reauthenticateWithGoogle,
-                icon: const Icon(Icons.g_mobiledata),
-                label: _isLoading
-                    ? const SizedBox(
+                child: _isLoading
+                    ? SizedBox(
                         width: 20,
                         height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                        child: CircularProgressIndicatorM3E.small(),
                       )
                     : const Text('Continue with Google'),
               ),
             ] else ...[
               Text(
                 'Unable to determine authentication method.',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                style: M3ETypography.bodyMedium.copyWith(
                   color: Colors.red,
                 ),
               ),
@@ -287,7 +288,7 @@ class _ReauthenticateDialogState extends ConsumerState<ReauthenticateDialog> {
         ),
       ),
       actions: [
-        TextButton(
+        TextButtonM3E(
           onPressed: _isLoading ? null : () => Navigator.of(context).pop(false),
           child: const Text('Cancel'),
         ),

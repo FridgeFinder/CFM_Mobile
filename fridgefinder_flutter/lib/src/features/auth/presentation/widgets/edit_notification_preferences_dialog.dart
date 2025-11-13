@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:design_system/design_system.dart';
 import '../../domain/models/subscription_preferences.dart';
 import '../../../../core/providers/subscriptions_provider.dart';
 import '../../../../core/providers/auth_provider.dart';
@@ -194,17 +195,19 @@ class _NotificationPreferencesDialogState
     final enableGeofencing = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Enable Geofencing?'),
-        content: const Text(
+        shape: M3EShapes.dialog,
+        title: Text('Enable Geofencing?', style: M3ETypography.headlineSmall),
+        content: Text(
           'Get notifications when near fridges needing attention (within 2-block radius). '
           'This requires location access to always be enabled in the background.',
+          style: M3ETypography.bodyMedium,
         ),
         actions: [
-          TextButton(
+          TextButtonM3E(
             onPressed: () => Navigator.of(context).pop(false),
             child: const Text('No Thanks'),
           ),
-          ElevatedButton(
+          FilledButtonM3E(
             onPressed: () => Navigator.of(context).pop(true),
             child: const Text('Enable'),
           ),
@@ -305,17 +308,19 @@ class _NotificationPreferencesDialogState
     final shouldOpenSettings = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Enable "Always Allow" Location'),
-        content: const Text(
+        shape: M3EShapes.dialog,
+        title: Text('Enable "Always Allow" Location', style: M3ETypography.headlineSmall),
+        content: Text(
           'For geofencing to work, you need to enable "Always" location access.\n\n'
           'Please tap "Open Settings" and change location to "Always".',
+          style: M3ETypography.bodyMedium,
         ),
         actions: [
-          TextButton(
+          TextButtonM3E(
             onPressed: () => Navigator.of(context).pop(false),
             child: const Text('Cancel'),
           ),
-          ElevatedButton(
+          FilledButtonM3E(
             onPressed: () => Navigator.of(context).pop(true),
             child: const Text('Open Settings'),
           ),
@@ -332,17 +337,19 @@ class _NotificationPreferencesDialogState
     final shouldOpenSettings = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Enable Location Access'),
-        content: const Text(
+        shape: M3EShapes.dialog,
+        title: Text('Enable Location Access', style: M3ETypography.headlineSmall),
+        content: Text(
           'Geofencing requires location access to notify you when you\'re near fridges needing help.\n\n'
           'Please tap "Open Settings" and enable location access for FridgeFinder.',
+          style: M3ETypography.bodyMedium,
         ),
         actions: [
-          TextButton(
+          TextButtonM3E(
             onPressed: () => Navigator.of(context).pop(false),
             child: const Text('Cancel'),
           ),
-          ElevatedButton(
+          FilledButtonM3E(
             onPressed: () => Navigator.of(context).pop(true),
             child: const Text('Open Settings'),
           ),
@@ -363,22 +370,26 @@ class _NotificationPreferencesDialogState
         : 'Subscribe to Fridge';
 
     return AlertDialog(
-      title: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(dialogTitle),
-          if (widget.fridgeName != null) ...[
-            const SizedBox(height: 4),
-            Text(
-              widget.fridgeName!,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-            ),
-          ],
-        ],
-      ),
+      shape: M3EShapes.dialog,
+      title: widget.fridgeName != null
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  dialogTitle,
+                  style: M3ETypography.headlineSmall,
+                ),
+                M3ESpacing.verticalXXS,
+                Text(
+                  widget.fridgeName!,
+                  style: M3ETypography.bodyMedium.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                ),
+              ],
+            )
+          : Text(dialogTitle, style: M3ETypography.headlineSmall),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -386,9 +397,9 @@ class _NotificationPreferencesDialogState
           children: [
             Text(
               'Select which updates you want to receive:',
-              style: Theme.of(context).textTheme.bodySmall,
+              style: M3ETypography.bodySmall,
             ),
-            const SizedBox(height: 16),
+            M3ESpacing.verticalMD,
             _buildPreferenceSwitch(
               title: 'Updated with Food',
               subtitle: 'When the fridge is restocked',
@@ -459,17 +470,17 @@ class _NotificationPreferencesDialogState
         ),
       ),
       actions: [
-        TextButton(
+        TextButtonM3E(
           onPressed: _isLoading ? null : () => Navigator.of(context).pop(false),
           child: const Text('Cancel'),
         ),
-        ElevatedButton(
+        FilledButtonM3E(
           onPressed: _isLoading ? null : _handleSave,
           child: _isLoading
-              ? const SizedBox(
+              ? SizedBox(
                   width: 20,
                   height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+                  child: CircularProgressIndicatorM3E.small(),
                 )
               : Text(widget.mode == NotificationPreferencesMode.edit ? 'Save' : 'Subscribe'),
         ),
@@ -485,7 +496,7 @@ class _NotificationPreferencesDialogState
     required IconData icon,
   }) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.only(bottom: M3ESpacing.sm),
       child: Row(
         children: [
           Icon(
@@ -493,27 +504,27 @@ class _NotificationPreferencesDialogState
             size: 24,
             color: Theme.of(context).colorScheme.primary,
           ),
-          const SizedBox(width: 12),
+          M3ESpacing.horizontalSM,
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  style: M3ETypography.bodyMedium.copyWith(
                         fontWeight: FontWeight.w500,
                       ),
                 ),
                 Text(
                   subtitle,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  style: M3ETypography.bodySmall.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                 ),
               ],
             ),
           ),
-          Switch(
+          SwitchM3E(
             value: value,
             onChanged: onChanged,
           ),

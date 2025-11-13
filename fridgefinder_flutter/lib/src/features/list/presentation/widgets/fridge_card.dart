@@ -81,155 +81,147 @@ class _FridgeCardState extends State<FridgeCard>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-              // Title and Icon Row
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // SVG marker icon - same as map (with green glow if subscribed)
-                  // Wrapped in Hero for smooth transition to detail view
-                  Hero(
-                    tag: 'fridge-icon-${widget.fridge.id}',
-                    child: widget.isSubscribed
-                        ? AnimatedBuilder(
-                            animation: _animation,
-                            builder: (context, child) {
-                              return Container(
-                                width: FridgeCard.iconSize,
-                                height: FridgeCard.iconSize,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: FridgeMarker.subscribedGreen
-                                          .withValues(alpha: _animation.value * 0.6),
-                                      blurRadius: 8,
-                                      spreadRadius: 1,
-                                    ),
-                                    BoxShadow(
-                                      color: FridgeMarker.subscribedGreen
-                                          .withValues(alpha: _animation.value * 0.4),
-                                      blurRadius: 12,
-                                      spreadRadius: 2,
-                                    ),
-                                  ],
-                                ),
-                                child: FridgeIconUtils.getFridgeIcon(
-                                  fridge: widget.fridge,
-                                  size: FridgeCard.iconSize,
-                                ),
-                              );
-                            },
-                          )
-                        : SizedBox(
+          // Title and Icon Row
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // SVG marker icon - same as map (with green glow if subscribed)
+              // Wrapped in Hero for smooth transition to detail view
+              Hero(
+                tag: 'fridge-icon-${widget.fridge.id}',
+                child: widget.isSubscribed
+                    ? AnimatedBuilder(
+                        animation: _animation,
+                        builder: (context, child) {
+                          return Container(
                             width: FridgeCard.iconSize,
                             height: FridgeCard.iconSize,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: FridgeMarker.subscribedGreen
+                                      .withValues(alpha: _animation.value * 0.6),
+                                  blurRadius: 8,
+                                  spreadRadius: 1,
+                                ),
+                                BoxShadow(
+                                  color: FridgeMarker.subscribedGreen
+                                      .withValues(alpha: _animation.value * 0.4),
+                                  blurRadius: 12,
+                                  spreadRadius: 2,
+                                ),
+                              ],
+                            ),
                             child: FridgeIconUtils.getFridgeIcon(
                               fridge: widget.fridge,
                               size: FridgeCard.iconSize,
                             ),
-                          ),
-                  ),
-                  M3ESpacing.horizontalMD,
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.fridge.name,
-                          style: Theme.of(context).textTheme.titleMedium,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                          );
+                        },
+                      )
+                    : SizedBox(
+                        width: FridgeCard.iconSize,
+                        height: FridgeCard.iconSize,
+                        child: FridgeIconUtils.getFridgeIcon(
+                          fridge: widget.fridge,
+                          size: FridgeCard.iconSize,
                         ),
-                        M3ESpacing.verticalXXS,
-                        Text(
-                          widget.fridge.location.shortAddress,
-                          style: Theme.of(context).textTheme.bodySmall,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (!widget.fridge.verified)
-                    Tooltip(
-                      message: 'Not verified',
-                      child: Icon(
-                        Icons.info_outline,
-                        size: 20,
-                        color: Theme.of(context).colorScheme.error,
                       ),
-                    ),
-                ],
               ),
-              M3ESpacing.verticalMD,
+              M3ESpacing.horizontalMD,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.fridge.name,
+                      style: M3ETypography.titleMedium,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    M3ESpacing.verticalXXS,
+                    Text(
+                      widget.fridge.location.shortAddress,
+                      style: M3ETypography.bodySmall,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          M3ESpacing.verticalMD,
 
-              // Status, Food Level, and Distance Row
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          // Status, Food Level, and Distance Row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // Status with icon
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Status with icon
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Status',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                      Row(
-                        children: [
-                          Icon(statusIcon, size: 16, color: statusColor),
-                          M3ESpacing.horizontalXS,
-                          Text(
-                            widget.fridge.statusText,
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(
-                                  fontWeight: FontWeight.w500,
-                                  color: statusColor,
-                                ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  // Food Level
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Text(
-                        'Food Level',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                      Text(
-                        widget.fridge.foodLevelText,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                  // Distance
-                  if (widget.distanceKm != null)
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          'Distance',
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(color: Colors.grey[600]),
-                        ),
-                        Text(
-                          '${(widget.distanceKm! * 0.621371 * 10).round() / 10} mi',
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(fontWeight: FontWeight.w500),
-                        ),
-                      ],
+                  Text(
+                    'Status',
+                    style: M3ETypography.bodySmall.copyWith(
+                      color: Colors.grey[600],
                     ),
+                  ),
+                  Row(
+                    children: [
+                      Icon(statusIcon, size: 16, color: statusColor),
+                      M3ESpacing.horizontalXS,
+                      Text(
+                        widget.fridge.statusText,
+                        style: M3ETypography.bodyMedium.copyWith(
+                          fontWeight: FontWeight.w500,
+                          color: statusColor,
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
+              // Food Level
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    'Food Level',
+                    style: M3ETypography.bodySmall.copyWith(
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  Text(
+                    widget.fridge.foodLevelText,
+                    style: M3ETypography.bodyMedium.copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+              // Distance
+              if (widget.distanceKm != null)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      'Distance',
+                      style: M3ETypography.bodySmall.copyWith(
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                    Text(
+                      '${(widget.distanceKm! * 0.621371 * 10).round() / 10} mi',
+                      style: M3ETypography.bodyMedium.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+            ],
+          ),
         ],
       ),
     );

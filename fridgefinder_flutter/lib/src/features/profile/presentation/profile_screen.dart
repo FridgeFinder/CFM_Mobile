@@ -13,13 +13,24 @@ import '../../../core/providers/points_provider.dart';
 import '../../../features/auth/domain/models/user_profile.dart';
 import '../../../features/auth/presentation/widgets/sign_in_widget.dart';
 import '../../../features/auth/presentation/widgets/reauthenticate_dialog.dart';
+import '../../../common_widgets/loading_messages.dart';
 import 'test_notification_screen.dart';
 
-class ProfileScreen extends ConsumerWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+  // Local state for optimistic updates
+  bool? _localNotificationsEnabled;
+  bool? _localGeofencingEnabled;
+  NotificationFrequency? _localNotificationFrequency;
+
+  @override
+  Widget build(BuildContext context) {
     final themeMode = ref.watch(appThemeModeProvider);
     final environment = ref.watch(environmentProvider);
     final locationAccessEnabled = ref.watch(locationAccessProvider);
@@ -27,7 +38,7 @@ class ProfileScreen extends ConsumerWidget {
     return Scaffold(
       body: SingleChildScrollView(
         child: Padding(
-          padding: M3ESpacing.all(M3ESpacing.md),
+          padding: M3ESpacing.all(M3ESpacing.lg),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -44,13 +55,8 @@ class ProfileScreen extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Text(
-                            'Account',
-                            style: Theme.of(context).textTheme.titleLarge,
-                          ),
-                          M3ESpacing.verticalMD,
-                          Text(
                             'Sign in to subscribe to fridges and track your volunteer points',
-                            style: Theme.of(context).textTheme.bodyMedium,
+                            style: M3ETypography.bodyMedium,
                           ),
                           M3ESpacing.verticalMD,
                           FilledButtonM3E(
@@ -71,396 +77,378 @@ class ProfileScreen extends ConsumerWidget {
                     );
                   }
 
-                  return userProfileAsync.when(
-                    loading: () => const Card(
-                      child: Padding(
-                        padding: EdgeInsets.all(16.0),
-                        child: Center(child: CircularProgressIndicator()),
-                      ),
-                    ),
-                    error: (_, _) => const SizedBox.shrink(),
-                    data: (profile) {
-                      if (profile == null) return const SizedBox.shrink();
+                  // Keep showing previous data during refresh to prevent jank
+                  final profile = userProfileAsync.hasValue ? userProfileAsync.value : null;
 
-                      return Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  CircleAvatar(
-                                    radius: 24,
-                                    child: Text(
-                                      profile.username
-                                          .substring(0, 1)
-                                          .toUpperCase(),
-                                      style: const TextStyle(fontSize: 20),
-                                    ),
+                  // Only show loading on initial load (no cached data)
+                  if (profile == null && userProfileAsync.isLoading) {
+                    return LoadingIndicatorM3E(
+                      message: getRandomLoadingMessage(),
+                    );
+                  }
+
+                  if (profile == null) return const SizedBox.shrink();
+
+                  return CardM3E(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                CircleAvatar(
+                                  radius: 24,
+                                  child: Text(
+                                    profile.username
+                                        .substring(0, 1)
+                                        .toUpperCase(),
+                                    style: M3ETypography.titleMedium,
                                   ),
-                                  const SizedBox(width: 16),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          profile.username,
-                                          style: Theme.of(
-                                            context,
-                                          ).textTheme.titleLarge,
+                                ),
+                                M3ESpacing.horizontalMD,
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        profile.username,
+                                        style: M3ETypography.titleLarge,
+                                      ),
+                                      if (profile.isVolunteer)
+                                        Row(
+                                          children: [
+                                            const Icon(
+                                              Icons.volunteer_activism,
+                                              size: 16,
+                                            ),
+                                            M3ESpacing.horizontalXS,
+                                            Text(
+                                              'Volunteer',
+                                              style: M3ETypography.bodySmall,
+                                            ),
+                                          ],
                                         ),
-                                        if (profile.isVolunteer)
-                                          Row(
-                                            children: [
-                                              const Icon(
-                                                Icons.volunteer_activism,
-                                                size: 16,
-                                              ),
-                                              const SizedBox(width: 4),
-                                              Text(
-                                                'Volunteer',
-                                                style: Theme.of(
-                                                  context,
-                                                ).textTheme.bodySmall,
-                                              ),
-                                            ],
-                                          ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              if (profile.isVolunteer) ...[
-                                const SizedBox(height: 16),
-                                userPointsAsync.when(
-                                  loading: () => const SizedBox.shrink(),
-                                  error: (_, _) => const SizedBox.shrink(),
-                                  data: (points) => Container(
-                                    padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.primaryContainer,
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.stars,
-                                          color: Theme.of(
-                                            context,
-                                          ).colorScheme.onPrimaryContainer,
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          '$points points',
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .titleMedium
-                                              ?.copyWith(
-                                                color: Theme.of(context)
-                                                    .colorScheme
-                                                    .onPrimaryContainer,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                        ),
-                                      ],
-                                    ),
+                                    ],
                                   ),
                                 ),
                               ],
-                              const SizedBox(height: 16),
-                              // Notification Settings
-                              _buildNotificationSettings(context, ref, profile),
-                              const SizedBox(height: 16),
-                              // Sign Out Button
-                              OutlinedButton.icon(
+                            ),
+                            if (profile.isVolunteer) ...[
+                              M3ESpacing.verticalMD,
+                              userPointsAsync.when(
+                                loading: () => const SizedBox.shrink(),
+                                error: (_, _) => const SizedBox.shrink(),
+                                data: (points) => Container(
+                                  padding: M3ESpacing.all(M3ESpacing.sm),
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primaryContainer,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.stars,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.onPrimaryContainer,
+                                      ),
+                                      M3ESpacing.horizontalXS,
+                                      Text(
+                                        '$points points',
+                                        style: M3ETypography.titleMedium
+                                            .copyWith(
+                                              color: Theme.of(
+                                                context,
+                                              ).colorScheme.onPrimaryContainer,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                            M3ESpacing.verticalMD,
+                            // Notification Settings
+                            SizedBox(
+                              width: double.infinity,
+                              child: _buildNotificationSettings(
+                                context,
+                                ref,
+                                profile,
+                              ),
+                            ),
+                            M3ESpacing.verticalMD,
+                            // Sign Out Button
+                            SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButtonM3E(
                                 onPressed: () =>
                                     _showSignOutDialog(context, ref),
-                                icon: const Icon(Icons.logout),
-                                label: const Text('Sign Out'),
+                                icon: Icons.logout,
+                                child: const Text('Sign Out'),
                               ),
-                              const SizedBox(height: 12),
-                              // Delete Account Button
-                              OutlinedButton.icon(
+                            ),
+                            M3ESpacing.verticalSM,
+                            // Delete Account Button
+                            SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton.icon(
                                 onPressed: () => _showDeleteAccountDialog(
                                   context,
                                   ref,
                                   profile.userId,
                                 ),
-                                icon: const Icon(
+                                icon: Icon(
                                   Icons.delete_outline,
-                                  color: Colors.red,
+                                  color: Theme.of(context).colorScheme.error,
                                 ),
-                                label: const Text(
+                                label: Text(
                                   'Delete Account',
-                                  style: TextStyle(color: Colors.red),
+                                  style: TextStyle(
+                                    color: Theme.of(context).colorScheme.error,
+                                  ),
                                 ),
                                 style: OutlinedButton.styleFrom(
-                                  side: const BorderSide(color: Colors.red),
+                                  side: BorderSide(
+                                    color: Theme.of(context).colorScheme.error,
+                                  ),
+                                  minimumSize: const Size.fromHeight(40),
                                 ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                },
+              ),
+              M3ESpacing.verticalMD,
+              CardM3E(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Allow Location Access',
+                                style: M3ETypography.bodyLarge.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              M3ESpacing.verticalXS,
+                              Text(
+                                'Enable to show distances and sort fridges by proximity',
+                                style: M3ETypography.bodyMedium,
                               ),
                             ],
                           ),
                         ),
-                      );
-                    },
-                  );
-                },
-              ),
-              const SizedBox(height: 16),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Location Settings',
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Allow Location Access',
-                                  style: Theme.of(context).textTheme.titleMedium
-                                      ?.copyWith(fontWeight: FontWeight.w600),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Enable to show distances and sort fridges by proximity',
-                                  style: Theme.of(context).textTheme.bodySmall,
-                                ),
-                              ],
-                            ),
-                          ),
-                          Switch(
-                            value: locationAccessEnabled,
-                            onChanged: (value) async {
-                              final result = await ref
-                                  .read(locationAccessProvider.notifier)
-                                  .setAccessWithPermission(value);
+                        SwitchM3E(
+                          value: locationAccessEnabled,
+                          onChanged: (value) async {
+                            final result = await ref
+                                .read(locationAccessProvider.notifier)
+                                .setAccessWithPermission(value);
 
-                              if (context.mounted) {
-                                if (result['openSettings'] == true) {
-                                  // Guide user to settings
-                                  final shouldOpenSettings = await showDialog<bool>(
-                                    context: context,
-                                    builder: (context) => AlertDialog(
-                                      title: const Text('Location Permission Required'),
-                                      content: const Text(
-                                        'Location access is disabled. '
-                                        'Please enable it in Settings to see distances and sort fridges by proximity.',
+                            if (context.mounted) {
+                              if (result['openSettings'] == true) {
+                                // Guide user to settings
+                                final shouldOpenSettings = await showDialog<bool>(
+                                  context: context,
+                                  builder: (context) => AlertDialog(
+                                    title: const Text(
+                                      'Location Permission Required',
+                                    ),
+                                    content: const Text(
+                                      'Location access is disabled. '
+                                      'Please enable it in Settings to see distances and sort fridges by proximity.',
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.of(context).pop(false),
+                                        child: const Text('Cancel'),
                                       ),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () => Navigator.of(context).pop(false),
-                                          child: const Text('Cancel'),
-                                        ),
-                                        TextButton(
-                                          onPressed: () => Navigator.of(context).pop(true),
-                                          child: const Text('Open Settings'),
-                                        ),
-                                      ],
-                                    ),
-                                  );
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.of(context).pop(true),
+                                        child: const Text('Open Settings'),
+                                      ),
+                                    ],
+                                  ),
+                                );
 
-                                  if (shouldOpenSettings == true) {
-                                    await openAppSettings();
-                                  }
-                                } else if (result['disabled'] == true) {
-                                  // User disabled location
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Location access disabled. '
-                                        'To revoke location permission, go to Settings.'),
-                                      duration: Duration(seconds: 4),
-                                    ),
-                                  );
-                                } else if (result['success'] == false && result['openSettings'] != true) {
-                                  // Permission denied but not permanently
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Location permission is required'),
-                                    ),
-                                  );
+                                if (shouldOpenSettings == true) {
+                                  await openAppSettings();
                                 }
-                              }
-                            },
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              // API Environment Settings Section - Only show in debug mode
-              if (kDebugMode) ...[
-                const SizedBox(height: 16),
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Debug Tools',
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        const SizedBox(height: 16),
-                        OutlinedButton.icon(
-                          onPressed: () async {
-                            try {
-                              final repository = ref.read(
-                                authRepositoryProvider,
-                              );
-                              await repository.signOut();
-                              if (context.mounted) {
+                              } else if (result['disabled'] == true) {
+                                // User disabled location
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
                                     content: Text(
-                                      'Signed out - Auth state reset',
+                                      'Location access disabled. '
+                                      'To revoke location permission, go to Settings.',
+                                    ),
+                                    duration: Duration(seconds: 4),
+                                  ),
+                                );
+                              } else if (result['success'] == false &&
+                                  result['openSettings'] != true) {
+                                // Permission denied but not permanently
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Location permission is required',
                                     ),
                                   ),
                                 );
                               }
-                            } catch (e) {
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Error: $e')),
-                                );
-                              }
                             }
                           },
-                          icon: const Icon(Icons.refresh),
-                          label: const Text('Reset Auth State (Sign Out)'),
-                        ),
-                        const SizedBox(height: 12),
-                        OutlinedButton.icon(
-                          onPressed: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (context) => const TestNotificationScreen(),
-                              ),
-                            );
-                          },
-                          icon: const Icon(Icons.notifications_active),
-                          label: const Text('Test Notifications'),
                         ),
                       ],
                     ),
+                  ],
+                ),
+              ),
+              // API Environment Settings Section - Only show in debug mode
+              if (kDebugMode) ...[
+                M3ESpacing.verticalMD,
+                CardM3E(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      OutlinedButtonM3E(
+                        onPressed: () async {
+                          try {
+                            final repository = ref.read(authRepositoryProvider);
+                            await repository.signOut();
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Signed out - Auth state reset',
+                                  ),
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Error: $e')),
+                              );
+                            }
+                          }
+                        },
+                        icon: Icons.refresh,
+                        child: const Text('Reset Auth State (Sign Out)'),
+                      ),
+                      M3ESpacing.verticalSM,
+                      OutlinedButtonM3E(
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  const TestNotificationScreen(),
+                            ),
+                          );
+                        },
+                        icon: Icons.notifications_active,
+                        child: const Text('Test Notifications'),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 16),
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'API Environment',
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Current: ${environment.name.toUpperCase()}',
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurfaceVariant,
-                              ),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Select API environment',
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-                        const SizedBox(height: 16),
-                        // Environment Options
-                        _buildEnvironmentOption(
-                          context: context,
-                          ref: ref,
-                          title: 'Production',
-                          subtitle: 'api-prod.communityfridgefinder.com',
-                          environment: ApiEnvironment.prod,
-                          isSelected: environment == ApiEnvironment.prod,
-                          icon: Icons.cloud,
-                        ),
-                        const SizedBox(height: 12),
-                        _buildEnvironmentOption(
-                          context: context,
-                          ref: ref,
-                          title: 'Development',
-                          subtitle: 'api-dev.communityfridgefinder.com',
-                          environment: ApiEnvironment.dev,
-                          isSelected: environment == ApiEnvironment.dev,
-                          icon: Icons.construction,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-              ],
-              // Theme Settings Section
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
+                M3ESpacing.verticalMD,
+                CardM3E(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Theme Settings',
-                        style: Theme.of(context).textTheme.titleLarge,
+                        'Current: ${environment.name.toUpperCase()}',
+                        style: M3ETypography.bodySmall.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                       ),
-                      const SizedBox(height: 16),
+                      M3ESpacing.verticalMD,
                       Text(
-                        'Choose your preferred theme',
-                        style: Theme.of(context).textTheme.bodyMedium,
+                        'Select API environment',
+                        style: M3ETypography.bodyMedium,
                       ),
-                      const SizedBox(height: 16),
-                      // Theme Mode Options
-                      _buildThemeOption(
+                      M3ESpacing.verticalMD,
+                      // Environment Options
+                      _buildEnvironmentOption(
                         context: context,
                         ref: ref,
-                        title: 'System',
-                        subtitle: 'Follow device settings',
-                        mode: AppThemeMode.system,
-                        isSelected: themeMode == AppThemeMode.system,
-                        icon: Icons.brightness_auto,
+                        title: 'Production',
+                        subtitle: 'api-prod.communityfridgefinder.com',
+                        environment: ApiEnvironment.prod,
+                        isSelected: environment == ApiEnvironment.prod,
+                        icon: Icons.cloud,
                       ),
-                      const SizedBox(height: 12),
-                      _buildThemeOption(
+                      M3ESpacing.verticalSM,
+                      _buildEnvironmentOption(
                         context: context,
                         ref: ref,
-                        title: 'Light',
-                        subtitle: 'Always use light theme',
-                        mode: AppThemeMode.light,
-                        isSelected: themeMode == AppThemeMode.light,
-                        icon: Icons.light_mode,
-                      ),
-                      const SizedBox(height: 12),
-                      _buildThemeOption(
-                        context: context,
-                        ref: ref,
-                        title: 'Dark',
-                        subtitle: 'Always use dark theme',
-                        mode: AppThemeMode.dark,
-                        isSelected: themeMode == AppThemeMode.dark,
-                        icon: Icons.dark_mode,
+                        title: 'Development',
+                        subtitle: 'api-dev.communityfridgefinder.com',
+                        environment: ApiEnvironment.dev,
+                        isSelected: environment == ApiEnvironment.dev,
+                        icon: Icons.construction,
                       ),
                     ],
                   ),
+                ),
+                M3ESpacing.verticalMD,
+              ],
+              // Theme Settings Section
+              CardM3E(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Choose your preferred theme',
+                      style: M3ETypography.bodyMedium,
+                    ),
+                    M3ESpacing.verticalMD,
+                    // Theme Mode Options
+                    _buildThemeOption(
+                      context: context,
+                      ref: ref,
+                      title: 'System',
+                      subtitle: 'Follow device settings',
+                      mode: AppThemeMode.system,
+                      isSelected: themeMode == AppThemeMode.system,
+                      icon: Icons.brightness_auto,
+                    ),
+                    M3ESpacing.verticalSM,
+                    _buildThemeOption(
+                      context: context,
+                      ref: ref,
+                      title: 'Light',
+                      subtitle: 'Always use light theme',
+                      mode: AppThemeMode.light,
+                      isSelected: themeMode == AppThemeMode.light,
+                      icon: Icons.light_mode,
+                    ),
+                    M3ESpacing.verticalSM,
+                    _buildThemeOption(
+                      context: context,
+                      ref: ref,
+                      title: 'Dark',
+                      subtitle: 'Always use dark theme',
+                      mode: AppThemeMode.dark,
+                      isSelected: themeMode == AppThemeMode.dark,
+                      icon: Icons.dark_mode,
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -514,14 +502,14 @@ class ProfileScreen extends ConsumerWidget {
                 children: [
                   Text(
                     title,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    style: M3ETypography.titleMedium.copyWith(
                       fontWeight: FontWeight.w600,
                       color: isSelected
                           ? Theme.of(context).colorScheme.primary
                           : null,
                     ),
                   ),
-                  Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
+                  Text(subtitle, style: M3ETypography.bodySmall),
                 ],
               ),
             ),
@@ -580,14 +568,14 @@ class ProfileScreen extends ConsumerWidget {
                 children: [
                   Text(
                     title,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    style: M3ETypography.titleMedium.copyWith(
                       fontWeight: FontWeight.w600,
                       color: isSelected
                           ? Theme.of(context).colorScheme.primary
                           : null,
                     ),
                   ),
-                  Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
+                  Text(subtitle, style: M3ETypography.bodySmall),
                 ],
               ),
             ),
@@ -608,15 +596,15 @@ class ProfileScreen extends ConsumerWidget {
     UserProfile profile,
   ) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(
           'Notification Settings',
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+          style: M3ETypography.titleMedium.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
         ),
-        const SizedBox(height: 12),
+        M3ESpacing.verticalSM,
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -624,30 +612,33 @@ class ProfileScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Push Notifications',
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
+                  Text('Push Notifications', style: M3ETypography.bodyLarge),
                   Text(
                     'Receive notifications about your subscribed fridges',
-                    style: Theme.of(context).textTheme.bodySmall,
+                    style: M3ETypography.bodyMedium,
                   ),
                 ],
               ),
             ),
-            Switch(
-              value: profile.settings.notificationsEnabled,
+            SwitchM3E(
+              value: _localNotificationsEnabled ?? profile.settings.notificationsEnabled,
               onChanged: (value) async {
+                // Optimistic update - change UI immediately
+                setState(() => _localNotificationsEnabled = value);
+
                 try {
                   // Request permission if enabling
                   if (value) {
                     final messaging = FirebaseMessaging.instance;
 
                     // Check current notification settings
-                    final currentSettings = await messaging.getNotificationSettings();
+                    final currentSettings = await messaging
+                        .getNotificationSettings();
 
-                    if (currentSettings.authorizationStatus == AuthorizationStatus.denied ||
-                        currentSettings.authorizationStatus == AuthorizationStatus.notDetermined) {
+                    if (currentSettings.authorizationStatus ==
+                            AuthorizationStatus.denied ||
+                        currentSettings.authorizationStatus ==
+                            AuthorizationStatus.notDetermined) {
                       // Request permission
                       final settings = await messaging.requestPermission(
                         alert: true,
@@ -655,25 +646,31 @@ class ProfileScreen extends ConsumerWidget {
                         sound: true,
                       );
 
-                      if (settings.authorizationStatus != AuthorizationStatus.authorized &&
-                          settings.authorizationStatus != AuthorizationStatus.provisional) {
+                      if (settings.authorizationStatus !=
+                              AuthorizationStatus.authorized &&
+                          settings.authorizationStatus !=
+                              AuthorizationStatus.provisional) {
                         if (context.mounted) {
                           // If permanently denied, guide to settings
                           final shouldOpenSettings = await showDialog<bool>(
                             context: context,
                             builder: (context) => AlertDialog(
-                              title: const Text('Notification Permission Required'),
+                              title: const Text(
+                                'Notification Permission Required',
+                              ),
                               content: const Text(
                                 'Push notifications are disabled. '
                                 'Please enable them in Settings to receive updates about your subscribed fridges.',
                               ),
                               actions: [
                                 TextButton(
-                                  onPressed: () => Navigator.of(context).pop(false),
+                                  onPressed: () =>
+                                      Navigator.of(context).pop(false),
                                   child: const Text('Cancel'),
                                 ),
                                 TextButton(
-                                  onPressed: () => Navigator.of(context).pop(true),
+                                  onPressed: () =>
+                                      Navigator.of(context).pop(true),
                                   child: const Text('Open Settings'),
                                 ),
                               ],
@@ -692,8 +689,10 @@ class ProfileScreen extends ConsumerWidget {
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('Notifications disabled. '
-                            'To revoke notification permission, go to Settings.'),
+                          content: Text(
+                            'Notifications disabled. '
+                            'To revoke notification permission, go to Settings.',
+                          ),
                           duration: Duration(seconds: 4),
                         ),
                       );
@@ -707,19 +706,32 @@ class ProfileScreen extends ConsumerWidget {
                   );
                   final repository = ref.read(authRepositoryProvider);
                   await repository.updateUserProfile(updatedProfile);
+
+                  // Invalidate to refresh data, but local state prevents jank
                   ref.invalidate(userProfileProvider);
+
+                  // Clear local state after a delay to let new data load
+                  Future.delayed(const Duration(milliseconds: 500), () {
+                    if (mounted) {
+                      setState(() => _localNotificationsEnabled = null);
+                    }
+                  });
                 } catch (e) {
+                  // On error, revert local state and show error
+                  if (mounted) {
+                    setState(() => _localNotificationsEnabled = !value);
+                  }
                   if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Error: $e')),
-                    );
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text('Error: $e')));
                   }
                 }
               },
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        M3ESpacing.verticalSM,
         // Only show geofencing toggle for volunteers
         if (profile.isVolunteer) ...[
           Row(
@@ -729,231 +741,252 @@ class ProfileScreen extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Geofencing',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
+                    Text('Geofencing', style: M3ETypography.bodyLarge),
                     Text(
                       'Get notified when near fridges needing attention',
-                      style: Theme.of(context).textTheme.bodySmall,
+                      style: M3ETypography.bodyMedium,
                     ),
                   ],
                 ),
               ),
-              Switch(
-              value: profile.settings.geofencingEnabled,
-              onChanged: (value) async {
-                try {
-                  // Request location permission if enabling
-                  if (value) {
-                    // Use Geolocator for location permissions (handles iOS two-step flow)
-                    LocationPermission permission = await Geolocator.checkPermission();
-                    debugPrint('Geofencing toggle - current permission: $permission');
+              SwitchM3E(
+                value: _localGeofencingEnabled ?? profile.settings.geofencingEnabled,
+                onChanged: (value) async {
+                  // Optimistic update - change UI immediately
+                  setState(() => _localGeofencingEnabled = value);
 
-                    // Check if we already have 'always' permission
-                    if (permission == LocationPermission.always) {
-                      debugPrint('Already have "always" permission, enabling geofencing');
-                      // Already have always permission, proceed
-                    } else if (permission == LocationPermission.denied ||
-                               permission == LocationPermission.whileInUse) {
-                      // Request permission (this will show system dialog)
-                      debugPrint('Requesting location permission...');
-                      permission = await Geolocator.requestPermission();
-                      debugPrint('After request, permission: $permission');
+                  try {
+                    // Request location permission if enabling
+                    if (value) {
+                      // Use Geolocator for location permissions (handles iOS two-step flow)
+                      LocationPermission permission =
+                          await Geolocator.checkPermission();
+                      debugPrint(
+                        'Geofencing toggle - current permission: $permission',
+                      );
 
-                      // Check if we got at least whileInUse or always
-                      if (permission == LocationPermission.denied ||
-                          permission == LocationPermission.deniedForever) {
-                        if (context.mounted) {
-                          if (permission == LocationPermission.deniedForever) {
-                            // Guide to settings
-                            final shouldOpenSettings = await showDialog<bool>(
-                              context: context,
-                              builder: (context) => AlertDialog(
-                                title: const Text('Enable Location Access'),
-                                content: const Text(
-                                  'Geofencing requires location access to notify you when you\'re near fridges needing help.\n\n'
-                                  'Please tap "Open Settings" and enable location access for FridgeFinder.',
+                      // Check if we already have 'always' permission
+                      if (permission == LocationPermission.always) {
+                        debugPrint(
+                          'Already have "always" permission, enabling geofencing',
+                        );
+                        // Already have always permission, proceed
+                      } else if (permission == LocationPermission.denied ||
+                          permission == LocationPermission.whileInUse) {
+                        // Request permission (this will show system dialog)
+                        debugPrint('Requesting location permission...');
+                        permission = await Geolocator.requestPermission();
+                        debugPrint('After request, permission: $permission');
+
+                        // Check if we got at least whileInUse or always
+                        if (permission == LocationPermission.denied ||
+                            permission == LocationPermission.deniedForever) {
+                          if (context.mounted) {
+                            if (permission ==
+                                LocationPermission.deniedForever) {
+                              // Guide to settings
+                              final shouldOpenSettings = await showDialog<bool>(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: const Text('Enable Location Access'),
+                                  content: const Text(
+                                    'Geofencing requires location access to notify you when you\'re near fridges needing help.\n\n'
+                                    'Please tap "Open Settings" and enable location access for FridgeFinder.',
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.of(context).pop(false),
+                                      child: const Text('Cancel'),
+                                    ),
+                                    ElevatedButton(
+                                      onPressed: () =>
+                                          Navigator.of(context).pop(true),
+                                      child: const Text('Open Settings'),
+                                    ),
+                                  ],
                                 ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.of(context).pop(false),
-                                    child: const Text('Cancel'),
-                                  ),
-                                  ElevatedButton(
-                                    onPressed: () => Navigator.of(context).pop(true),
-                                    child: const Text('Open Settings'),
-                                  ),
-                                ],
-                              ),
-                            );
+                              );
 
-                            if (shouldOpenSettings == true) {
-                              await Geolocator.openAppSettings();
+                              if (shouldOpenSettings == true) {
+                                await Geolocator.openAppSettings();
+                              }
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Location permission is required for geofencing',
+                                  ),
+                                ),
+                              );
                             }
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Location permission is required for geofencing'),
+                          }
+                          return;
+                        }
+
+                        // If we got whileInUse, show info about upgrading to always
+                        if (permission == LocationPermission.whileInUse &&
+                            context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Geofencing enabled. For background notifications, '
+                                'change to "Always Allow" in Settings.',
                               ),
-                            );
+                              duration: Duration(seconds: 5),
+                            ),
+                          );
+                        }
+                      } else if (permission ==
+                          LocationPermission.deniedForever) {
+                        // Permanently denied, guide to settings
+                        debugPrint('Location permission permanently denied');
+                        if (context.mounted) {
+                          final shouldOpenSettings = await showDialog<bool>(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text('Enable Location Access'),
+                              content: const Text(
+                                'Geofencing requires location access to notify you when you\'re near fridges needing help.\n\n'
+                                'Please tap "Open Settings" and enable location access for FridgeFinder.',
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () =>
+                                      Navigator.of(context).pop(false),
+                                  child: const Text('Cancel'),
+                                ),
+                                ElevatedButton(
+                                  onPressed: () =>
+                                      Navigator.of(context).pop(true),
+                                  child: const Text('Open Settings'),
+                                ),
+                              ],
+                            ),
+                          );
+
+                          if (shouldOpenSettings == true) {
+                            await Geolocator.openAppSettings();
                           }
                         }
                         return;
                       }
-
-                      // If we got whileInUse, show info about upgrading to always
-                      if (permission == LocationPermission.whileInUse && context.mounted) {
+                    } else {
+                      // Disabling - just update the setting
+                      if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text(
-                              'Geofencing enabled. For background notifications, '
-                              'change to "Always Allow" in Settings.',
-                            ),
-                            duration: Duration(seconds: 5),
+                            content: Text('Geofencing disabled'),
+                            duration: Duration(seconds: 2),
                           ),
                         );
                       }
-                    } else if (permission == LocationPermission.deniedForever) {
-                      // Permanently denied, guide to settings
-                      debugPrint('Location permission permanently denied');
-                      if (context.mounted) {
-                        final shouldOpenSettings = await showDialog<bool>(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            title: const Text('Enable Location Access'),
-                            content: const Text(
-                              'Geofencing requires location access to notify you when you\'re near fridges needing help.\n\n'
-                              'Please tap "Open Settings" and enable location access for FridgeFinder.',
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.of(context).pop(false),
-                                child: const Text('Cancel'),
-                              ),
-                              ElevatedButton(
-                                onPressed: () => Navigator.of(context).pop(true),
-                                child: const Text('Open Settings'),
-                              ),
-                            ],
-                          ),
-                        );
-
-                        if (shouldOpenSettings == true) {
-                          await Geolocator.openAppSettings();
-                        }
-                      }
-                      return;
                     }
-                  } else {
-                    // Disabling - just update the setting
+
+                    final updatedProfile = profile.copyWith(
+                      settings: profile.settings.copyWith(
+                        geofencingEnabled: value,
+                      ),
+                    );
+                    final repository = ref.read(authRepositoryProvider);
+                    await repository.updateUserProfile(updatedProfile);
+
+                    // Invalidate to refresh data, but local state prevents jank
+                    ref.invalidate(userProfileProvider);
+
+                    // Clear local state after a delay to let new data load
+                    Future.delayed(const Duration(milliseconds: 500), () {
+                      if (mounted) {
+                        setState(() => _localGeofencingEnabled = null);
+                      }
+                    });
+                  } catch (e) {
+                    // On error, revert local state and show error
+                    if (mounted) {
+                      setState(() => _localGeofencingEnabled = !value);
+                    }
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(SnackBar(content: Text('Error: $e')));
+                    }
+                  }
+                },
+              ),
+            ],
+          ),
+          M3ESpacing.verticalSM,
+        ],
+        // Center the notification frequency group
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text('Notification Frequency', style: M3ETypography.bodyLarge),
+            M3ESpacing.verticalXS,
+            SegmentedButtonM3E<NotificationFrequency>(
+              showSelectedIcon: false,
+              emptySelectionAllowed: false,
+              segments: const [
+                ButtonSegment(
+                  value: NotificationFrequency.immediate,
+                  label: Text('Immediate'),
+                ),
+                ButtonSegment(
+                  value: NotificationFrequency.daily,
+                  label: Text('Daily'),
+                ),
+                ButtonSegment(
+                  value: NotificationFrequency.weekly,
+                  label: Text('Weekly'),
+                ),
+              ],
+              selected: {_localNotificationFrequency ?? profile.settings.notificationFrequency},
+              onSelectionChanged: (Set<NotificationFrequency> selected) async {
+                if (selected.isNotEmpty) {
+                  // Optimistic update - change UI immediately
+                  setState(() => _localNotificationFrequency = selected.first);
+
+                  try{
+                    final updatedProfile = profile.copyWith(
+                      settings: profile.settings.copyWith(
+                        notificationFrequency: selected.first,
+                      ),
+                    );
+                    final repository = ref.read(authRepositoryProvider);
+                    await repository.updateUserProfile(updatedProfile);
+
+                    // Invalidate to refresh data, but local state prevents jank
+                    ref.invalidate(userProfileProvider);
+
+                    // Clear local state after a delay to let new data load
+                    Future.delayed(const Duration(milliseconds: 500), () {
+                      if (mounted) {
+                        setState(() => _localNotificationFrequency = null);
+                      }
+                    });
+
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('Geofencing disabled'),
-                          duration: Duration(seconds: 2),
+                          content: Text('Notification frequency updated'),
                         ),
                       );
                     }
-                  }
-
-                  final updatedProfile = profile.copyWith(
-                    settings: profile.settings.copyWith(geofencingEnabled: value),
-                  );
-                  final repository = ref.read(authRepositoryProvider);
-                  await repository.updateUserProfile(updatedProfile);
-                  ref.invalidate(userProfileProvider);
-                } catch (e) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Error: $e')),
-                    );
+                  } catch (e) {
+                    // On error, revert local state and show error
+                    if (mounted) {
+                      setState(() => _localNotificationFrequency = profile.settings.notificationFrequency);
+                    }
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(SnackBar(content: Text('Error: $e')));
+                    }
                   }
                 }
               },
             ),
           ],
-        ),
-        const SizedBox(height: 12),
-        ],
-        Text(
-          'Notification Frequency',
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
-        const SizedBox(height: 8),
-        SegmentedButton<NotificationFrequency>(
-          showSelectedIcon: false,
-          style: ButtonStyle(
-            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            visualDensity: VisualDensity.compact,
-          ),
-          segments: [
-            ButtonSegment(
-              value: NotificationFrequency.immediate,
-              label: SizedBox(
-                width: 80,
-                child: Center(
-                  child: Text(
-                    'Immediate',
-                    style: Theme.of(context).textTheme.bodySmall,
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ),
-            ),
-            ButtonSegment(
-              value: NotificationFrequency.daily,
-              label: SizedBox(
-                width: 80,
-                child: Center(
-                  child: Text(
-                    'Daily',
-                    style: Theme.of(context).textTheme.bodySmall,
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ),
-            ),
-            ButtonSegment(
-              value: NotificationFrequency.weekly,
-              label: SizedBox(
-                width: 80,
-                child: Center(
-                  child: Text(
-                    'Weekly',
-                    style: Theme.of(context).textTheme.bodySmall,
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ),
-            ),
-          ],
-          selected: {profile.settings.notificationFrequency},
-          onSelectionChanged: (Set<NotificationFrequency> selected) async {
-            if (selected.isNotEmpty) {
-              try {
-                final updatedProfile = profile.copyWith(
-                  settings: profile.settings.copyWith(
-                    notificationFrequency: selected.first,
-                  ),
-                );
-                final repository = ref.read(authRepositoryProvider);
-                await repository.updateUserProfile(updatedProfile);
-                ref.invalidate(userProfileProvider);
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Notification frequency updated')),
-                  );
-                }
-              } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error: $e')),
-                  );
-                }
-              }
-            }
-          },
         ),
       ],
     );
@@ -966,11 +999,11 @@ class ProfileScreen extends ConsumerWidget {
         title: const Text('Sign Out?'),
         content: const Text('Are you sure you want to sign out?'),
         actions: [
-          TextButton(
+          TextButtonM3E(
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('Cancel'),
           ),
-          TextButton(
+          TextButtonM3E(
             onPressed: () async {
               Navigator.of(context).pop();
               try {
@@ -1015,11 +1048,11 @@ class ProfileScreen extends ConsumerWidget {
           'Are you sure you want to delete your account? This will permanently delete your profile, subscriptions, and points. Your status reports will be anonymized but kept.',
         ),
         actions: [
-          TextButton(
+          TextButtonM3E(
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('Cancel'),
           ),
-          TextButton(
+          TextButtonM3E(
             onPressed: () {
               Navigator.of(context).pop();
               _showFinalDeleteConfirmation(context, ref, userId);
@@ -1044,11 +1077,11 @@ class ProfileScreen extends ConsumerWidget {
           'This action cannot be undone. Your account and all associated data will be permanently deleted.',
         ),
         actions: [
-          TextButton(
+          TextButtonM3E(
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('Cancel'),
           ),
-          TextButton(
+          TextButtonM3E(
             onPressed: () async {
               // Get repository and user references FIRST, before any navigation
               final repository = ref.read(authRepositoryProvider);
@@ -1080,9 +1113,7 @@ class ProfileScreen extends ConsumerWidget {
                 if (context.mounted) {
                   Navigator.of(context).pop();
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Account deletion cancelled'),
-                    ),
+                    const SnackBar(content: Text('Account deletion cancelled')),
                   );
                 }
                 return;
@@ -1090,7 +1121,9 @@ class ProfileScreen extends ConsumerWidget {
 
               // If re-authentication succeeded, close the confirmation dialog first
               if (!context.mounted) {
-                debugPrint('Context not mounted after reauth, aborting deletion');
+                debugPrint(
+                  'Context not mounted after reauth, aborting deletion',
+                );
                 return;
               }
 
@@ -1104,7 +1137,9 @@ class ProfileScreen extends ConsumerWidget {
               debugPrint('Proceeding with account deletion for user: $userId');
 
               if (!context.mounted) {
-                debugPrint('Context not mounted after closing dialog, aborting deletion');
+                debugPrint(
+                  'Context not mounted after closing dialog, aborting deletion',
+                );
                 return;
               }
 
@@ -1118,9 +1153,9 @@ class ProfileScreen extends ConsumerWidget {
                       SizedBox(
                         width: 20,
                         height: 20,
-                        child: CircularProgressIndicator(
+                        child: CircularProgressIndicatorM3E.small(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          color: Colors.white,
                         ),
                       ),
                       SizedBox(width: 16),
@@ -1141,7 +1176,9 @@ class ProfileScreen extends ConsumerWidget {
 
                 await repository.deleteAccount(userId);
 
-                debugPrint('Account deleted successfully from deleteAccount call');
+                debugPrint(
+                  'Account deleted successfully from deleteAccount call',
+                );
 
                 // Clear loading indicator and show success message
                 // Use the messenger we captured before deletion
@@ -1154,7 +1191,9 @@ class ProfileScreen extends ConsumerWidget {
                   ),
                 );
 
-                debugPrint('Account deletion complete - Firebase will auto-update auth state');
+                debugPrint(
+                  'Account deletion complete - Firebase will auto-update auth state',
+                );
               } catch (e) {
                 debugPrint('Error deleting account: $e');
 
@@ -1163,7 +1202,8 @@ class ProfileScreen extends ConsumerWidget {
 
                   // Check if it's a requires-recent-login error (shouldn't happen after reauth)
                   if (e.toString().contains('requires-recent-login')) {
-                    errorMessage = 'Please try again. Your session may have expired.';
+                    errorMessage =
+                        'Please try again. Your session may have expired.';
                   }
 
                   // Clear any previous snackbars

@@ -49,17 +49,25 @@ class RadioM3E<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (label != null) {
-      return RadioListTile<T>(
+      return
+      // ignore: deprecated_member_use
+      RadioListTile<T>(
         value: value,
+        // ignore: deprecated_member_use
         groupValue: groupValue,
+        // ignore: deprecated_member_use
         onChanged: onChanged,
         title: Text(label!),
       );
     }
 
-    return Radio<T>(
+    return
+    // ignore: deprecated_member_use
+    Radio<T>(
       value: value,
+      // ignore: deprecated_member_use
       groupValue: groupValue,
+      // ignore: deprecated_member_use
       onChanged: onChanged,
     );
   }

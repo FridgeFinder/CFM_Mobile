@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$UserSettings {
 
- bool get notificationsEnabled;@JsonKey(name: 'notificationFrequency', fromJson: _notificationFrequencyFromJson, toJson: _notificationFrequencyToJson) NotificationFrequency get notificationFrequency; bool get geofencingEnabled;
+ bool get notificationsEnabled; NotificationFrequency get notificationFrequency; bool get geofencingEnabled;
 /// Create a copy of UserSettings
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -48,7 +48,7 @@ abstract mixin class $UserSettingsCopyWith<$Res>  {
   factory $UserSettingsCopyWith(UserSettings value, $Res Function(UserSettings) _then) = _$UserSettingsCopyWithImpl;
 @useResult
 $Res call({
- bool notificationsEnabled,@JsonKey(name: 'notificationFrequency', fromJson: _notificationFrequencyFromJson, toJson: _notificationFrequencyToJson) NotificationFrequency notificationFrequency, bool geofencingEnabled
+ bool notificationsEnabled, NotificationFrequency notificationFrequency, bool geofencingEnabled
 });
 
 
@@ -155,7 +155,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( bool notificationsEnabled, @JsonKey(name: 'notificationFrequency', fromJson: _notificationFrequencyFromJson, toJson: _notificationFrequencyToJson)  NotificationFrequency notificationFrequency,  bool geofencingEnabled)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( bool notificationsEnabled,  NotificationFrequency notificationFrequency,  bool geofencingEnabled)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _UserSettings() when $default != null:
 return $default(_that.notificationsEnabled,_that.notificationFrequency,_that.geofencingEnabled);case _:
@@ -176,7 +176,7 @@ return $default(_that.notificationsEnabled,_that.notificationFrequency,_that.geo
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( bool notificationsEnabled, @JsonKey(name: 'notificationFrequency', fromJson: _notificationFrequencyFromJson, toJson: _notificationFrequencyToJson)  NotificationFrequency notificationFrequency,  bool geofencingEnabled)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( bool notificationsEnabled,  NotificationFrequency notificationFrequency,  bool geofencingEnabled)  $default,) {final _that = this;
 switch (_that) {
 case _UserSettings():
 return $default(_that.notificationsEnabled,_that.notificationFrequency,_that.geofencingEnabled);case _:
@@ -196,7 +196,7 @@ return $default(_that.notificationsEnabled,_that.notificationFrequency,_that.geo
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( bool notificationsEnabled, @JsonKey(name: 'notificationFrequency', fromJson: _notificationFrequencyFromJson, toJson: _notificationFrequencyToJson)  NotificationFrequency notificationFrequency,  bool geofencingEnabled)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( bool notificationsEnabled,  NotificationFrequency notificationFrequency,  bool geofencingEnabled)?  $default,) {final _that = this;
 switch (_that) {
 case _UserSettings() when $default != null:
 return $default(_that.notificationsEnabled,_that.notificationFrequency,_that.geofencingEnabled);case _:
@@ -211,11 +211,11 @@ return $default(_that.notificationsEnabled,_that.notificationFrequency,_that.geo
 @JsonSerializable()
 
 class _UserSettings extends UserSettings {
-  const _UserSettings({this.notificationsEnabled = true, @JsonKey(name: 'notificationFrequency', fromJson: _notificationFrequencyFromJson, toJson: _notificationFrequencyToJson) this.notificationFrequency = NotificationFrequency.immediate, this.geofencingEnabled = false}): super._();
+  const _UserSettings({this.notificationsEnabled = true, this.notificationFrequency = NotificationFrequency.immediate, this.geofencingEnabled = false}): super._();
   factory _UserSettings.fromJson(Map<String, dynamic> json) => _$UserSettingsFromJson(json);
 
 @override@JsonKey() final  bool notificationsEnabled;
-@override@JsonKey(name: 'notificationFrequency', fromJson: _notificationFrequencyFromJson, toJson: _notificationFrequencyToJson) final  NotificationFrequency notificationFrequency;
+@override@JsonKey() final  NotificationFrequency notificationFrequency;
 @override@JsonKey() final  bool geofencingEnabled;
 
 /// Create a copy of UserSettings
@@ -251,7 +251,7 @@ abstract mixin class _$UserSettingsCopyWith<$Res> implements $UserSettingsCopyWi
   factory _$UserSettingsCopyWith(_UserSettings value, $Res Function(_UserSettings) _then) = __$UserSettingsCopyWithImpl;
 @override @useResult
 $Res call({
- bool notificationsEnabled,@JsonKey(name: 'notificationFrequency', fromJson: _notificationFrequencyFromJson, toJson: _notificationFrequencyToJson) NotificationFrequency notificationFrequency, bool geofencingEnabled
+ bool notificationsEnabled, NotificationFrequency notificationFrequency, bool geofencingEnabled
 });
 
 
@@ -284,7 +284,7 @@ as bool,
 /// @nodoc
 mixin _$UserProfile {
 
- String get userId; String? get email; String? get phoneNumber; String get username; bool get isVolunteer; String? get zipCode; int get points; String? get fcmToken;@JsonKey(fromJson: _userSettingsFromJson, toJson: _userSettingsToJson) UserSettings get settings;@JsonKey(fromJson: _dateTimeFromJson, toJson: _dateTimeToJson) DateTime get createdAt;@JsonKey(fromJson: _dateTimeFromJsonNullable, toJson: _dateTimeToJsonNullable) DateTime? get lastLoginAt;
+ String get userId; String? get email; String? get phoneNumber; String get username; bool get isVolunteer; String? get zipCode; int get points; String? get fcmToken; UserSettings get settings; DateTime get createdAt; DateTime? get lastLoginAt;
 /// Create a copy of UserProfile
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -317,7 +317,7 @@ abstract mixin class $UserProfileCopyWith<$Res>  {
   factory $UserProfileCopyWith(UserProfile value, $Res Function(UserProfile) _then) = _$UserProfileCopyWithImpl;
 @useResult
 $Res call({
- String userId, String? email, String? phoneNumber, String username, bool isVolunteer, String? zipCode, int points, String? fcmToken,@JsonKey(fromJson: _userSettingsFromJson, toJson: _userSettingsToJson) UserSettings settings,@JsonKey(fromJson: _dateTimeFromJson, toJson: _dateTimeToJson) DateTime createdAt,@JsonKey(fromJson: _dateTimeFromJsonNullable, toJson: _dateTimeToJsonNullable) DateTime? lastLoginAt
+ String userId, String? email, String? phoneNumber, String username, bool isVolunteer, String? zipCode, int points, String? fcmToken, UserSettings settings, DateTime createdAt, DateTime? lastLoginAt
 });
 
 
@@ -441,7 +441,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String userId,  String? email,  String? phoneNumber,  String username,  bool isVolunteer,  String? zipCode,  int points,  String? fcmToken, @JsonKey(fromJson: _userSettingsFromJson, toJson: _userSettingsToJson)  UserSettings settings, @JsonKey(fromJson: _dateTimeFromJson, toJson: _dateTimeToJson)  DateTime createdAt, @JsonKey(fromJson: _dateTimeFromJsonNullable, toJson: _dateTimeToJsonNullable)  DateTime? lastLoginAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String userId,  String? email,  String? phoneNumber,  String username,  bool isVolunteer,  String? zipCode,  int points,  String? fcmToken,  UserSettings settings,  DateTime createdAt,  DateTime? lastLoginAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _UserProfile() when $default != null:
 return $default(_that.userId,_that.email,_that.phoneNumber,_that.username,_that.isVolunteer,_that.zipCode,_that.points,_that.fcmToken,_that.settings,_that.createdAt,_that.lastLoginAt);case _:
@@ -462,7 +462,7 @@ return $default(_that.userId,_that.email,_that.phoneNumber,_that.username,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String userId,  String? email,  String? phoneNumber,  String username,  bool isVolunteer,  String? zipCode,  int points,  String? fcmToken, @JsonKey(fromJson: _userSettingsFromJson, toJson: _userSettingsToJson)  UserSettings settings, @JsonKey(fromJson: _dateTimeFromJson, toJson: _dateTimeToJson)  DateTime createdAt, @JsonKey(fromJson: _dateTimeFromJsonNullable, toJson: _dateTimeToJsonNullable)  DateTime? lastLoginAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String userId,  String? email,  String? phoneNumber,  String username,  bool isVolunteer,  String? zipCode,  int points,  String? fcmToken,  UserSettings settings,  DateTime createdAt,  DateTime? lastLoginAt)  $default,) {final _that = this;
 switch (_that) {
 case _UserProfile():
 return $default(_that.userId,_that.email,_that.phoneNumber,_that.username,_that.isVolunteer,_that.zipCode,_that.points,_that.fcmToken,_that.settings,_that.createdAt,_that.lastLoginAt);case _:
@@ -482,7 +482,7 @@ return $default(_that.userId,_that.email,_that.phoneNumber,_that.username,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String userId,  String? email,  String? phoneNumber,  String username,  bool isVolunteer,  String? zipCode,  int points,  String? fcmToken, @JsonKey(fromJson: _userSettingsFromJson, toJson: _userSettingsToJson)  UserSettings settings, @JsonKey(fromJson: _dateTimeFromJson, toJson: _dateTimeToJson)  DateTime createdAt, @JsonKey(fromJson: _dateTimeFromJsonNullable, toJson: _dateTimeToJsonNullable)  DateTime? lastLoginAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String userId,  String? email,  String? phoneNumber,  String username,  bool isVolunteer,  String? zipCode,  int points,  String? fcmToken,  UserSettings settings,  DateTime createdAt,  DateTime? lastLoginAt)?  $default,) {final _that = this;
 switch (_that) {
 case _UserProfile() when $default != null:
 return $default(_that.userId,_that.email,_that.phoneNumber,_that.username,_that.isVolunteer,_that.zipCode,_that.points,_that.fcmToken,_that.settings,_that.createdAt,_that.lastLoginAt);case _:
@@ -497,7 +497,7 @@ return $default(_that.userId,_that.email,_that.phoneNumber,_that.username,_that.
 @JsonSerializable()
 
 class _UserProfile extends UserProfile {
-  const _UserProfile({required this.userId, this.email, this.phoneNumber, required this.username, required this.isVolunteer, this.zipCode, this.points = 0, this.fcmToken, @JsonKey(fromJson: _userSettingsFromJson, toJson: _userSettingsToJson) this.settings = const UserSettings(), @JsonKey(fromJson: _dateTimeFromJson, toJson: _dateTimeToJson) required this.createdAt, @JsonKey(fromJson: _dateTimeFromJsonNullable, toJson: _dateTimeToJsonNullable) this.lastLoginAt}): super._();
+  const _UserProfile({required this.userId, this.email, this.phoneNumber, required this.username, required this.isVolunteer, this.zipCode, this.points = 0, this.fcmToken, this.settings = const UserSettings(), required this.createdAt, this.lastLoginAt}): super._();
   factory _UserProfile.fromJson(Map<String, dynamic> json) => _$UserProfileFromJson(json);
 
 @override final  String userId;
@@ -508,9 +508,9 @@ class _UserProfile extends UserProfile {
 @override final  String? zipCode;
 @override@JsonKey() final  int points;
 @override final  String? fcmToken;
-@override@JsonKey(fromJson: _userSettingsFromJson, toJson: _userSettingsToJson) final  UserSettings settings;
-@override@JsonKey(fromJson: _dateTimeFromJson, toJson: _dateTimeToJson) final  DateTime createdAt;
-@override@JsonKey(fromJson: _dateTimeFromJsonNullable, toJson: _dateTimeToJsonNullable) final  DateTime? lastLoginAt;
+@override@JsonKey() final  UserSettings settings;
+@override final  DateTime createdAt;
+@override final  DateTime? lastLoginAt;
 
 /// Create a copy of UserProfile
 /// with the given fields replaced by the non-null parameter values.
@@ -545,7 +545,7 @@ abstract mixin class _$UserProfileCopyWith<$Res> implements $UserProfileCopyWith
   factory _$UserProfileCopyWith(_UserProfile value, $Res Function(_UserProfile) _then) = __$UserProfileCopyWithImpl;
 @override @useResult
 $Res call({
- String userId, String? email, String? phoneNumber, String username, bool isVolunteer, String? zipCode, int points, String? fcmToken,@JsonKey(fromJson: _userSettingsFromJson, toJson: _userSettingsToJson) UserSettings settings,@JsonKey(fromJson: _dateTimeFromJson, toJson: _dateTimeToJson) DateTime createdAt,@JsonKey(fromJson: _dateTimeFromJsonNullable, toJson: _dateTimeToJsonNullable) DateTime? lastLoginAt
+ String userId, String? email, String? phoneNumber, String username, bool isVolunteer, String? zipCode, int points, String? fcmToken, UserSettings settings, DateTime createdAt, DateTime? lastLoginAt
 });
 
 

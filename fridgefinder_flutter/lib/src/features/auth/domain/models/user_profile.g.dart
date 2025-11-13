@@ -9,22 +9,28 @@ part of 'user_profile.dart';
 _UserSettings _$UserSettingsFromJson(Map<String, dynamic> json) =>
     _UserSettings(
       notificationsEnabled: json['notificationsEnabled'] as bool? ?? true,
-      notificationFrequency: json['notificationFrequency'] == null
-          ? NotificationFrequency.immediate
-          : _notificationFrequencyFromJson(
-              json['notificationFrequency'] as String,
-            ),
+      notificationFrequency:
+          $enumDecodeNullable(
+            _$NotificationFrequencyEnumMap,
+            json['notificationFrequency'],
+          ) ??
+          NotificationFrequency.immediate,
       geofencingEnabled: json['geofencingEnabled'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$UserSettingsToJson(_UserSettings instance) =>
     <String, dynamic>{
       'notificationsEnabled': instance.notificationsEnabled,
-      'notificationFrequency': _notificationFrequencyToJson(
-        instance.notificationFrequency,
-      ),
+      'notificationFrequency':
+          _$NotificationFrequencyEnumMap[instance.notificationFrequency]!,
       'geofencingEnabled': instance.geofencingEnabled,
     };
+
+const _$NotificationFrequencyEnumMap = {
+  NotificationFrequency.immediate: 'immediate',
+  NotificationFrequency.daily: 'daily',
+  NotificationFrequency.weekly: 'weekly',
+};
 
 _UserProfile _$UserProfileFromJson(Map<String, dynamic> json) => _UserProfile(
   userId: json['userId'] as String,
@@ -37,9 +43,11 @@ _UserProfile _$UserProfileFromJson(Map<String, dynamic> json) => _UserProfile(
   fcmToken: json['fcmToken'] as String?,
   settings: json['settings'] == null
       ? const UserSettings()
-      : _userSettingsFromJson(json['settings'] as Map<String, dynamic>),
-  createdAt: _dateTimeFromJson(json['createdAt'] as String),
-  lastLoginAt: _dateTimeFromJsonNullable(json['lastLoginAt'] as String?),
+      : UserSettings.fromJson(json['settings'] as Map<String, dynamic>),
+  createdAt: DateTime.parse(json['createdAt'] as String),
+  lastLoginAt: json['lastLoginAt'] == null
+      ? null
+      : DateTime.parse(json['lastLoginAt'] as String),
 );
 
 Map<String, dynamic> _$UserProfileToJson(_UserProfile instance) =>
@@ -52,7 +60,7 @@ Map<String, dynamic> _$UserProfileToJson(_UserProfile instance) =>
       'zipCode': instance.zipCode,
       'points': instance.points,
       'fcmToken': instance.fcmToken,
-      'settings': _userSettingsToJson(instance.settings),
-      'createdAt': _dateTimeToJson(instance.createdAt),
-      'lastLoginAt': _dateTimeToJsonNullable(instance.lastLoginAt),
+      'settings': instance.settings,
+      'createdAt': instance.createdAt.toIso8601String(),
+      'lastLoginAt': instance.lastLoginAt?.toIso8601String(),
     };

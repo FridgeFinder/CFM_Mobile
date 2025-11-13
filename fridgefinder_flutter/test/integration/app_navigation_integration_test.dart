@@ -91,8 +91,9 @@ void main() {
       await tester.pumpAndSettle(const Duration(seconds: 1));
 
       // Find and tap the List navigation item
-      final listIcon = find.byIcon(Icons.list).last;
-      await tester.tap(listIcon, warnIfMissed: false);
+      final listIcon = find.byIcon(Icons.list_outlined);
+      expect(listIcon, findsWidgets);
+      await tester.tap(listIcon.first, warnIfMissed: false);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 200));
       await tester.pumpAndSettle();
@@ -177,7 +178,7 @@ void main() {
         navAttempts++;
       }
 
-      final profileIcon = find.byIcon(Icons.person).last;
+      final profileIcon = find.byIcon(Icons.person_outline);
       await tester.tap(profileIcon, warnIfMissed: false);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 200));
@@ -203,7 +204,7 @@ void main() {
       expect(find.byType(FlutterMap), findsOneWidget);
 
       // Navigate to list (index 1)
-      await tester.tap(find.byIcon(Icons.list).last, warnIfMissed: false);
+      await tester.tap(find.byIcon(Icons.list_outlined).first, warnIfMissed: false);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 200));
       await tester.pumpAndSettle();
@@ -227,7 +228,7 @@ void main() {
       expect(bottomNav.currentIndex, 1);
 
       // Navigate to profile (index 3, since My Fridges is index 2)
-      await tester.tap(find.byIcon(Icons.person).last, warnIfMissed: false);
+      await tester.tap(find.byIcon(Icons.person_outline).first, warnIfMissed: false);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 200));
       await tester.pumpAndSettle();

@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:design_system/design_system.dart';
 import '../features/map/presentation/screens/map_screen.dart';
 import '../features/list/presentation/list_screen.dart';
 import '../features/profile/presentation/profile_screen.dart';
 import '../features/auth/presentation/screens/my_fridges_screen.dart';
 import '../common_widgets/main_shell.dart';
+import '../common_widgets/loading_messages.dart';
 
 /// Custom page transition that prevents default transition and lets MainShell handle it
 CustomTransitionPage<void> _buildPageWithTransition(
@@ -46,9 +48,9 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRouter.of(context).go('/');
         }
       });
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
+      return Scaffold(
+        body: LoadingIndicatorM3E(
+          message: getRandomLoadingMessage(),
         ),
       );
     },

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:design_system/design_system.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/utils/app_logger.dart';
 import '../../../../core/utils/phone_number_helper.dart';
@@ -75,9 +76,11 @@ class _SignInWidgetState extends ConsumerState<SignInWidget> {
     } catch (e) {
       logger.e('Error signing in with phone: $e');
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
     }
   }
 
@@ -276,74 +279,67 @@ class _SignInWidgetState extends ConsumerState<SignInWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return CardM3E(
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: M3ESpacing.all(M3ESpacing.lg),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
               'Sign In',
-              style: Theme.of(context).textTheme.titleLarge,
+              style: M3ETypography.titleLarge,
             ),
-            const SizedBox(height: 16),
-            
+            M3ESpacing.verticalMD,
+
             if (!_isCodeSent) ...[
-              TextField(
+              TextFieldM3E(
                 controller: _phoneController,
-                decoration: const InputDecoration(
-                  labelText: 'Phone Number',
-                  hintText: '+1234567890 or (234) 567-8900',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.phone),
-                  helperText: 'Include country code (e.g., +1 for US)',
-                ),
+                labelText: 'Phone Number',
+                hintText: '+1234567890 or (234) 567-8900',
+                prefixIcon: Icons.phone,
+                helperText: 'Include country code (e.g., +1 for US)',
                 keyboardType: TextInputType.phone,
-                autofillHints: const [AutofillHints.telephoneNumber],
               ),
-              const SizedBox(height: 16),
-              ElevatedButton.icon(
+              M3ESpacing.verticalMD,
+              FilledButtonM3E(
+                icon: Icons.phone,
                 onPressed: _isLoading ? null : _signInWithPhone,
-                icon: const Icon(Icons.phone),
-                label: const Text('Sign In with Phone'),
+                child: const Text('Sign In with Phone'),
               ),
-              const SizedBox(height: 8),
-              OutlinedButton.icon(
+              M3ESpacing.verticalXS,
+              OutlinedButtonM3E(
+                icon: Icons.g_mobiledata,
                 onPressed: _isLoading ? null : _signInWithGoogle,
-                icon: const Icon(Icons.g_mobiledata),
-                label: const Text('Sign In with Gmail'),
+                child: const Text('Sign In with Gmail'),
               ),
             ] else ...[
               Text(
                 'Enter verification code',
-                style: Theme.of(context).textTheme.titleMedium,
+                style: M3ETypography.titleMedium,
               ),
-              const SizedBox(height: 8),
-              TextField(
+              M3ESpacing.verticalXS,
+              TextFieldM3E(
                 controller: _codeController,
-                decoration: const InputDecoration(
-                  labelText: 'Verification Code',
-                  hintText: '123456',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.lock),
-                ),
+                labelText: 'Verification Code',
+                hintText: '123456',
+                prefixIcon: Icons.lock,
                 keyboardType: TextInputType.number,
-                maxLength: 6,
+                maxLines: 1,
               ),
-              const SizedBox(height: 16),
-              ElevatedButton(
+              M3ESpacing.verticalMD,
+              FilledButtonM3E(
                 onPressed: _isLoading ? null : _verifyCode,
                 child: _isLoading
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 20,
                         height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                        child: CircularProgressIndicatorM3E.small(),
                       )
                     : const Text('Verify Code'),
               ),
-              const SizedBox(height: 8),
-              TextButton(
+              M3ESpacing.verticalXS,
+              TextButtonM3E(
                 onPressed: () {
                   setState(() {
                     _isCodeSent = false;

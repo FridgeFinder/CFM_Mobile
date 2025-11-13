@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:design_system/design_system.dart';
 import '../../../map/domain/models/fridge_domain.dart';
 import '../../../map/data/repositories/fridge_repository.dart';
 import '../../../map/presentation/controllers/fridge_list_controller.dart';
@@ -144,10 +145,9 @@ class _StatusUpdateFormState extends ConsumerState<StatusUpdateForm> {
   @override
   Widget build(BuildContext context) {
     return Column(
-      mainAxisSize: MainAxisSize.min,
       children: [
-        // Scrollable form content
-        Flexible(
+        // Scrollable form content - uses Expanded to fill available space
+        Expanded(
           child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -156,17 +156,21 @@ class _StatusUpdateFormState extends ConsumerState<StatusUpdateForm> {
                 // Condition Selection
                 Text(
                   'Fridge Condition',
-                  style: Theme.of(context).textTheme.titleSmall,
+                  style: M3ETypography.labelLarge, // 14px Medium
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: M3ESpacing.xs), // 8dp
                 // Radio buttons for condition selection (exclude ghost)
                 ...FridgeCondition.values
                     .where((condition) => condition != FridgeCondition.ghost)
                     .map(
-                      (condition) => RadioListTile<FridgeCondition>(
+                      (condition) =>
+                      // ignore: deprecated_member_use
+                      RadioListTile<FridgeCondition>(
                         title: Text(_conditionLabel(condition)),
                         value: condition,
+                        // ignore: deprecated_member_use
                         groupValue: _selectedCondition,
+                        // ignore: deprecated_member_use
                         onChanged: (FridgeCondition? value) {
                           if (value != null) {
                             setState(() => _selectedCondition = value);
@@ -176,12 +180,12 @@ class _StatusUpdateFormState extends ConsumerState<StatusUpdateForm> {
                         dense: true,
                       ),
                     ),
-                const SizedBox(height: 16),
+                SizedBox(height: M3ESpacing.md), // 16dp
 
                 // Food Level Slider
                 Text(
                   'Food Level: ${_getFoodLevelLabel()}',
-                  style: Theme.of(context).textTheme.titleSmall,
+                  style: M3ETypography.labelLarge, // 14px Medium
                 ),
                 Slider(
                   value: _foodPercentage,
@@ -193,42 +197,38 @@ class _StatusUpdateFormState extends ConsumerState<StatusUpdateForm> {
                   divisions: 3,
                   label: _getFoodLevelLabel(),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: M3ESpacing.xxs), // 4dp
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Empty', style: Theme.of(context).textTheme.bodySmall),
-                    Text('Few Items', style: Theme.of(context).textTheme.bodySmall),
-                    Text('Many Items', style: Theme.of(context).textTheme.bodySmall),
-                    Text('Full', style: Theme.of(context).textTheme.bodySmall),
+                    Text('Empty', style: M3ETypography.bodySmall),
+                    Text('Few Items', style: M3ETypography.bodySmall),
+                    Text('Many Items', style: M3ETypography.bodySmall),
+                    Text('Full', style: M3ETypography.bodySmall),
                   ],
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: M3ESpacing.md), // 16dp
 
-                // Notes
+                // Notes - M3E TextField with 56dp height, 12dp top corners, 4dp bottom
                 Text(
                   'Additional Notes (Optional)',
-                  style: Theme.of(context).textTheme.titleSmall,
+                  style: M3ETypography.labelLarge, // 14px Medium
                 ),
-                const SizedBox(height: 8),
-                TextField(
+                SizedBox(height: M3ESpacing.xs), // 8dp
+                TextFieldM3E(
                   controller: _notesController,
                   maxLines: 3,
-                  decoration: InputDecoration(
-                    hintText: 'Any additional information...',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
+                  hintText: 'Any additional information...',
+                  filled: true,
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: M3ESpacing.md), // 16dp
 
                 // Photo Upload
                 Text(
                   'Photo (Optional)',
-                  style: Theme.of(context).textTheme.titleSmall,
+                  style: M3ETypography.labelLarge, // 14px Medium
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: M3ESpacing.xs), // 8dp
                 if (_selectedImage != null)
                   Stack(
                     children: [
@@ -258,47 +258,64 @@ class _StatusUpdateFormState extends ConsumerState<StatusUpdateForm> {
                   Row(
                     children: [
                       Expanded(
-                        child: OutlinedButton.icon(
-                          icon: const Icon(Icons.camera_alt),
-                          label: const Text('Camera'),
+                        child: OutlinedButtonM3E(
+                          icon: Icons.camera_alt,
                           onPressed: () => _pickImage(ImageSource.camera),
+                          child: Text(
+                            'Camera',
+                            style: M3ETypography.labelLarge,
+                          ),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      SizedBox(width: M3ESpacing.xs), // 8dp
                       Expanded(
-                        child: OutlinedButton.icon(
-                          icon: const Icon(Icons.photo_library),
-                          label: const Text('Gallery'),
+                        child: OutlinedButtonM3E(
+                          icon: Icons.photo_library,
                           onPressed: () => _pickImage(ImageSource.gallery),
+                          child: Text(
+                            'Gallery',
+                            style: M3ETypography.labelLarge,
+                          ),
                         ),
                       ),
                     ],
                   ),
-                const SizedBox(height: 24),
+                SizedBox(height: M3ESpacing.xl), // 24dp
               ],
             ),
           ),
         ),
-        // Fixed bottom row with Cancel and Submit buttons
+        // Fixed bottom row with Cancel and Submit buttons - M3E variants
         Padding(
-          padding: const EdgeInsets.only(top: 16.0),
+          padding: EdgeInsets.only(top: M3ESpacing.md), // 16dp
           child: Row(
+            mainAxisSize: MainAxisSize.min,  // ← FIX: Prevent unbounded constraints
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              TextButton(
+              // Cancel - M3E Text button (40dp height)
+              TextButtonM3E(
                 onPressed: _isSubmitting ? null : () => Navigator.pop(context),
-                child: const Text('Cancel'),
+                child: Text(
+                  'Cancel',
+                  style: M3ETypography.labelLarge,
+                ),
               ),
-              const SizedBox(width: 8),
-              ElevatedButton(
+              SizedBox(width: M3ESpacing.xs), // 8dp
+              // Submit - M3E Filled button (40dp height) with 300ms press animation
+              FilledButtonM3E(
                 onPressed: _isSubmitting ? null : _submit,
                 child: _isSubmitting
                     ? const SizedBox(
                         height: 20,
                         width: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                        child: CircularProgressIndicatorM3E.small(
+                          strokeWidth: 2,
+                        ),
                       )
-                    : const Text('Submit Update'),
+                    : Text(
+                        'Submit Update',
+                        style: M3ETypography.labelLarge,
+                      ),
               ),
             ],
           ),

@@ -18,6 +18,7 @@ import '../../../core/utils/distance_calculator.dart' as distance_utils;
 import '../../../core/utils/fridge_icon_utils.dart';
 import '../../auth/presentation/widgets/subscription_dialog.dart';
 import '../../auth/presentation/widgets/sign_in_widget.dart';
+import '../../../common_widgets/loading_messages.dart';
 import '../../auth/presentation/widgets/edit_notification_preferences_dialog.dart';
 
 /// Model for map app options in the direction chooser
@@ -131,132 +132,166 @@ class _FridgeProfileSheetState extends ConsumerState<FridgeProfileSheet>
       initialChildSize: 0.6,
       minChildSize: 0.4,
       maxChildSize: 0.95,
-      builder: (context, scrollController) => SingleChildScrollView(
-        controller: scrollController,
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              Row(
+      builder: (context, scrollController) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // M3E Drag Handle - 32x4dp with 4dp corners
+          const DragHandleM3E(),
+          Expanded(
+            child: SingleChildScrollView(
+              controller: scrollController,
+              child: Padding(
+                padding: EdgeInsets.all(M3ESpacing.xl), // 24dp edges
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+              // Header - M3E Two-row layout (icon+title on row 1, buttons on row 2)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Consumer(
-                    builder: (context, ref, child) {
-                      final isSubscribedAsync = ref.watch(
-                        isFridgeSubscribedProvider(fridge.id),
-                      );
-                      final isSubscribed =
-                          isSubscribedAsync.whenOrNull(
-                            data: (subscribed) => subscribed,
-                          ) ??
-                          false;
+                  // Row 1: Icon + Title + Address
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Hero Icon - 48dp with glow effect for subscribed fridges
+                      Consumer(
+                        builder: (context, ref, child) {
+                          final isSubscribedAsync = ref.watch(
+                            isFridgeSubscribedProvider(fridge.id),
+                          );
+                          final isSubscribed =
+                              isSubscribedAsync.whenOrNull(
+                                data: (subscribed) => subscribed,
+                              ) ??
+                              false;
 
-                      final iconWidget = SizedBox(
-                        width: 48,
-                        height: 48,
-                        child: FridgeIconUtils.getFridgeIcon(
-                          fridge: fridge,
-                          size: 48,
-                        ),
-                      );
+                          final iconWidget = SizedBox(
+                            width: 48,
+                            height: 48,
+                            child: FridgeIconUtils.getFridgeIcon(
+                              fridge: fridge,
+                              size: 48,
+                            ),
+                          );
 
-                      // Add green glow if subscribed
-                      if (isSubscribed) {
-                        return AnimatedBuilder(
-                          animation: _glowAnimation,
-                          builder: (context, child) {
-                            return Container(
-                              width: 48,
-                              height: 48,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: FridgeMarker.subscribedGreen
-                                        .withValues(
-                                          alpha: _glowAnimation.value * 0.6,
-                                        ),
-                                    blurRadius: 8,
-                                    spreadRadius: 1,
+                          // Add green glow if subscribed
+                          if (isSubscribed) {
+                            return AnimatedBuilder(
+                              animation: _glowAnimation,
+                              builder: (context, child) {
+                                return Container(
+                                  width: 48,
+                                  height: 48,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: FridgeMarker.subscribedGreen
+                                            .withValues(
+                                              alpha: _glowAnimation.value * 0.6,
+                                            ),
+                                        blurRadius: 8,
+                                        spreadRadius: 1,
+                                      ),
+                                      BoxShadow(
+                                        color: FridgeMarker.subscribedGreen
+                                            .withValues(
+                                              alpha: _glowAnimation.value * 0.4,
+                                            ),
+                                        blurRadius: 12,
+                                        spreadRadius: 2,
+                                      ),
+                                    ],
                                   ),
-                                  BoxShadow(
-                                    color: FridgeMarker.subscribedGreen
-                                        .withValues(
-                                          alpha: _glowAnimation.value * 0.4,
-                                        ),
-                                    blurRadius: 12,
-                                    spreadRadius: 2,
+                                  child: iconWidget,
+                                );
+                              },
+                            );
+                          }
+                          return iconWidget;
+                        },
+                      ),
+                      SizedBox(width: M3ESpacing.md), // 16dp between icon and content
+                      // Content Column - Title, Address, Status (no buttons here)
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Fridge Title - titleLarge (22px) with max 2 lines
+                            Text(
+                              fridge.name,
+                              style: M3ETypography.titleLarge, // 22px Regular
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            SizedBox(height: M3ESpacing.xxs), // 4dp between title and address
+                            // Address - bodyMedium (14px) with max 2 lines
+                            Text(
+                              fridge.location.fullAddress,
+                              style: M3ETypography.bodyMedium.copyWith( // 14px
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            SizedBox(height: M3ESpacing.xs), // 8dp between groups
+                            // Status Row - labelMedium (12px Medium) with icon and distance
+                            Row(
+                              children: [
+                                // Status icon and text
+                                if (fridge.latestFridgeReport != null)
+                                  Icon(
+                                    FridgeIconUtils.getStatusIcon(
+                                      fridge.latestFridgeReport!.condition,
+                                    ),
+                                    size: 12,
+                                    color: FridgeIconUtils.getStatusColor(
+                                      fridge.latestFridgeReport!.condition,
+                                    ),
+                                  ),
+                                if (fridge.latestFridgeReport != null)
+                                  SizedBox(width: M3ESpacing.xxs), // 4dp icon-text gap
+                                Flexible(
+                                  child: Text(
+                                    fridge.statusText,
+                                    style: M3ETypography.labelMedium.copyWith( // 12px Medium
+                                      color: fridge.latestFridgeReport != null
+                                          ? FridgeIconUtils.getStatusColor(
+                                              fridge.latestFridgeReport!.condition,
+                                            )
+                                          : Theme.of(context).colorScheme.onSurfaceVariant,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                // Distance (if available)
+                                if (distance != null) ...[
+                                  Padding(
+                                    padding: EdgeInsets.symmetric(horizontal: M3ESpacing.xxs), // 4dp
+                                    child: Text(
+                                      '•',
+                                      style: M3ETypography.labelMedium.copyWith(
+                                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ),
+                                  Text(
+                                    '${(distance * distance_utils.DistanceCalculator.kmToMilesConversion * 10).round() / 10} mi',
+                                    style: M3ETypography.labelMedium.copyWith( // 12px Medium
+                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                    ),
                                   ),
                                 ],
-                              ),
-                              child: iconWidget,
-                            );
-                          },
-                        );
-                      }
-                      return iconWidget;
-                    },
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          fridge.name,
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        Wrap(
-                          spacing: 4,
-                          runSpacing: 2,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          children: [
-                            if (fridge.latestFridgeReport != null)
-                              Icon(
-                                FridgeIconUtils.getStatusIcon(
-                                  fridge.latestFridgeReport!.condition,
-                                ),
-                                size: 14,
-                                color: FridgeIconUtils.getStatusColor(
-                                  fridge.latestFridgeReport!.condition,
-                                ),
-                              ),
-                            Text(
-                              fridge.statusText,
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.secondary,
-                                  ),
+                              ],
                             ),
-                            if (distance != null) ...[
-                              Text(
-                                '•',
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.secondary,
-                                    ),
-                              ),
-                              Text(
-                                '${(distance * distance_utils.DistanceCalculator.kmToMilesConversion * 10).round() / 10} mi away',
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.secondary,
-                                    ),
-                              ),
-                            ],
                           ],
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                  // Subscribe/Unsubscribe Button (in header)
+                  SizedBox(height: M3ESpacing.md), // 16dp between rows
+                  // Row 2: Subscribe/Edit/Unsubscribe Buttons (full width, side by side)
                   Consumer(
                     builder: (context, ref, child) {
                       final isAuthenticated = ref.watch(
@@ -268,106 +303,78 @@ class _FridgeProfileSheetState extends ConsumerState<FridgeProfileSheet>
 
                       // If not authenticated, show subscribe button
                       if (!isAuthenticated) {
-                        return FilledButton.icon(
-                          onPressed: () =>
-                              _showSignInAndSubscribeDialog(context, ref),
-                          icon: const Icon(Icons.favorite_border, size: 18),
-                          label: const Text('Subscribe'),
-                          style: FilledButton.styleFrom(
-                            backgroundColor: FridgeMarker.subscribedGreen,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
+                        return SizedBox(
+                          width: double.infinity,
+                          child: FilledButtonM3E(
+                            onPressed: () =>
+                                _showSignInAndSubscribeDialog(context, ref),
+                            icon: Icons.favorite_border,
+                            child: Text(
+                              'Subscribe',
+                              style: M3ETypography.labelLarge,
                             ),
-                            textStyle: const TextStyle(fontSize: 14),
                           ),
                         );
                       }
 
                       return isSubscribedAsync.when(
                         loading: () => const SizedBox(
-                          width: 80,
-                          height: 60,
+                          width: double.infinity,
+                          height: 40,
                           child: Center(
-                            child: CircularProgressIndicator(strokeWidth: 2),
+                            child: CircularProgressIndicatorM3E.small(
+                              strokeWidth: 2,
+                            ),
                           ),
                         ),
-                        error: (_, _) => const SizedBox(width: 80, height: 60),
+                        error: (error, stackTrace) => const SizedBox(
+                          width: double.infinity,
+                          height: 40,
+                        ),
                         data: (isSubscribed) {
                           return isSubscribed
-                              ? Column(
-                                  mainAxisSize: MainAxisSize.min,
+                              ? Row(
                                   children: [
-                                    OutlinedButton.icon(
-                                      onPressed: () =>
-                                          _showEditNotificationsDialog(
-                                            context,
-                                            ref,
-                                          ),
-                                      icon: const Icon(
-                                        Icons.notifications,
-                                        size: 14,
-                                      ),
-                                      label: const Text('Edit'),
-                                      style: OutlinedButton.styleFrom(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 10,
-                                          vertical: 6,
+                                    Expanded(
+                                      child: OutlinedButtonM3E(
+                                        onPressed: () =>
+                                            _showEditNotificationsDialog(
+                                              context,
+                                              ref,
+                                            ),
+                                        icon: Icons.notifications,
+                                        child: Text(
+                                          'Edit Alerts',
+                                          style: M3ETypography.labelLarge,
                                         ),
-                                        textStyle: const TextStyle(
-                                          fontSize: 12,
-                                        ),
-                                        minimumSize: const Size(0, 28),
                                       ),
                                     ),
-                                    const SizedBox(height: 6),
-                                    OutlinedButton.icon(
-                                      onPressed: () =>
-                                          _showUnsubscribeDialog(context, ref),
-                                      icon: const Icon(
-                                        Icons.favorite,
-                                        size: 14,
-                                        color: Colors.red,
-                                      ),
-                                      label: const Text(
-                                        'Unsub',
-                                        style: TextStyle(color: Colors.red),
-                                      ),
-                                      style: OutlinedButton.styleFrom(
-                                        side: const BorderSide(
-                                          color: Colors.red,
+                                    SizedBox(width: M3ESpacing.sm), // 12dp between buttons
+                                    Expanded(
+                                      child: OutlinedButtonM3E(
+                                        onPressed: () =>
+                                            _showUnsubscribeDialog(context, ref),
+                                        icon: Icons.favorite,
+                                        child: Text(
+                                          'Unsubscribe',
+                                          style: M3ETypography.labelLarge.copyWith(
+                                            color: Theme.of(context).colorScheme.error,
+                                          ),
                                         ),
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 10,
-                                          vertical: 6,
-                                        ),
-                                        textStyle: const TextStyle(
-                                          fontSize: 12,
-                                        ),
-                                        minimumSize: const Size(0, 28),
                                       ),
                                     ),
                                   ],
                                 )
-                              : FilledButton.icon(
-                                  onPressed: () =>
-                                      _showSubscribeDialog(context, ref),
-                                  icon: const Icon(
-                                    Icons.favorite_border,
-                                    size: 16,
-                                  ),
-                                  label: const Text('Subscribe'),
-                                  style: FilledButton.styleFrom(
-                                    backgroundColor:
-                                        FridgeMarker.subscribedGreen,
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 10,
-                                      vertical: 6,
+                              : SizedBox(
+                                  width: double.infinity,
+                                  child: FilledButtonM3E(
+                                    onPressed: () =>
+                                        _showSubscribeDialog(context, ref),
+                                    icon: Icons.favorite_border,
+                                    child: Text(
+                                      'Subscribe',
+                                      style: M3ETypography.labelLarge,
                                     ),
-                                    textStyle: const TextStyle(fontSize: 12),
-                                    minimumSize: const Size(0, 28),
                                   ),
                                 );
                         },
@@ -376,23 +383,7 @@ class _FridgeProfileSheetState extends ConsumerState<FridgeProfileSheet>
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
-
-              // Address Section
-              _buildSection(
-                context: context,
-                icon: Icons.location_on,
-                title: 'Location',
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      fridge.location.fullAddress,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ],
-                ),
-              ),
+              SizedBox(height: M3ESpacing.xl), // 24dp between header and content
 
               // Fridge Photo - Show report photo if available, otherwise main photo
               if (photoUrl != null)
@@ -435,7 +426,7 @@ class _FridgeProfileSheetState extends ConsumerState<FridgeProfileSheet>
                                 const SizedBox(height: 8),
                                 Text(
                                   'Photo unavailable',
-                                  style: Theme.of(context).textTheme.bodySmall,
+                                  style: M3ETypography.bodySmall,
                                 ),
                               ],
                             ),
@@ -463,12 +454,11 @@ class _FridgeProfileSheetState extends ConsumerState<FridgeProfileSheet>
                             children: [
                               Text(
                                 'Condition',
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.onSurfaceVariant,
-                                    ),
+                                style: M3ETypography.bodySmall.copyWith(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
+                                ),
                               ),
                               Row(
                                 children: [
@@ -484,17 +474,12 @@ class _FridgeProfileSheetState extends ConsumerState<FridgeProfileSheet>
                                   const SizedBox(width: 6),
                                   Text(
                                     fridge.latestFridgeReport!.condition.value,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleMedium
-                                        ?.copyWith(
-                                          fontWeight: FontWeight.bold,
-                                          color: FridgeIconUtils.getStatusColor(
-                                            fridge
-                                                .latestFridgeReport!
-                                                .condition,
-                                          ),
-                                        ),
+                                    style: M3ETypography.bodyLarge.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: FridgeIconUtils.getStatusColor(
+                                        fridge.latestFridgeReport!.condition,
+                                      ),
+                                    ),
                                   ),
                                 ],
                               ),
@@ -505,17 +490,17 @@ class _FridgeProfileSheetState extends ConsumerState<FridgeProfileSheet>
                             children: [
                               Text(
                                 'Food Level',
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.onSurfaceVariant,
-                                    ),
+                                style: M3ETypography.bodySmall.copyWith(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
+                                ),
                               ),
                               Text(
                                 '${fridge.latestFridgeReport!.foodPercentageInt}%',
-                                style: Theme.of(context).textTheme.titleMedium
-                                    ?.copyWith(fontWeight: FontWeight.bold),
+                                style: M3ETypography.bodyLarge.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ],
                           ),
@@ -528,17 +513,16 @@ class _FridgeProfileSheetState extends ConsumerState<FridgeProfileSheet>
                           children: [
                             Text(
                               'Notes',
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onSurfaceVariant,
-                                  ),
+                              style: M3ETypography.bodySmall.copyWith(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
+                              ),
                             ),
                             const SizedBox(height: 4),
                             Text(
                               fridge.latestFridgeReport!.notes!,
-                              style: Theme.of(context).textTheme.bodyMedium,
+                              style: M3ETypography.bodyMedium,
                             ),
                           ],
                         ),
@@ -547,12 +531,11 @@ class _FridgeProfileSheetState extends ConsumerState<FridgeProfileSheet>
                           padding: const EdgeInsets.only(top: 8.0),
                           child: Text(
                             'Last updated: ${_formatDate(fridge.latestFridgeReport!.reportDate!)}',
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onSurfaceVariant,
-                                ),
+                            style: M3ETypography.bodySmall.copyWith(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                            ),
                           ),
                         ),
                     ],
@@ -573,15 +556,14 @@ class _FridgeProfileSheetState extends ConsumerState<FridgeProfileSheet>
                         children: [
                           Text(
                             'Condition',
-                            style: Theme.of(context).textTheme.bodySmall,
+                            style: M3ETypography.bodySmall,
                           ),
                           Text(
                             fridge.statusText,
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.grey,
-                                ),
+                            style: M3ETypography.bodyMedium.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey,
+                            ),
                           ),
                         ],
                       ),
@@ -590,12 +572,13 @@ class _FridgeProfileSheetState extends ConsumerState<FridgeProfileSheet>
                         children: [
                           Text(
                             'Food Level',
-                            style: Theme.of(context).textTheme.bodySmall,
+                            style: M3ETypography.bodySmall,
                           ),
                           Text(
                             fridge.foodLevelText,
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(fontWeight: FontWeight.bold),
+                            style: M3ETypography.bodyMedium.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ],
                       ),
@@ -632,44 +615,56 @@ class _FridgeProfileSheetState extends ConsumerState<FridgeProfileSheet>
                   ),
                 ),
 
-              const SizedBox(height: 24),
+              SizedBox(height: M3ESpacing.xl), // 24dp
 
-              // Status Update Button
+              // Status Update Button - M3E Tonal button (40dp height)
               SizedBox(
                 width: double.infinity,
-                child: ElevatedButton.icon(
+                child: FilledTonalButtonM3E(
                   onPressed: () => _showStatusUpdateDialog(context),
-                  icon: const Icon(Icons.edit),
-                  label: const Text('Report Status Update'),
+                  icon: Icons.edit,
+                  child: Text(
+                    'Report Status Update',
+                    style: M3ETypography.labelLarge,
+                  ),
                 ),
               ),
 
-              const SizedBox(height: 16),
+              SizedBox(height: M3ESpacing.md), // 16dp between elements
 
-              // Directions Button
+              // Directions Button - M3E Filled button (40dp height)
               SizedBox(
                 width: double.infinity,
-                child: ElevatedButton.icon(
+                child: FilledButtonM3E(
                   onPressed: () => _openDirections(context),
-                  icon: const Icon(Icons.directions),
-                  label: const Text('Get Directions'),
+                  icon: Icons.directions,
+                  child: Text(
+                    'Get Directions',
+                    style: M3ETypography.labelLarge,
+                  ),
                 ),
               ),
 
-              const SizedBox(height: 12),
+              SizedBox(height: M3ESpacing.sm), // 12dp dense spacing
 
-              // Share Button
+              // Share Button - M3E Text button (40dp height)
               SizedBox(
                 width: double.infinity,
-                child: OutlinedButton.icon(
+                child: TextButtonM3E(
                   onPressed: () => _share(context),
-                  icon: const Icon(Icons.share),
-                  label: const Text('Share'),
+                  icon: Icons.share,
+                  child: Text(
+                    'Share',
+                    style: M3ETypography.labelLarge,
+                  ),
                 ),
               ),
-            ],
+                  ],
+                ),
+              ),
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -681,19 +676,25 @@ class _FridgeProfileSheetState extends ConsumerState<FridgeProfileSheet>
     required Widget child,
   }) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 20.0),
+      padding: EdgeInsets.only(bottom: M3ESpacing.lg), // 20dp
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Icon(icon, size: 20),
-              const SizedBox(width: 8),
-              Text(title, style: Theme.of(context).textTheme.titleMedium),
+              SizedBox(width: M3ESpacing.xs), // 8dp
+              Text(
+                title,
+                style: M3ETypography.labelLarge, // 14px Medium
+              ),
             ],
           ),
-          const SizedBox(height: 8),
-          Padding(padding: const EdgeInsets.only(left: 28.0), child: child),
+          SizedBox(height: M3ESpacing.xs), // 8dp
+          Padding(
+            padding: EdgeInsets.only(left: M3ESpacing.xxl), // 28dp
+            child: child,
+          ),
         ],
       ),
     );
@@ -706,11 +707,28 @@ class _FridgeProfileSheetState extends ConsumerState<FridgeProfileSheet>
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Report Status Update'),
-        content: SizedBox(
+      builder: (context) => Dialog(
+        child: SizedBox(
           width: MediaQuery.of(context).size.width * 0.9,
-          child: StatusUpdateForm(fridge: fridge),
+          height: MediaQuery.of(context).size.height * 0.8,
+          child: Padding(
+            padding: EdgeInsets.all(M3ESpacing.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Title
+                Text(
+                  'Report Status Update',
+                  style: M3ETypography.headlineSmall,
+                ),
+                SizedBox(height: M3ESpacing.md),
+                // Form - takes remaining space
+                Expanded(
+                  child: StatusUpdateForm(fridge: fridge),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -799,10 +817,10 @@ class _FridgeProfileSheetState extends ConsumerState<FridgeProfileSheet>
           mainAxisSize: MainAxisSize.min,
           children: [
             Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: EdgeInsets.all(M3ESpacing.md), // 16dp
               child: Text(
                 'Choose a map app',
-                style: Theme.of(context).textTheme.titleMedium,
+                style: M3ETypography.labelLarge, // 14px Medium
               ),
             ),
             ...availableOptions.map(
@@ -920,7 +938,7 @@ class _FridgeProfileSheetState extends ConsumerState<FridgeProfileSheet>
                 children: [
                   Text(
                     'Sign In to Subscribe',
-                    style: Theme.of(context).textTheme.titleLarge,
+                    style: M3ETypography.headlineSmall, // 24px
                   ),
                   const SizedBox(height: 16),
                   const Text(
@@ -965,7 +983,7 @@ class _FridgeProfileSheetState extends ConsumerState<FridgeProfileSheet>
         barrierDismissible: false,
         useRootNavigator: true,
         builder: (dialogContext) =>
-            const Center(child: CircularProgressIndicator()),
+            LoadingIndicatorM3E(message: getRandomLoadingMessage()),
       );
 
       // Get current notification preferences

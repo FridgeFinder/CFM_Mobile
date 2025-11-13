@@ -1,0 +1,487 @@
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:design_system/design_system.dart';
+import './bottom_nav_bar.dart';
+import '../core/providers/auth_provider.dart';
+import '../core/providers/drawer_provider.dart';
+import '../core/providers/subscriptions_provider.dart';
+import '../features/auth/presentation/widgets/sign_in_widget.dart';
+
+/// Main shell layout that keeps the bottom navigation bar constant
+/// while allowing the page content to transition with directional slides
+class MainShell extends ConsumerStatefulWidget {
+  final Widget child;
+  final String currentRoute;
+
+  const MainShell({super.key, required this.child, required this.currentRoute});
+
+  @override
+  ConsumerState<MainShell> createState() => _MainShellState();
+}
+
+class _MainShellState extends ConsumerState<MainShell> with TickerProviderStateMixin {
+  late int _currentIndex;
+  late int _previousIndex;
+  late AnimationController _animationController;
+  late Animation<Offset> _slideAnimation;
+  bool _isDrawerOpen = false;
+  late AnimationController _drawerAnimationController;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = _getIndexForRoute(widget.currentRoute);
+    _previousIndex = _currentIndex;
+
+    _animationController = AnimationController(
+      duration: M3EMotion.medium2, // Use M3E duration (300ms)
+      vsync: this,
+    );
+
+    _slideAnimation = Tween<Offset>(begin: Offset.zero, end: Offset.zero)
+        .animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.easeInOutCubic,
+          ),
+        );
+
+    _drawerAnimationController = AnimationController(
+      duration: M3EMotionPatterns.drawerFallback, // Use M3E duration
+      vsync: this,
+    );
+  }
+
+  @override
+  void didUpdateWidget(MainShell oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.currentRoute != widget.currentRoute) {
+      _previousIndex = _currentIndex;
+      _currentIndex = _getIndexForRoute(widget.currentRoute);
+
+      // Determine direction and animate with M3E Shared Axis X pattern
+      final isMovingRight = _currentIndex > _previousIndex;
+      // M3E uses 3% offset for shared axis transitions
+      final beginOffset = isMovingRight
+          ? const Offset(0.03, 0.0) // Enter from right (3%)
+          : const Offset(-0.03, 0.0); // Enter from left (3%)
+
+      _slideAnimation = Tween<Offset>(begin: beginOffset, end: Offset.zero)
+          .animate(
+            CurvedAnimation(
+              parent: _animationController,
+              curve: M3EMotion.emphasizedDecelerate, // M3E emphasized curve
+            ),
+          );
+
+      _animationController.forward(from: 0.0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    _drawerAnimationController.dispose();
+    super.dispose();
+  }
+
+  int _getIndexForRoute(String route) {
+    switch (route) {
+      case '/':
+        return 0;
+      case '/list':
+        return 1;
+      case '/my-fridges':
+        return 2;
+      case '/profile':
+        return 3;
+      default:
+        return 0;
+    }
+  }
+
+  String _getTitleForRoute(String route) {
+    switch (route) {
+      case '/':
+        return 'Fridge Map';
+      case '/list':
+        return 'Fridge List';
+      case '/my-fridges':
+        return 'My Fridges';
+      case '/profile':
+        return 'Profile';
+      default:
+        return 'FridgeFinder';
+    }
+  }
+
+  void _toggleDrawer() {
+    setState(() {
+      _isDrawerOpen = !_isDrawerOpen;
+    });
+    // Update drawer state provider immediately
+    ref.read(drawerStateProvider.notifier).setOpen(_isDrawerOpen);
+    if (_isDrawerOpen) {
+      _drawerAnimationController.forward();
+    } else {
+      _drawerAnimationController.reverse();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final drawerAnimation =
+        Tween<Offset>(begin: const Offset(1.0, 0.0), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _drawerAnimationController,
+            curve: M3EMotion.emphasizedDecelerate,
+          ),
+        );
+
+    return Stack(
+      children: [
+        Scaffold(
+          appBar: PreferredSize(
+            preferredSize: const Size.fromHeight(80),
+            child: Container(
+              decoration: BoxDecoration(
+                // M3E-compliant gradient using tonal palette values
+                // Tone80 (#88B3FF) to Tone50 (#0075E5) for subtle depth
+                gradient: const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0xFF88B3FF), // primaryTone80 (lighter)
+                    Color(0xFF4A91FF), // primaryTone60 (medium)
+                  ],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                    vertical: 8.0,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Logo
+                      SizedBox(
+                        height: 60,
+                        width: 60,
+                        child: Image.asset(
+                          'assets/images/logo.webp',
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                      // Page Title
+                      Expanded(
+                        child: Center(
+                          child: Text(
+                            _getTitleForRoute(widget.currentRoute),
+                            style: M3ETypography.titleLarge.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                      // Hamburger Menu
+                      IconButton(
+                        icon: const Icon(Icons.menu),
+                        color: Colors.white,
+                        onPressed: _toggleDrawer,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          body: SlideTransition(position: _slideAnimation, child: widget.child),
+          bottomNavigationBar: AppBottomNavBar(
+            currentRoute: widget.currentRoute,
+          ),
+        ),
+        // Drawer overlay
+        if (_isDrawerOpen)
+          GestureDetector(
+            onTap: _toggleDrawer,
+            child: AnimatedBuilder(
+              animation: _drawerAnimationController,
+              builder: (context, child) {
+                final opacity = 1.0 - (_drawerAnimationController.value * 0.3);
+                return Container(
+                  color: Colors.black.withValues(alpha: 0.5 * (1.0 - opacity)),
+                );
+              },
+            ),
+          ),
+        // Navigation drawer
+        SlideTransition(
+          position: drawerAnimation,
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: Material(
+              color: Theme.of(context).scaffoldBackgroundColor,
+              child: Container(
+                width: 280,
+                height: double.infinity,
+                color: Theme.of(context).scaffoldBackgroundColor,
+                child: SafeArea(
+                  child: Column(
+                    children: [
+                      // Close button
+                      Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Align(
+                          alignment: Alignment.topRight,
+                          child: IconButton(
+                            icon: const Icon(Icons.close),
+                            onPressed: _toggleDrawer,
+                          ),
+                        ),
+                      ),
+                      // Menu items
+                      Expanded(
+                        child: ListView(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          children: [
+                            _buildMenuTile(
+                              context: context,
+                              icon: Icons.map,
+                              title: 'Fridge Map',
+                              subtitle: 'View fridges on map',
+                              isSelected: widget.currentRoute == '/',
+                              route: '/',
+                              onTap: () {
+                                _toggleDrawer();
+                                GoRouter.of(context).go('/');
+                              },
+                            ),
+                            _buildMenuTile(
+                              context: context,
+                              icon: Icons.list,
+                              title: 'Fridge List',
+                              subtitle: 'Browse all fridges',
+                              isSelected: widget.currentRoute == '/list',
+                              route: '/list',
+                              onTap: () {
+                                _toggleDrawer();
+                                GoRouter.of(context).go('/list');
+                              },
+                            ),
+                            _buildMenuTile(
+                              context: context,
+                              icon: Icons.favorite,
+                              title: 'My Fridges',
+                              subtitle: 'Your subscribed fridges',
+                              isSelected: widget.currentRoute == '/my-fridges',
+                              route: '/my-fridges',
+                              onTap: () {
+                                _toggleDrawer();
+                                GoRouter.of(context).go('/my-fridges');
+                              },
+                            ),
+                            _buildMenuTile(
+                              context: context,
+                              icon: Icons.person,
+                              title: 'Profile',
+                              subtitle: 'Settings & preferences',
+                              isSelected: widget.currentRoute == '/profile',
+                              route: '/profile',
+                              onTap: () {
+                                _toggleDrawer();
+                                GoRouter.of(context).go('/profile');
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Footer with auth widget
+                      Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Divider(color: Theme.of(context).dividerColor),
+                            const SizedBox(height: 12),
+                            Consumer(
+                              builder: (context, ref, child) {
+                                final isAuthenticated = ref.watch(isAuthenticatedProvider);
+                                final userProfileAsync = ref.watch(userProfileProvider);
+                                
+                                if (!isAuthenticated) {
+                                  return Column(
+                                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                                    children: [
+                                      OutlinedButtonM3E(
+                                        onPressed: () {
+                                          _toggleDrawer();
+                                          showDialog(
+                                            context: context,
+                                            builder: (context) => Dialog(
+                                              child: Padding(
+                                                padding: const EdgeInsets.all(24.0),
+                                                child: SignInWidget(),
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                        icon: Icons.login,
+                                        child: const Text('Sign In'),
+                                      ),
+                                      const SizedBox(height: 12),
+                                    ],
+                                  );
+                                }
+                                
+                                return userProfileAsync.when(
+                                  loading: () => const SizedBox.shrink(),
+                                  error: (_, _) => const SizedBox.shrink(),
+                                  data: (profile) {
+                                    if (profile == null) return const SizedBox.shrink();
+                                    
+                                    return Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            CircleAvatar(
+                                              radius: 16,
+                                              child: Text(
+                                                profile.username.substring(0, 1).toUpperCase(),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    profile.username,
+                                                    style: M3ETypography.bodyMedium.copyWith(
+                                                      fontWeight: FontWeight.bold,
+                                                      color: Theme.of(context).colorScheme.onSurface,
+                                                    ),
+                                                  ),
+                                                  if (profile.isVolunteer)
+                                                    Text(
+                                                      'Volunteer',
+                                                      style: M3ETypography.bodySmall.copyWith(
+                                                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                                      ),
+                                                    ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 8),
+                                        OutlinedButtonM3E(
+                                          onPressed: () async {
+                                            try {
+                                              final repository = ref.read(authRepositoryProvider);
+                                              await repository.signOut();
+
+                                              // Invalidate providers to update UI
+                                              ref.invalidate(authUserProvider);
+                                              ref.invalidate(userProfileProvider);
+                                              ref.invalidate(isAuthenticatedProvider);
+                                              ref.invalidate(subscribedFridgesProvider);
+
+                                              _toggleDrawer();
+                                            } catch (e) {
+                                              if (context.mounted) {
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  SnackBar(content: Text('Error signing out: $e')),
+                                                );
+                                              }
+                                            }
+                                          },
+                                          icon: Icons.logout,
+                                          child: const Text('Sign Out'),
+                                        ),
+                                        const SizedBox(height: 12),
+                                      ],
+                                    );
+                                  },
+                                );
+                              },
+                            ),
+                            Text(
+                              'About FridgeFinder',
+                              style: M3ETypography.bodySmall.copyWith(
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'v1.0.0',
+                              style: M3ETypography.labelSmall.copyWith(
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMenuTile({
+    required BuildContext context,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required bool isSelected,
+    required String route,
+    required VoidCallback onTap,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: isSelected ? const Color(0xFF88B3FF) : Colors.transparent,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: ListTile(
+        leading: Icon(
+          icon,
+          color: isSelected ? Colors.white : colorScheme.onSurfaceVariant,
+        ),
+        title: Text(
+          title,
+          style: M3ETypography.titleMedium.copyWith(
+            color: isSelected ? Colors.white : colorScheme.onSurface,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+          ),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: M3ETypography.bodySmall.copyWith(
+            color: isSelected ? Colors.white70 : colorScheme.onSurfaceVariant,
+          ),
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        onTap: onTap,
+      ),
+    );
+  }
+}

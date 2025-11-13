@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:design_system/design_system.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/utils/app_logger.dart';
 import '../../domain/models/user_profile.dart';
@@ -39,7 +40,7 @@ class _SignUpFormState extends ConsumerState<SignUpForm>
     );
     _fadeAnimation = CurvedAnimation(
       parent: _fadeController,
-      curve: Curves.easeIn,
+      curve: M3EMotion.emphasized,
     );
     _fadeController.forward();
     _generateInitialUsername();
@@ -188,30 +189,30 @@ class _SignUpFormState extends ConsumerState<SignUpForm>
           Row(
             children: [
               _buildStepIndicator(0, 'Volunteer'),
-              const SizedBox(width: 8),
+              M3ESpacing.horizontalXS,
               _buildStepIndicator(1, _isVolunteer ? 'Zip Code' : 'Username'),
             ],
           ),
-          const SizedBox(height: 24),
-          
+          M3ESpacing.verticalXL,
+
           // Step content
           if (_currentStep == 0) _buildVolunteerStep(),
           if (_currentStep == 1) _buildUsernameStep(),
-          
-          const SizedBox(height: 24),
-          
+
+          M3ESpacing.verticalXL,
+
           // Navigation buttons
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               if (_currentStep > 0)
-                OutlinedButton(
+                OutlinedButtonM3E(
                   onPressed: _previousStep,
                   child: const Text('Back'),
                 )
               else
                 const SizedBox.shrink(),
-              ElevatedButton(
+              FilledButtonM3E(
                 onPressed: _nextStep,
                 child: Text(_currentStep == 1 ? 'Complete' : 'Next'),
               ),
@@ -225,7 +226,7 @@ class _SignUpFormState extends ConsumerState<SignUpForm>
   Widget _buildStepIndicator(int step, String label) {
     final isActive = step == _currentStep;
     final isCompleted = step < _currentStep;
-    
+
     return Expanded(
       child: Column(
         children: [
@@ -243,18 +244,17 @@ class _SignUpFormState extends ConsumerState<SignUpForm>
                   ? const Icon(Icons.check, color: Colors.white, size: 20)
                   : Text(
                       '${step + 1}',
-                      style: const TextStyle(
+                      style: M3ETypography.labelMedium.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
             ),
           ),
-          const SizedBox(height: 4),
+          M3ESpacing.verticalXXS,
           Text(
             label,
-            style: TextStyle(
-              fontSize: 12,
+            style: M3ETypography.labelSmall.copyWith(
               color: isActive || isCompleted
                   ? Theme.of(context).colorScheme.primary
                   : Colors.grey,
@@ -271,16 +271,16 @@ class _SignUpFormState extends ConsumerState<SignUpForm>
       children: [
         Text(
           'Are you a volunteer?',
-          style: Theme.of(context).textTheme.titleLarge,
+          style: M3ETypography.titleLarge,
         ),
-        const SizedBox(height: 8),
+        M3ESpacing.verticalXS,
         Text(
           'Volunteers help maintain and stock community fridges',
-          style: Theme.of(context).textTheme.bodyMedium,
+          style: M3ETypography.bodyMedium,
         ),
-        const SizedBox(height: 24),
-        CheckboxListTile(
-          title: const Text('I am a volunteer'),
+        M3ESpacing.verticalXL,
+        CheckboxM3E(
+          label: 'I am a volunteer',
           value: _isVolunteer,
           onChanged: (value) {
             setState(() => _isVolunteer = value ?? false);
@@ -296,40 +296,37 @@ class _SignUpFormState extends ConsumerState<SignUpForm>
       children: [
         Text(
           _isVolunteer ? 'Enter your zip code' : 'Choose your username',
-          style: Theme.of(context).textTheme.titleLarge,
+          style: M3ETypography.titleLarge,
         ),
-        const SizedBox(height: 8),
+        M3ESpacing.verticalXS,
         if (_isVolunteer) ...[
           Text(
             'We collect zip codes for non-profit funding purposes and do not share this information with any third parties.',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            style: M3ETypography.bodySmall.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
-          const SizedBox(height: 16),
-          TextField(
-            decoration: const InputDecoration(
-              labelText: 'Zip Code',
-              hintText: '12345',
-              border: OutlineInputBorder(),
-            ),
+          M3ESpacing.verticalMD,
+          TextFieldM3E(
+            labelText: 'Zip Code',
+            hintText: '12345',
             keyboardType: TextInputType.number,
             onChanged: (value) {
               setState(() => _zipCode = value);
             },
           ),
-          const SizedBox(height: 24),
+          M3ESpacing.verticalXL,
         ],
         Text(
           'Your username',
-          style: Theme.of(context).textTheme.titleMedium,
+          style: M3ETypography.titleMedium,
         ),
-        const SizedBox(height: 8),
+        M3ESpacing.verticalXS,
         Container(
-          padding: const EdgeInsets.all(16),
+          padding: M3ESpacing.all(M3ESpacing.md),
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(M3EShapes.medium),
             border: Border.all(
               color: Theme.of(context).colorScheme.primary,
               width: 2,
@@ -340,17 +337,17 @@ class _SignUpFormState extends ConsumerState<SignUpForm>
               Expanded(
                 child: Text(
                   _selectedUsername ?? 'Generating...',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  style: M3ETypography.titleLarge.copyWith(
                     fontWeight: FontWeight.bold,
                     color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
               ),
               if (_isGeneratingUsername)
-                const SizedBox(
+                SizedBox(
                   width: 20,
                   height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+                  child: CircularProgressIndicatorM3E.small(),
                 )
               else
                 IconButton(
@@ -361,10 +358,10 @@ class _SignUpFormState extends ConsumerState<SignUpForm>
             ],
           ),
         ),
-        const SizedBox(height: 8),
+        M3ESpacing.verticalXS,
         Text(
           'Click the dice icon to generate a new username',
-          style: Theme.of(context).textTheme.bodySmall,
+          style: M3ETypography.bodySmall,
         ),
       ],
     );

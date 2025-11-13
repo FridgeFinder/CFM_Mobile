@@ -136,18 +136,21 @@ class _ListScreenState extends ConsumerState<ListScreen>
     // Watch subscriptions for green glow
     final subscriptionsAsync = ref.watch(subscribedFridgesProvider);
 
-    return Scaffold(
-      body: fridgesAsync.when(
-        loading: () => const common_widgets.LoadingIndicator(
-          message: 'Loading fridges...',
-        ),
-        error: (error, stackTrace) => common_widgets.ErrorView(
-          message: error.toString(),
-          onRetry: () => ref.refresh(fridgeListProvider),
-        ),
-        data: (_) {
-          return filterStateAsync.when(
-            data: (filterState) {
+    return GestureDetector(
+      onTap: () {
+        // Unfocus any focused widget when tapping outside
+        FocusScope.of(context).unfocus();
+      },
+      child: Scaffold(
+        body: fridgesAsync.when(
+          loading: () => const common_widgets.LoadingIndicator(),
+          error: (error, stackTrace) => common_widgets.ErrorView(
+            message: error.toString(),
+            onRetry: () => ref.refresh(fridgeListProvider),
+          ),
+          data: (_) {
+            return filterStateAsync.when(
+              data: (filterState) {
               if (_searchController.text != filterState.searchQuery) {
                 _searchController.value = TextEditingValue(
                   text: filterState.searchQuery,
@@ -181,7 +184,9 @@ class _ListScreenState extends ConsumerState<ListScreen>
               // Apply subscribed filter if active
               if (filterState.subscribedOnly) {
                 filtered = filtered.where((fridgeWithDistance) {
-                  return subscribedFridgeIds.contains(fridgeWithDistance.fridge.id);
+                  return subscribedFridgeIds.contains(
+                    fridgeWithDistance.fridge.id,
+                  );
                 }).toList();
               }
 
@@ -217,36 +222,22 @@ class _ListScreenState extends ConsumerState<ListScreen>
                 }).toList();
               }
 
-              return Column(
-                children: [
-                  // Filter Pills - shared with map view
-                  const FilterPillsRow(),
+                return Column(
+                  children: [
+                    // Filter Pills - shared with map view
+                    const FilterPillsRow(),
 
-                  // Search Bar
+                  // Search Bar with M3E styling
                   Padding(
-                    padding: M3ESpacing.all(M3ESpacing.sm),
-                    child: TextField(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: M3ESpacing.md,
+                      vertical: M3ESpacing.xs,
+                    ),
+                    child: SearchBarM3E(
                       controller: _searchController,
-                      focusNode: _searchFocusNode,
-                      textInputAction: TextInputAction.search,
-                      decoration: InputDecoration(
-                        hintText: 'Search by name or location...',
-                        prefixIcon: const Icon(Icons.search),
-                        suffixIcon: filterState.searchQuery.isNotEmpty
-                            ? IconButton(
-                                icon: const Icon(Icons.close),
-                                onPressed: () {
-                                  _searchController.clear();
-                                  ref
-                                      .read(mapFilterProvider.notifier)
-                                      .clearSearch();
-                                },
-                              )
-                            : null,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
+                      hintText: 'Search by name or location...',
+                      leadingIcon: Icons.search,
+                      expandedByDefault: true,
                       onChanged: (query) {
                         ref
                             .read(mapFilterProvider.notifier)
@@ -342,7 +333,9 @@ class _ListScreenState extends ConsumerState<ListScreen>
                             ),
                           )
                         : ListView.builder(
-                            padding: EdgeInsets.symmetric(horizontal: M3ESpacing.md),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: M3ESpacing.md,
+                            ),
                             itemCount: filtered.length,
                             itemBuilder: (context, index) {
                               final fridgeWithDistance = filtered[index];
@@ -352,12 +345,16 @@ class _ListScreenState extends ConsumerState<ListScreen>
                               return M3ETransitions.listItemEntrance(
                                 animation: _listAnimationController,
                                 index: index,
-                                totalItems: filtered.length.clamp(0, 10), // Limit stagger to first 10
+                                totalItems: filtered.length.clamp(
+                                  0,
+                                  10,
+                                ), // Limit stagger to first 10
                                 child: FridgeCard(
                                   fridge: fridgeWithDistance.fridge,
                                   distanceKm: fridgeWithDistance.distanceKm,
-                                  isSubscribed: subscribedFridgeIds
-                                      .contains(fridgeWithDistance.fridge.id),
+                                  isSubscribed: subscribedFridgeIds.contains(
+                                    fridgeWithDistance.fridge.id,
+                                  ),
                                   onTap: () => _showFridgeProfile(
                                     context,
                                     ref,
@@ -367,14 +364,15 @@ class _ListScreenState extends ConsumerState<ListScreen>
                               );
                             },
                           ),
-                  ),
-                ],
-              );
-            },
-            loading: () => const SizedBox.shrink(),
-            error: (_, _) => const SizedBox.shrink(),
-          );
-        },
+                    ),
+                  ],
+                );
+              },
+              loading: () => const SizedBox.shrink(),
+              error: (_, _) => const SizedBox.shrink(),
+            );
+          },
+        ),
       ),
     );
   }
