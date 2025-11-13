@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:go_router/go_router.dart';
 import 'package:design_system/design_system.dart';
 import '../../../core/providers/theme_provider.dart';
 import '../../../core/providers/environment_provider.dart';
@@ -78,7 +79,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   }
 
                   // Keep showing previous data during refresh to prevent jank
-                  final profile = userProfileAsync.hasValue ? userProfileAsync.value : null;
+                  final profile = userProfileAsync.hasValue
+                      ? userProfileAsync.value
+                      : null;
 
                   // Only show loading on initial load (no cached data)
                   if (profile == null && userProfileAsync.isLoading) {
@@ -90,130 +93,127 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   if (profile == null) return const SizedBox.shrink();
 
                   return CardM3E(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
                           children: [
-                            Row(
-                              children: [
-                                CircleAvatar(
-                                  radius: 24,
-                                  child: Text(
-                                    profile.username
-                                        .substring(0, 1)
-                                        .toUpperCase(),
-                                    style: M3ETypography.titleMedium,
+                            CircleAvatar(
+                              radius: 24,
+                              child: Text(
+                                profile.username.substring(0, 1).toUpperCase(),
+                                style: M3ETypography.titleMedium,
+                              ),
+                            ),
+                            M3ESpacing.horizontalMD,
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    profile.username,
+                                    style: M3ETypography.titleLarge,
                                   ),
-                                ),
-                                M3ESpacing.horizontalMD,
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        profile.username,
-                                        style: M3ETypography.titleLarge,
-                                      ),
-                                      if (profile.isVolunteer)
-                                        Row(
-                                          children: [
-                                            const Icon(
-                                              Icons.volunteer_activism,
-                                              size: 16,
-                                            ),
-                                            M3ESpacing.horizontalXS,
-                                            Text(
-                                              'Volunteer',
-                                              style: M3ETypography.bodySmall,
-                                            ),
-                                          ],
+                                  if (profile.isVolunteer)
+                                    Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.volunteer_activism,
+                                          size: 16,
                                         ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            if (profile.isVolunteer) ...[
-                              M3ESpacing.verticalMD,
-                              userPointsAsync.when(
-                                loading: () => const SizedBox.shrink(),
-                                error: (_, _) => const SizedBox.shrink(),
-                                data: (points) => Container(
-                                  padding: M3ESpacing.all(M3ESpacing.sm),
-                                  decoration: BoxDecoration(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.primaryContainer,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        Icons.stars,
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.onPrimaryContainer,
-                                      ),
-                                      M3ESpacing.horizontalXS,
-                                      Text(
-                                        '$points points',
-                                        style: M3ETypography.titleMedium
-                                            .copyWith(
-                                              color: Theme.of(
-                                                context,
-                                              ).colorScheme.onPrimaryContainer,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                            M3ESpacing.verticalMD,
-                            // Notification Settings
-                            SizedBox(
-                              width: double.infinity,
-                              child: _buildNotificationSettings(
-                                context,
-                                ref,
-                                profile,
-                              ),
-                            ),
-                            M3ESpacing.verticalMD,
-                            // Sign Out Button
-                            SizedBox(
-                              width: double.infinity,
-                              child: OutlinedButtonM3E(
-                                onPressed: () =>
-                                    _showSignOutDialog(context, ref),
-                                icon: Icons.logout,
-                                child: const Text('Sign Out'),
-                              ),
-                            ),
-                            M3ESpacing.verticalSM,
-                            // Delete Account Button
-                            SizedBox(
-                              width: double.infinity,
-                              child: OutlinedButton.icon(
-                                onPressed: () => _showDeleteAccountDialog(
-                                  context,
-                                  ref,
-                                  profile.userId,
-                                ),
-                                icon: const Icon(Icons.delete_outline),
-                                label: const Text('Delete Account'),
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: Theme.of(context).colorScheme.error,
-                                  side: BorderSide(
-                                    color: Theme.of(context).colorScheme.error,
-                                  ),
-                                ),
+                                        M3ESpacing.horizontalXS,
+                                        Text(
+                                          'Volunteer',
+                                          style: M3ETypography.bodySmall,
+                                        ),
+                                      ],
+                                    ),
+                                ],
                               ),
                             ),
                           ],
                         ),
-                      );
+                        if (profile.isVolunteer) ...[
+                          M3ESpacing.verticalMD,
+                          userPointsAsync.when(
+                            loading: () => const SizedBox.shrink(),
+                            error: (_, _) => const SizedBox.shrink(),
+                            data: (points) => Container(
+                              padding: M3ESpacing.all(M3ESpacing.sm),
+                              decoration: BoxDecoration(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.primaryContainer,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.stars,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onPrimaryContainer,
+                                  ),
+                                  M3ESpacing.horizontalXS,
+                                  Text(
+                                    '$points points',
+                                    style: M3ETypography.titleMedium.copyWith(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onPrimaryContainer,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                        M3ESpacing.verticalMD,
+                        // Notification Settings
+                        SizedBox(
+                          width: double.infinity,
+                          child: _buildNotificationSettings(
+                            context,
+                            ref,
+                            profile,
+                          ),
+                        ),
+                        M3ESpacing.verticalMD,
+                        // Sign Out Button
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButtonM3E(
+                            onPressed: () => _showSignOutDialog(context, ref),
+                            icon: Icons.logout,
+                            child: const Text('Sign Out'),
+                          ),
+                        ),
+                        M3ESpacing.verticalSM,
+                        // Delete Account Button
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: () => _showDeleteAccountDialog(
+                              context,
+                              ref,
+                              profile.userId,
+                            ),
+                            icon: const Icon(Icons.delete_outline),
+                            label: const Text('Delete Account'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Theme.of(
+                                context,
+                              ).colorScheme.error,
+                              side: BorderSide(
+                                color: Theme.of(context).colorScheme.error,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
                 },
               ),
               M3ESpacing.verticalMD,
@@ -252,42 +252,49 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             if (context.mounted) {
                               if (result['openSettings'] == true) {
                                 // Guide user to settings
-                                final shouldOpenSettings = await DialogM3E.showCustom<bool>(
-                                  context: context,
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Location Permission Required',
-                                        style: M3ETypography.headlineSmall,
-                                      ),
-                                      M3ESpacing.verticalMD,
-                                      Text(
-                                        'Location access is disabled. '
-                                        'Please enable it in Settings to see distances and sort fridges by proximity.',
-                                        style: M3ETypography.bodyMedium,
-                                      ),
-                                      M3ESpacing.verticalXL,
-                                      Row(
-                                        mainAxisAlignment: MainAxisAlignment.end,
+                                final shouldOpenSettings =
+                                    await DialogM3E.showCustom<bool>(
+                                      context: context,
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
-                                          TextButtonM3E(
-                                            onPressed: () =>
-                                                Navigator.of(context).pop(false),
-                                            child: const Text('Cancel'),
+                                          Text(
+                                            'Location Permission Required',
+                                            style: M3ETypography.headlineSmall,
                                           ),
-                                          M3ESpacing.horizontalXS,
-                                          FilledButtonM3E(
-                                            onPressed: () =>
-                                                Navigator.of(context).pop(true),
-                                            child: const Text('Open Settings'),
+                                          M3ESpacing.verticalMD,
+                                          Text(
+                                            'Location access is disabled. '
+                                            'Please enable it in Settings to see distances and sort fridges by proximity.',
+                                            style: M3ETypography.bodyMedium,
+                                          ),
+                                          M3ESpacing.verticalXL,
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.end,
+                                            children: [
+                                              TextButtonM3E(
+                                                onPressed: () => Navigator.of(
+                                                  context,
+                                                ).pop(false),
+                                                child: const Text('Cancel'),
+                                              ),
+                                              M3ESpacing.horizontalXS,
+                                              FilledButtonM3E(
+                                                onPressed: () => Navigator.of(
+                                                  context,
+                                                ).pop(true),
+                                                child: const Text(
+                                                  'Open Settings',
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ],
                                       ),
-                                    ],
-                                  ),
-                                );
+                                    );
 
                                 if (shouldOpenSettings == true) {
                                   await openAppSettings();
@@ -296,7 +303,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                 // User disabled location
                                 showSnackbarM3E(
                                   context: context,
-                                  message: 'Location access disabled. '
+                                  message:
+                                      'Location access disabled. '
                                       'To revoke location permission, go to Settings.',
                                   duration: SnackbarDuration.long_,
                                 );
@@ -619,7 +627,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ),
             ),
             SwitchM3E(
-              value: _localNotificationsEnabled ?? profile.settings.notificationsEnabled,
+              value:
+                  _localNotificationsEnabled ??
+                  profile.settings.notificationsEnabled,
               onChanged: (value) async {
                 // Optimistic update - change UI immediately
                 setState(() => _localNotificationsEnabled = value);
@@ -650,42 +660,43 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               AuthorizationStatus.provisional) {
                         if (context.mounted) {
                           // If permanently denied, guide to settings
-                          final shouldOpenSettings = await DialogM3E.showCustom<bool>(
-                            context: context,
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Notification Permission Required',
-                                  style: M3ETypography.headlineSmall,
-                                ),
-                                M3ESpacing.verticalMD,
-                                Text(
-                                  'Push notifications are disabled. '
-                                  'Please enable them in Settings to receive updates about your subscribed fridges.',
-                                  style: M3ETypography.bodyMedium,
-                                ),
-                                M3ESpacing.verticalXL,
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
+                          final shouldOpenSettings =
+                              await DialogM3E.showCustom<bool>(
+                                context: context,
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    TextButtonM3E(
-                                      onPressed: () =>
-                                          Navigator.of(context).pop(false),
-                                      child: const Text('Cancel'),
+                                    Text(
+                                      'Notification Permission Required',
+                                      style: M3ETypography.headlineSmall,
                                     ),
-                                    M3ESpacing.horizontalXS,
-                                    FilledButtonM3E(
-                                      onPressed: () =>
-                                          Navigator.of(context).pop(true),
-                                      child: const Text('Open Settings'),
+                                    M3ESpacing.verticalMD,
+                                    Text(
+                                      'Push notifications are disabled. '
+                                      'Please enable them in Settings to receive updates about your subscribed fridges.',
+                                      style: M3ETypography.bodyMedium,
+                                    ),
+                                    M3ESpacing.verticalXL,
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      children: [
+                                        TextButtonM3E(
+                                          onPressed: () =>
+                                              Navigator.of(context).pop(false),
+                                          child: const Text('Cancel'),
+                                        ),
+                                        M3ESpacing.horizontalXS,
+                                        FilledButtonM3E(
+                                          onPressed: () =>
+                                              Navigator.of(context).pop(true),
+                                          child: const Text('Open Settings'),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
-                              ],
-                            ),
-                          );
+                              );
 
                           if (shouldOpenSettings == true) {
                             await openAppSettings();
@@ -760,7 +771,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ),
               ),
               SwitchM3E(
-                value: _localGeofencingEnabled ?? profile.settings.geofencingEnabled,
+                value:
+                    _localGeofencingEnabled ??
+                    profile.settings.geofencingEnabled,
                 onChanged: (value) async {
                   // Optimistic update - change UI immediately
                   setState(() => _localGeofencingEnabled = value);
@@ -795,42 +808,49 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             if (permission ==
                                 LocationPermission.deniedForever) {
                               // Guide to settings
-                              final shouldOpenSettings = await DialogM3E.showCustom<bool>(
-                                context: context,
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Enable Location Access',
-                                      style: M3ETypography.headlineSmall,
-                                    ),
-                                    M3ESpacing.verticalMD,
-                                    Text(
-                                      'Geofencing requires location access to notify you when you\'re near fridges needing help.\n\n'
-                                      'Please tap "Open Settings" and enable location access for FridgeFinder.',
-                                      style: M3ETypography.bodyMedium,
-                                    ),
-                                    M3ESpacing.verticalXL,
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.end,
+                              final shouldOpenSettings =
+                                  await DialogM3E.showCustom<bool>(
+                                    context: context,
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
-                                        TextButtonM3E(
-                                          onPressed: () =>
-                                              Navigator.of(context).pop(false),
-                                          child: const Text('Cancel'),
+                                        Text(
+                                          'Enable Location Access',
+                                          style: M3ETypography.headlineSmall,
                                         ),
-                                        M3ESpacing.horizontalXS,
-                                        FilledButtonM3E(
-                                          onPressed: () =>
-                                              Navigator.of(context).pop(true),
-                                          child: const Text('Open Settings'),
+                                        M3ESpacing.verticalMD,
+                                        Text(
+                                          'Geofencing requires location access to notify you when you\'re near fridges needing help.\n\n'
+                                          'Please tap "Open Settings" and enable location access for FridgeFinder.',
+                                          style: M3ETypography.bodyMedium,
+                                        ),
+                                        M3ESpacing.verticalXL,
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.end,
+                                          children: [
+                                            TextButtonM3E(
+                                              onPressed: () => Navigator.of(
+                                                context,
+                                              ).pop(false),
+                                              child: const Text('Cancel'),
+                                            ),
+                                            M3ESpacing.horizontalXS,
+                                            FilledButtonM3E(
+                                              onPressed: () => Navigator.of(
+                                                context,
+                                              ).pop(true),
+                                              child: const Text(
+                                                'Open Settings',
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ],
                                     ),
-                                  ],
-                                ),
-                              );
+                                  );
 
                               if (shouldOpenSettings == true) {
                                 await Geolocator.openAppSettings();
@@ -978,13 +998,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   label: Text('Weekly'),
                 ),
               ],
-              selected: {_localNotificationFrequency ?? profile.settings.notificationFrequency},
+              selected: {
+                _localNotificationFrequency ??
+                    profile.settings.notificationFrequency,
+              },
               onSelectionChanged: (Set<NotificationFrequency> selected) async {
                 if (selected.isNotEmpty) {
                   // Optimistic update - change UI immediately
                   setState(() => _localNotificationFrequency = selected.first);
 
-                  try{
+                  try {
                     final updatedProfile = profile.copyWith(
                       settings: profile.settings.copyWith(
                         notificationFrequency: selected.first,
@@ -1013,7 +1036,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   } catch (e) {
                     // On error, revert local state and show error
                     if (mounted) {
-                      setState(() => _localNotificationFrequency = profile.settings.notificationFrequency);
+                      setState(
+                        () => _localNotificationFrequency =
+                            profile.settings.notificationFrequency,
+                      );
                     }
                     if (context.mounted) {
                       ScaffoldMessenger.of(
@@ -1037,10 +1063,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Sign Out?',
-            style: M3ETypography.headlineSmall,
-          ),
+          Text('Sign Out?', style: M3ETypography.headlineSmall),
           M3ESpacing.verticalMD,
           Text(
             'Are you sure you want to sign out?',
@@ -1100,42 +1123,53 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   ) {
     DialogM3E.showCustom(
       context: context,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Delete Account?',
-            style: M3ETypography.headlineSmall,
-          ),
-          M3ESpacing.verticalMD,
-          Text(
-            'Are you sure you want to delete your account? This will permanently delete your profile, subscriptions, and points. Your status reports will be anonymized but kept.',
-            style: M3ETypography.bodyMedium,
-          ),
-          M3ESpacing.verticalXL,
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              TextButtonM3E(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Cancel'),
-              ),
-              M3ESpacing.horizontalXS,
-              FilledButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  _showFinalDeleteConfirmation(context, ref, userId);
-                },
-                style: FilledButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.error,
-                  foregroundColor: Theme.of(context).colorScheme.onError,
+      child: Padding(
+        padding: M3ESpacing.all(M3ESpacing.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Delete Account?', style: M3ETypography.headlineSmall),
+            M3ESpacing.verticalMD,
+            Text(
+              'Are you sure you want to delete your account? This will permanently delete your profile, subscriptions, and points. Your status reports will be anonymized but kept.',
+              style: M3ETypography.bodyMedium,
+            ),
+            M3ESpacing.verticalXL,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButtonM3E(
+                  onPressed: () {
+                    try {
+                      Navigator.of(context, rootNavigator: true).pop();
+                    } catch (e) {
+                      debugPrint('Error closing dialog: $e');
+                    }
+                  },
+                  child: const Text('Cancel'),
                 ),
-                child: const Text('Continue'),
-              ),
-            ],
-          ),
-        ],
+                M3ESpacing.horizontalXS,
+                FilledButton(
+                  onPressed: () {
+                    // Close the first dialog using root navigator
+                    try {
+                      Navigator.of(context, rootNavigator: true).pop();
+                    } catch (e) {
+                      debugPrint('Error closing first delete dialog: $e');
+                    }
+                    _showFinalDeleteConfirmation(context, ref, userId);
+                  },
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.error,
+                    foregroundColor: Theme.of(context).colorScheme.onError,
+                  ),
+                  child: const Text('Continue'),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1147,158 +1181,196 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   ) {
     DialogM3E.showCustom(
       context: context,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Final Confirmation',
-            style: M3ETypography.headlineSmall,
-          ),
-          M3ESpacing.verticalMD,
-          Text(
-            'This action cannot be undone. Your account and all associated data will be permanently deleted.',
-            style: M3ETypography.bodyMedium,
-          ),
-          M3ESpacing.verticalXL,
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              TextButtonM3E(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Cancel'),
-              ),
-              M3ESpacing.horizontalXS,
-              FilledButton(
-                onPressed: () async {
-              // Get repository and user references FIRST, before any navigation
-              final repository = ref.read(authRepositoryProvider);
-              final authUser = ref.read(currentAuthUserProvider);
-              final user = authUser.value;
+      child: Padding(
+        padding: M3ESpacing.all(M3ESpacing.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Final Confirmation', style: M3ETypography.headlineSmall),
+            M3ESpacing.verticalMD,
+            Text(
+              'This action cannot be undone. Your account and all associated data will be permanently deleted.',
+              style: M3ETypography.bodyMedium,
+            ),
+            M3ESpacing.verticalXL,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButtonM3E(
+                  onPressed: () {
+                    try {
+                      Navigator.of(context, rootNavigator: true).pop();
+                    } catch (e) {
+                      debugPrint('Error closing dialog: $e');
+                    }
+                  },
+                  child: const Text('Cancel'),
+                ),
+                M3ESpacing.horizontalXS,
+                FilledButton(
+                  onPressed: () async {
+                    // Get repository and user references FIRST, before any navigation
+                    final repository = ref.read(authRepositoryProvider);
+                    final authUser = ref.read(currentAuthUserProvider);
+                    final user = authUser.value;
 
-              if (user == null) {
-                if (context.mounted) {
-                  Navigator.of(context).pop();
-                  showSnackbarM3E(
-                    context: context,
-                    message: 'Not authenticated',
-                  );
-                }
-                return;
-              }
+                    if (user == null) {
+                      if (context.mounted) {
+                        try {
+                          Navigator.of(context, rootNavigator: true).pop();
+                        } catch (e) {
+                          debugPrint('Error closing dialog: $e');
+                        }
+                        showSnackbarM3E(
+                          context: context,
+                          message: 'Not authenticated',
+                        );
+                      }
+                      return;
+                    }
 
-              // Show re-authentication dialog (on top of the confirmation dialog)
-              if (!context.mounted) return;
+                    // Show re-authentication dialog (on top of the confirmation dialog)
+                    if (!context.mounted) return;
 
-              final reauthenticated = await showDialog<bool>(
-                context: context,
-                barrierDismissible: false,
-                builder: (context) => ReauthenticateDialog(user: user),
-              );
+                    final reauthenticated = await showDialog<bool>(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (context) => ReauthenticateDialog(user: user),
+                    );
 
-              debugPrint('Re-authentication result: $reauthenticated');
+                    debugPrint('Re-authentication result: $reauthenticated');
 
-              if (reauthenticated != true) {
-                if (context.mounted) {
-                  Navigator.of(context).pop();
-                  showSnackbarM3E(
-                    context: context,
-                    message: 'Account deletion cancelled',
-                  );
-                }
-                return;
-              }
+                    if (reauthenticated != true) {
+                      if (context.mounted) {
+                        try {
+                          Navigator.of(context, rootNavigator: true).pop();
+                        } catch (e) {
+                          debugPrint('Error closing dialog: $e');
+                        }
+                        showSnackbarM3E(
+                          context: context,
+                          message: 'Account deletion cancelled',
+                        );
+                      }
+                      return;
+                    }
 
-              // If re-authentication succeeded, close the confirmation dialog first
-              if (!context.mounted) {
-                debugPrint(
-                  'Context not mounted after reauth, aborting deletion',
-                );
-                return;
-              }
+                    // If re-authentication succeeded, proceed with deletion
+                    if (!context.mounted) {
+                      debugPrint(
+                        'Context not mounted after reauth, aborting deletion',
+                      );
+                      return;
+                    }
 
-              // Close the confirmation dialog
-              Navigator.of(context).pop();
+                    debugPrint(
+                      'Proceeding with account deletion for user: $userId',
+                    );
+                    debugPrint('Context is mounted, showing loading indicator');
 
-              // Wait a frame for the dialog to fully close
-              await Future.delayed(const Duration(milliseconds: 100));
+                    // Show loading indicator
+                    showSnackbarM3E(
+                      context: context,
+                      message: 'Deleting account...',
+                      duration: SnackbarDuration.long_,
+                      icon: const Icon(Icons.hourglass_bottom),
+                    );
 
-              // If re-authentication succeeded, proceed with deletion
-              debugPrint('Proceeding with account deletion for user: $userId');
+                    debugPrint(
+                      'Loading indicator shown, calling deleteAccount',
+                    );
 
-              if (!context.mounted) {
-                debugPrint(
-                  'Context not mounted after closing dialog, aborting deletion',
-                );
-                return;
-              }
+                    try {
+                      debugPrint(
+                        'About to call deleteAccount with userId: $userId',
+                      );
 
-              debugPrint('Context is mounted, showing loading indicator');
+                      await repository.deleteAccount(userId);
 
-              // Show loading indicator
-              showSnackbarM3E(
-                context: context,
-                message: 'Deleting account...',
-                duration: SnackbarDuration.long_,
-                icon: const Icon(Icons.hourglass_bottom),
-              );
+                      debugPrint(
+                        'Account deleted successfully from deleteAccount call',
+                      );
 
-              debugPrint('Loading indicator shown, calling deleteAccount');
+                      // Show success message and navigate away
+                      if (context.mounted) {
+                        // Close the confirmation dialog using root navigator
+                        try {
+                          Navigator.of(context, rootNavigator: true).pop();
+                          debugPrint('Dialog closed successfully');
+                        } catch (e) {
+                          debugPrint('Error closing dialog: $e');
+                        }
 
-              try {
-                debugPrint('About to call deleteAccount with userId: $userId');
+                        // Wait a moment to allow dialog to close
+                        await Future.delayed(const Duration(milliseconds: 300));
 
-                await repository.deleteAccount(userId);
+                        if (context.mounted) {
+                          showSnackbarM3E(
+                            context: context,
+                            message: 'Account deleted successfully',
+                            icon: const Icon(Icons.check_circle),
+                            backgroundColor: Colors.green,
+                            duration: SnackbarDuration.short_,
+                          );
 
-                debugPrint(
-                  'Account deleted successfully from deleteAccount call',
-                );
+                          // Wait a moment for the message to be visible, then navigate to home
+                          await Future.delayed(const Duration(milliseconds: 500));
 
-                // Show success message
-                if (context.mounted) {
-                  showSnackbarM3E(
-                    context: context,
-                    message: 'Account deleted successfully',
-                    icon: const Icon(Icons.check_circle),
-                    backgroundColor: Colors.green,
-                    duration: SnackbarDuration.short_,
-                  );
-                }
+                          if (context.mounted) {
+                            debugPrint(
+                              'Navigating to home after account deletion',
+                            );
+                            context.go('/');
+                          }
+                        }
+                      }
 
-                debugPrint(
-                  'Account deletion complete - Firebase will auto-update auth state',
-                );
-              } catch (e) {
-                debugPrint('Error deleting account: $e');
+                      debugPrint(
+                        'Account deletion complete - Firebase will auto-update auth state',
+                      );
+                    } catch (e) {
+                      debugPrint('Error deleting account: $e');
 
-                if (context.mounted) {
-                  String errorMessage = 'Error deleting account: $e';
+                      if (context.mounted) {
+                        String errorMessage = 'Error deleting account: $e';
 
-                  // Check if it's a requires-recent-login error (shouldn't happen after reauth)
-                  if (e.toString().contains('requires-recent-login')) {
-                    errorMessage =
-                        'Please try again. Your session may have expired.';
-                  }
+                        // Check if it's a requires-recent-login error (shouldn't happen after reauth)
+                        if (e.toString().contains('requires-recent-login')) {
+                          errorMessage =
+                              'Please try again. Your session may have expired.';
+                        }
 
-                  showSnackbarM3E(
-                    context: context,
-                    message: errorMessage,
+                        // Close the dialog first so user can see the error and try again
+                        try {
+                          Navigator.of(context, rootNavigator: true).pop();
+                          debugPrint('Dialog closed after error');
+                        } catch (e) {
+                          debugPrint('Error closing dialog after deletion error: $e');
+                        }
+
+                        showSnackbarM3E(
+                          context: context,
+                          message: errorMessage,
+                          backgroundColor: Theme.of(context).colorScheme.error,
+                          foregroundColor: Theme.of(
+                            context,
+                          ).colorScheme.onError,
+                          duration: SnackbarDuration.long_,
+                        );
+                      }
+                    }
+                  },
+                  style: FilledButton.styleFrom(
                     backgroundColor: Theme.of(context).colorScheme.error,
                     foregroundColor: Theme.of(context).colorScheme.onError,
-                    duration: SnackbarDuration.long_,
-                  );
-                }
-              }
-            },
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
-              foregroundColor: Theme.of(context).colorScheme.onError,
+                  ),
+                  child: const Text('Delete Account'),
+                ),
+              ],
             ),
-            child: const Text('Delete Account'),
-          ),
-        ],
-      ),
-    ],
+          ],
+        ),
       ),
     );
   }

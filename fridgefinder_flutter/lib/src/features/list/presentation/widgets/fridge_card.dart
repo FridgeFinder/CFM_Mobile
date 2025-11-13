@@ -103,7 +103,7 @@ class _FridgeCardState extends State<FridgeCard>
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
-                                  color: FridgeMarker.subscribedGreen
+                                  color: FridgeMarker.subscribedGold
                                       .withValues(
                                         alpha: _animation.value * 0.6,
                                       ),
@@ -111,7 +111,7 @@ class _FridgeCardState extends State<FridgeCard>
                                   spreadRadius: 1,
                                 ),
                                 BoxShadow(
-                                  color: FridgeMarker.subscribedGreen
+                                  color: FridgeMarker.subscribedGold
                                       .withValues(
                                         alpha: _animation.value * 0.4,
                                       ),

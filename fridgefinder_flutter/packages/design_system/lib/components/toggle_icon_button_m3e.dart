@@ -90,18 +90,13 @@ class _ToggleIconButtonM3EState extends State<ToggleIconButtonM3E>
       curve: M3EMotion.emphasizedDecelerate,
     );
 
-    _scaleAnimation = TweenSequence<double>([
-      TweenSequenceItem(
-        tween: Tween<double>(begin: 1.0, end: 0.9)
-            .chain(CurveTween(curve: M3EMotion.emphasizedAccelerate)),
-        weight: 50.0,
+    // Scale animation with smooth elastic bounce (press and release)
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _scaleController,
+        curve: Curves.elasticOut,
       ),
-      TweenSequenceItem(
-        tween: Tween<double>(begin: 0.9, end: 1.0)
-            .chain(CurveTween(curve: M3EMotion.expressiveDefaultOvershoot)),
-        weight: 50.0,
-      ),
-    ]).animate(_scaleController);
+    );
 
     if (widget.isSelected) {
       _toggleController.value = 1.0;

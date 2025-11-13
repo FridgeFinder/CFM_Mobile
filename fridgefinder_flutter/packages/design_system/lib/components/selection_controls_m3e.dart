@@ -42,19 +42,14 @@ class _CheckboxM3EState extends State<CheckboxM3E>
       vsync: this,
     );
 
-    // Checkmark path animation with overshoot
-    _checkAnimation = TweenSequence<double>([
-      TweenSequenceItem(
-        tween: Tween<double>(begin: 0.0, end: 1.2)
-            .chain(CurveTween(curve: M3EMotion.expressiveFastOvershoot)),
-        weight: 50.0,
+    // Checkmark path animation with smooth overshoot
+    // The expressiveFastOvershoot curve naturally handles overshoot with smooth transitions
+    _checkAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: M3EMotion.expressiveFastOvershoot,
       ),
-      TweenSequenceItem(
-        tween: Tween<double>(begin: 1.2, end: 1.0)
-            .chain(CurveTween(curve: M3EMotion.emphasizedDecelerate)),
-        weight: 50.0,
-      ),
-    ]).animate(_controller);
+    );
 
     if (widget.value) {
       _controller.forward();

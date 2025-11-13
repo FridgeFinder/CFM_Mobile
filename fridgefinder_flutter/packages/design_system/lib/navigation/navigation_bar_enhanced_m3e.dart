@@ -86,30 +86,13 @@ class _NavigationBarEnhancedM3EState extends State<NavigationBarEnhancedM3E>
       curve: M3EMotion.expressiveDefaultOvershoot,
     );
 
-    // Icon bounce animation - more expressive bounce
-    _iconBounceAnimation = TweenSequence<double>([
-      TweenSequenceItem(
-        tween: Tween<double>(
-          begin: 1.0,
-          end: 1.3,
-        ).chain(CurveTween(curve: M3EMotion.expressiveFastOvershoot)),
-        weight: 40.0,
+    // Icon bounce animation with smooth elastic bounce
+    _iconBounceAnimation = Tween<double>(begin: 1.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _iconBounceController,
+        curve: Curves.elasticOut,
       ),
-      TweenSequenceItem(
-        tween: Tween<double>(
-          begin: 1.3,
-          end: 0.95,
-        ).chain(CurveTween(curve: M3EMotion.expressiveDefaultOvershoot)),
-        weight: 30.0,
-      ),
-      TweenSequenceItem(
-        tween: Tween<double>(
-          begin: 0.95,
-          end: 1.0,
-        ).chain(CurveTween(curve: M3EMotion.emphasizedDecelerate)),
-        weight: 30.0,
-      ),
-    ]).animate(_iconBounceController);
+    );
 
     // Pill morph animation - rounded to pill with spring
     _pillMorphAnimation = ShapeMorph.createMorph(

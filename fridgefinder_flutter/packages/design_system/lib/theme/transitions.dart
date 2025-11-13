@@ -446,7 +446,7 @@ class M3ETransitions {
     );
   }
 
-  /// List item entrance animation with stagger
+  /// List item entrance animation with bouncy scale, stagger, and fade
   static Widget listItemEntrance({
     required Animation<double> animation,
     required Widget child,
@@ -458,24 +458,33 @@ class M3ETransitions {
     final adjustedInterval = Interval(
       staggerDelay,
       (staggerDelay + 0.7).clamp(0.0, 1.0),
-      curve: M3EMotion.emphasizedDecelerate,
+      curve: M3EMotion.expressiveDefaultOvershoot, // Bouncy curve!
     );
 
-    final slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.1),
-      end: Offset.zero,
+    // Bouncy scale animation from 0 to 1 with overshoot
+    final scaleAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
     ).animate(CurvedAnimation(
       parent: animation,
       curve: adjustedInterval,
     ));
 
-    final fadeAnimation = CurvedAnimation(
+    // Fade animation for smooth appearance
+    final fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
       parent: animation,
-      curve: adjustedInterval,
-    );
+      curve: Interval(
+        staggerDelay,
+        (staggerDelay + 0.3).clamp(0.0, 1.0),
+        curve: Curves.easeIn,
+      ),
+    ));
 
-    return SlideTransition(
-      position: slideAnimation,
+    return ScaleTransition(
+      scale: scaleAnimation,
       child: FadeTransition(
         opacity: fadeAnimation,
         child: child,

@@ -102,8 +102,8 @@ class FilterPillsRow extends ConsumerWidget {
       selected: isSelected,
       icon: Icons.favorite,
       color: const Color(
-        0xFF5FD65F,
-      ), // Tertiary green - matches subscribed markers
+        0xFFFFD700,
+      ), // Shimmering gold - matches subscribed markers
       onSelected: (_) => onPressed(),
     );
   }

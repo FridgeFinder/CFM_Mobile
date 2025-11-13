@@ -14,11 +14,47 @@ import '../../../../common_widgets/index.dart' as common_widgets;
 import '../../../../common_widgets/loading_messages.dart';
 
 /// My Fridges screen showing user's subscribed fridges
-class MyFridgesScreen extends ConsumerWidget {
+class MyFridgesScreen extends ConsumerStatefulWidget {
   const MyFridgesScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MyFridgesScreen> createState() => _MyFridgesScreenState();
+}
+
+class _MyFridgesScreenState extends ConsumerState<MyFridgesScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _listAnimationController;
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize animation controller for list entrance
+    _listAnimationController = AnimationController(
+      duration: M3EMotion.long2,
+      vsync: this,
+    );
+
+    // Delay animation start until after first frame renders (so it's more noticeable)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        // Add a small extra delay so the animation is visible
+        Future.delayed(const Duration(milliseconds: 150), () {
+          if (mounted) {
+            _listAnimationController.forward();
+          }
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _listAnimationController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final isAuthenticated = ref.watch(isAuthenticatedProvider);
     final subscriptionsAsync = ref.watch(subscribedFridgesProvider);
     final fridgesAsync = ref.watch(fridgeListProvider);
@@ -183,9 +219,14 @@ class MyFridgesScreen extends ConsumerWidget {
                         ? FridgeIconUtils.getStatusColor(report.condition)
                         : Colors.grey;
 
-                    return Padding(
-                      padding: M3ESpacing.only(bottom: M3ESpacing.sm),
-                      child: ListTileM3E(
+                    // Wrap each item with bouncy entrance animation
+                    return M3ETransitions.listItemEntrance(
+                      animation: _listAnimationController,
+                      index: index,
+                      totalItems: subscribedFridges.length.clamp(0, 10),
+                      child: Padding(
+                        padding: M3ESpacing.only(bottom: M3ESpacing.sm),
+                        child: ListTileM3E(
                         leading: SizedBox(
                           width: 40,
                           height: 40,
@@ -205,7 +246,7 @@ class MyFridgesScreen extends ConsumerWidget {
                             ),
                             Icon(
                               Icons.favorite,
-                              color: FridgeMarker.subscribedGreen,
+                              color: FridgeMarker.subscribedGold,
                               size: 20,
                             ),
                           ],
@@ -251,6 +292,7 @@ class MyFridgesScreen extends ConsumerWidget {
                                 FridgeProfileSheet(fridge: fridge),
                           );
                         },
+                      ),
                       ),
                     );
                   },

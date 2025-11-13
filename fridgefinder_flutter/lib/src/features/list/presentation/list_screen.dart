@@ -43,8 +43,17 @@ class _ListScreenState extends ConsumerState<ListScreen>
       vsync: this,
     );
 
-    // Start animation on mount
-    _listAnimationController.forward();
+    // Delay animation start until after first frame renders (so it's more noticeable)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        // Add a small extra delay so the animation is visible
+        Future.delayed(const Duration(milliseconds: 150), () {
+          if (mounted) {
+            _listAnimationController.forward();
+          }
+        });
+      }
+    });
   }
 
   @override

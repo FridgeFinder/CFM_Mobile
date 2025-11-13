@@ -1,24 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:design_system/design_system.dart';
 import '../../domain/models/fridge_domain.dart';
 import '../../../../core/utils/fridge_icon_utils.dart';
 
 /// Custom marker widget for displaying fridge on map
 /// Uses SVG icons that match the web app design system
 /// Includes health bar showing food level percentage
+/// Features M3E springy entrance/exit animations
 class FridgeMarker extends StatefulWidget {
   final FridgeDomain fridge;
   final bool isSubscribed;
+  final int? animationIndex; // For staggered entrance animation
   static const double markerSize = 40;
   static const double healthBarHeight = 6;
   static const double healthBarSpacing = 2;
 
-  /// Vibrant green color for subscribed fridges - matches tertiary color #5FD65F
-  static const Color subscribedGreen = Color(0xFF5FD65F);
+  /// Shimmering, glowing gold color for subscribed fridges - #FFD700
+  static const Color subscribedGold = Color(0xFFFFD700);
 
   const FridgeMarker({
     super.key,
     required this.fridge,
     this.isSubscribed = false,
+    this.animationIndex,
   });
 
   @override
@@ -26,25 +30,77 @@ class FridgeMarker extends StatefulWidget {
 }
 
 class _FridgeMarkerState extends State<FridgeMarker>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _animation;
+    with TickerProviderStateMixin {
+  late AnimationController _pulseController; // For subscribed glow pulse
+  late Animation<double> _pulseAnimation;
+
+  late AnimationController _entranceController; // For entrance/exit animation
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _fadeAnimation;
+
+  bool _hasAnimated = false; // Track if entrance animation has been played
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
+
+    // Pulse animation for subscribed fridges
+    _pulseController = AnimationController(
       duration: const Duration(milliseconds: 1500),
       vsync: this,
     )..repeat(reverse: true);
-    _animation = Tween<double>(begin: 0.3, end: 0.7).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    _pulseAnimation = Tween<double>(begin: 0.3, end: 0.7).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
+
+    // Entrance/exit animation - M3E springy pop and grow
+    // Duration: 700ms for smooth, noticeable, expressive entrance
+    _entranceController = AnimationController(
+      duration: M3EMotion.getDuration(M3EMotion.extraLong1), // 700ms
+      vsync: this,
+    );
+
+    // Scale animation with smooth overshoot for springy "pop" effect
+    // The expressiveDefaultOvershoot curve naturally handles 0 -> overshoot -> 1.0
+    // with smooth transitions (no discrete segments)
+    _scaleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _entranceController,
+        curve: M3EMotion.expressiveDefaultOvershoot,
+      ),
+    );
+
+    // Fade animation for smooth appearance
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _entranceController,
+        curve: const Interval(0.0, 0.3, curve: Curves.easeIn),
+      ),
+    );
+
+    // Start entrance animation with staggered delay (only on first appearance)
+    // GlobalKeys ensure this initState is only called once per marker lifecycle
+    if (!_hasAnimated) {
+      _hasAnimated = true;
+
+      // Limit stagger to first 20 markers to avoid excessive delays
+      final effectiveIndex = widget.animationIndex != null
+          ? (widget.animationIndex! % 20)
+          : 0;
+      final delay = Duration(milliseconds: effectiveIndex * 30); // 30ms stagger per marker
+
+      Future.delayed(delay, () {
+        if (mounted) {
+          _entranceController.forward();
+        }
+      });
+    }
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _pulseController.dispose();
+    _entranceController.dispose();
     super.dispose();
   }
 
@@ -119,35 +175,47 @@ class _FridgeMarkerState extends State<FridgeMarker>
       ),
     );
 
-    // Add thin pulsing green glow for subscribed fridges
-    if (widget.isSubscribed) {
-      return AnimatedBuilder(
-        animation: _animation,
-        builder: (context, child) {
-          return Container(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: FridgeMarker.subscribedGreen
-                      .withValues(alpha: _animation.value * 0.6),
-                  blurRadius: 8,
-                  spreadRadius: 1,
-                ),
-                BoxShadow(
-                  color: FridgeMarker.subscribedGreen
-                      .withValues(alpha: _animation.value * 0.4),
-                  blurRadius: 12,
-                  spreadRadius: 2,
-                ),
-              ],
-            ),
-            child: markerContent,
-          );
-        },
-      );
-    }
+    // Build marker with entrance animation
+    Widget animatedMarker = AnimatedBuilder(
+      animation: _entranceController,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: _scaleAnimation.value,
+          child: Opacity(
+            opacity: _fadeAnimation.value,
+            child: child,
+          ),
+        );
+      },
+      child: widget.isSubscribed
+          ? AnimatedBuilder(
+              animation: _pulseAnimation,
+              builder: (context, child) {
+                return Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: FridgeMarker.subscribedGold
+                            .withValues(alpha: _pulseAnimation.value * 0.6),
+                        blurRadius: 8,
+                        spreadRadius: 1,
+                      ),
+                      BoxShadow(
+                        color: FridgeMarker.subscribedGold
+                            .withValues(alpha: _pulseAnimation.value * 0.4),
+                        blurRadius: 12,
+                        spreadRadius: 2,
+                      ),
+                    ],
+                  ),
+                  child: markerContent,
+                );
+              },
+            )
+          : markerContent,
+    );
 
-    return markerContent;
+    return animatedMarker;
   }
 }

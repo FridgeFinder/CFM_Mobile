@@ -102,18 +102,13 @@ class _BadgeM3EState extends State<BadgeM3E>
       vsync: this,
     );
 
-    _scaleAnimation = TweenSequence<double>([
-      TweenSequenceItem(
-        tween: Tween<double>(begin: 0.0, end: 1.2)
-            .chain(CurveTween(curve: M3EMotion.expressiveFastOvershoot)),
-        weight: 40.0,
+    // Scale animation with smooth overshoot for expressive badge entrance
+    _scaleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: M3EMotion.expressiveFastOvershoot,
       ),
-      TweenSequenceItem(
-        tween: Tween<double>(begin: 1.2, end: 1.0)
-            .chain(CurveTween(curve: M3EMotion.emphasizedDecelerate)),
-        weight: 60.0,
-      ),
-    ]).animate(_controller);
+    );
 
     _fadeAnimation = CurvedAnimation(
       parent: _controller,

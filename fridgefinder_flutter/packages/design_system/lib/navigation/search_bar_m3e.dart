@@ -172,23 +172,13 @@ class _SearchBarM3EState extends State<SearchBarM3E>
       end: -8.0,
     ).animate(_expandAnimation);
 
-    // Icon scale/morph animation
-    _iconScaleAnimation = TweenSequence<double>([
-      TweenSequenceItem(
-        tween: Tween<double>(
-          begin: 1.0,
-          end: 1.2,
-        ).chain(CurveTween(curve: M3EMotion.expressiveFastOvershoot)),
-        weight: 50.0,
+    // Icon scale/morph animation with smooth overshoot
+    _iconScaleAnimation = Tween<double>(begin: 1.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _iconMorphController,
+        curve: M3EMotion.expressiveFastOvershoot,
       ),
-      TweenSequenceItem(
-        tween: Tween<double>(
-          begin: 1.2,
-          end: 1.0,
-        ).chain(CurveTween(curve: M3EMotion.emphasizedDecelerate)),
-        weight: 50.0,
-      ),
-    ]).animate(_iconMorphController);
+    );
 
     // Clear button fade animation
     _clearButtonAnimation = CurvedAnimation(

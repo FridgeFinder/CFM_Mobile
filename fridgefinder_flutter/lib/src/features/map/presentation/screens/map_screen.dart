@@ -48,6 +48,9 @@ class _MapScreenState extends ConsumerState<MapScreen>
   // ignore: unused_field
   Timer? _logOutputTimer; // Timer for outputting logs
 
+  // GlobalKeys for each fridge marker to preserve state across rebuilds
+  final Map<String, GlobalKey<State<FridgeMarker>>> _markerKeys = {};
+
   @override
   bool get wantKeepAlive => true; // Keep the map state alive
 
@@ -627,20 +630,36 @@ class _MapScreenState extends ConsumerState<MapScreen>
                                   );
 
                               return filteredFridges
+                                  .asMap()
+                                  .entries
                                   .map(
-                                    (fridge) => Marker(
-                                      point: LatLng(
-                                        fridge.location.geoLat,
-                                        fridge.location.geoLng,
-                                      ),
-                                      width: FridgeMarker.markerSize,
-                                      height: FridgeMarker.markerSize,
-                                      child: FridgeMarker(
-                                        fridge: fridge,
-                                        isSubscribed: subscribedFridgeIds
-                                            .contains(fridge.id),
-                                      ),
-                                    ),
+                                    (entry) {
+                                      final index = entry.key;
+                                      final fridge = entry.value;
+
+                                      // Get or create GlobalKey for this fridge
+                                      // GlobalKeys preserve widget state across parent rebuilds
+                                      final markerKey = _markerKeys.putIfAbsent(
+                                        fridge.id,
+                                        () => GlobalKey<State<FridgeMarker>>(),
+                                      );
+
+                                      return Marker(
+                                        point: LatLng(
+                                          fridge.location.geoLat,
+                                          fridge.location.geoLng,
+                                        ),
+                                        width: FridgeMarker.markerSize,
+                                        height: FridgeMarker.markerSize,
+                                        child: FridgeMarker(
+                                          key: markerKey,
+                                          fridge: fridge,
+                                          isSubscribed: subscribedFridgeIds
+                                              .contains(fridge.id),
+                                          animationIndex: index,
+                                        ),
+                                      );
+                                    },
                                   )
                                   .toList();
                             }(),
