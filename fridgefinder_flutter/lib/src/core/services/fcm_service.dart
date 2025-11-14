@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/widgets.dart';
 import '../utils/app_logger.dart';
 import '../../features/auth/data/repositories/auth_repository.dart';
 import '../providers/database_provider.dart';
@@ -14,7 +15,7 @@ import 'local_notification_service.dart';
 /// PRODUCTION ENVIRONMENT ONLY
 /// This always uses production FCM (FirebaseMessaging.instance).
 /// Not affected by fridge data API environment setting.
-class FCMService {
+class FCMService with WidgetsBindingObserver {
   final FirebaseMessaging _messaging;
   final AuthRepository _authRepository;
   final LocalNotificationService _localNotifications;
@@ -23,13 +24,57 @@ class FCMService {
   StreamSubscription<RemoteMessage>? _messageSubscription;
   StreamSubscription<NotificationSettings>? _settingsSubscription;
 
+  // Track when we last verified the token to avoid excessive checks
+  DateTime? _lastTokenVerification;
+  static const _tokenVerificationCooldown = Duration(minutes: 5);
+
   FCMService({
     FirebaseMessaging? messaging,
     AuthRepository? authRepository,
     LocalNotificationService? localNotifications,
   }) : _messaging = messaging ?? FirebaseMessaging.instance,
        _authRepository = authRepository ?? AuthRepository(),
-       _localNotifications = localNotifications ?? LocalNotificationService();
+       _localNotifications = localNotifications ?? LocalNotificationService() {
+    // Register lifecycle observer to handle app resume
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    // When app resumes from background, verify token is saved
+    // This is especially important for iOS where APNS token might become available after app launch
+    if (state == AppLifecycleState.resumed) {
+      logger.d('App resumed - checking FCM token status');
+      _onAppResumed();
+    }
+  }
+
+  /// Handle app resume - verify token is saved (with cooldown to avoid excessive checks)
+  Future<void> _onAppResumed() async {
+    try {
+      // Check cooldown to avoid excessive verifications
+      if (_lastTokenVerification != null) {
+        final timeSinceLastCheck = DateTime.now().difference(_lastTokenVerification!);
+        if (timeSinceLastCheck < _tokenVerificationCooldown) {
+          logger.d('Token verification skipped - checked ${timeSinceLastCheck.inSeconds}s ago');
+          return;
+        }
+      }
+
+      _lastTokenVerification = DateTime.now();
+
+      // Only verify if permissions are granted
+      final settings = await _messaging.getNotificationSettings();
+      if (settings.authorizationStatus == AuthorizationStatus.authorized ||
+          settings.authorizationStatus == AuthorizationStatus.provisional) {
+        await _verifyTokenSaved();
+      }
+    } catch (e) {
+      logger.e('Error handling app resume: $e');
+    }
+  }
 
   /// Initialize FCM service (without requesting permissions)
   /// Permissions should be requested when user subscribes to first fridge
@@ -80,11 +125,56 @@ class FCMService {
             logger.w('Could not get FCM token during initialization: $e');
           }
         }
+
+        // NEW: Verify token is saved in database, retry if missing
+        await _verifyTokenSaved();
       }
 
       logger.i('FCM service initialized');
     } catch (e) {
       logger.e('Error initializing FCM: $e');
+    }
+  }
+
+  /// Verify that FCM token is saved in database
+  /// If permissions are granted but token is missing, attempt to retrieve and save it
+  Future<void> _verifyTokenSaved() async {
+    try {
+      final currentUser = _authRepository.currentUser;
+      if (currentUser == null) return;
+
+      // Check if token exists in database
+      final database = DatabaseProvider.databaseRef;
+      final tokenSnapshot = await database
+          .child('users')
+          .child(currentUser.uid)
+          .child('fcmToken')
+          .get();
+
+      if (!tokenSnapshot.exists || tokenSnapshot.value == null || (tokenSnapshot.value as String).isEmpty) {
+        logger.w('FCM token not found in database - attempting to retrieve and save');
+
+        // Try to get and save token
+        try {
+          final token = await _messaging.getToken();
+          if (token != null && token.isNotEmpty) {
+            await _saveFCMToken(token);
+            logger.i('Missing FCM token retrieved and saved');
+          } else {
+            logger.w('FCM token still not available - listener will save when ready');
+          }
+        } catch (e) {
+          if (Platform.isIOS && e.toString().contains('apns-token-not-set')) {
+            logger.d('APNS token not ready during verification - listener will save when available');
+          } else {
+            logger.e('Error retrieving FCM token during verification: $e');
+          }
+        }
+      } else {
+        logger.d('FCM token verified in database');
+      }
+    } catch (e) {
+      logger.e('Error verifying FCM token: $e');
     }
   }
 
@@ -237,6 +327,73 @@ class FCMService {
     await _saveFCMToken(token);
   }
 
+  /// Public method to manually refresh and verify FCM token
+  /// Useful for:
+  /// - Recovering from token save failures
+  /// - Ensuring token is saved after iOS APNS token becomes available
+  /// - Manual retry from user settings
+  /// Returns true if token was successfully saved
+  Future<bool> refreshAndVerifyToken() async {
+    try {
+      logger.i('Manual token refresh requested');
+
+      // Check current permission status
+      final settings = await _messaging.getNotificationSettings();
+      if (settings.authorizationStatus != AuthorizationStatus.authorized &&
+          settings.authorizationStatus != AuthorizationStatus.provisional) {
+        logger.w('Cannot refresh token - permissions not granted');
+        return false;
+      }
+
+      // Attempt to get and save token
+      try {
+        final token = await _messaging.getToken();
+        if (token != null && token.isNotEmpty) {
+          await _saveFCMToken(token);
+          logger.i('Token manually refreshed and saved: ${token.substring(0, 20)}...');
+          return true;
+        } else {
+          logger.w('Token refresh returned null/empty token');
+          return false;
+        }
+      } catch (e) {
+        if (Platform.isIOS && e.toString().contains('apns-token-not-set')) {
+          logger.w('APNS token not ready during manual refresh - listener will save when available');
+          // Return true because permissions are granted and listener is active
+          return true;
+        }
+        logger.e('Error during manual token refresh: $e');
+        return false;
+      }
+    } catch (e) {
+      logger.e('Error refreshing FCM token: $e');
+      return false;
+    }
+  }
+
+  /// Check if FCM token exists in database
+  /// Returns true if token exists and is not empty
+  Future<bool> hasTokenInDatabase() async {
+    try {
+      final currentUser = _authRepository.currentUser;
+      if (currentUser == null) return false;
+
+      final database = DatabaseProvider.databaseRef;
+      final tokenSnapshot = await database
+          .child('users')
+          .child(currentUser.uid)
+          .child('fcmToken')
+          .get();
+
+      return tokenSnapshot.exists &&
+             tokenSnapshot.value != null &&
+             (tokenSnapshot.value as String).isNotEmpty;
+    } catch (e) {
+      logger.e('Error checking token in database: $e');
+      return false;
+    }
+  }
+
   /// Handle foreground messages
   void _handleForegroundMessage(RemoteMessage message) {
     logger.i('Foreground message received: ${message.messageId}');
@@ -288,5 +445,6 @@ class FCMService {
     _tokenSubscription?.cancel();
     _messageSubscription?.cancel();
     _settingsSubscription?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
   }
 }

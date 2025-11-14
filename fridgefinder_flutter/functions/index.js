@@ -34,13 +34,20 @@ async function sendNotificationToUser(userId, notification) {
     }
 
     // Send notification
+    // Convert all data values to strings (FCM requirement for iOS)
+    const dataPayload = {};
+    if (notification.data && Object.keys(notification.data).length > 0) {
+      for (const [key, value] of Object.entries(notification.data)) {
+        dataPayload[key] = String(value || '');
+      }
+    }
+
     const message = {
       token: userData.fcmToken,
       notification: {
         title: notification.title,
         body: notification.body,
       },
-      data: notification.data || {},
       android: {
         priority: 'high',
         notification: {
@@ -49,14 +56,26 @@ async function sendNotificationToUser(userId, notification) {
         },
       },
       apns: {
+        headers: {
+          'apns-priority': '10',
+        },
         payload: {
           aps: {
+            alert: {
+              title: notification.title,
+              body: notification.body,
+            },
             sound: 'default',
             badge: 1,
           },
         },
       },
     };
+
+    // Only add data field if it has content
+    if (Object.keys(dataPayload).length > 0) {
+      message.data = dataPayload;
+    }
 
     const response = await admin.messaging().send(message);
     console.log(`Successfully sent notification to ${userId}:`, response);

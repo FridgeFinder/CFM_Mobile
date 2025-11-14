@@ -21,6 +21,7 @@ if (!admin.apps.length) {
   try {
     admin.initializeApp({
       credential: admin.credential.applicationDefault(),
+      databaseURL: 'https://fridgefinder-app-default-rtdb.firebaseio.com',
     });
     console.log('Firebase Admin SDK initialized');
   } catch (error) {
