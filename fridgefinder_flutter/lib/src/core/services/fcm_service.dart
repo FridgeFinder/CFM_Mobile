@@ -156,6 +156,16 @@ class FCMService with WidgetsBindingObserver {
 
         // Try to get and save token
         try {
+          // CRITICAL FIX: On iOS, request APNS token first
+          if (Platform.isIOS) {
+            final apnsToken = await _messaging.getAPNSToken();
+            if (apnsToken == null) {
+              logger.w('APNS token not available during verification - listener will save when ready');
+              return;
+            }
+            logger.d('APNS token verified during token verification');
+          }
+
           final token = await _messaging.getToken();
           if (token != null && token.isNotEmpty) {
             await _saveFCMToken(token);
@@ -239,6 +249,21 @@ class FCMService with WidgetsBindingObserver {
     });
 
     try {
+      // CRITICAL FIX: On iOS, request APNS token first
+      if (Platform.isIOS) {
+        final apnsToken = await _messaging.getAPNSToken();
+        if (apnsToken == null) {
+          logger.w('APNS token is null - retrying...');
+          if (retryCount < maxRetries) {
+            await Future.delayed(retryDelay);
+            return _requestTokenAndSave(retryCount: retryCount + 1);
+          }
+          logger.w('APNS token not available after $maxRetries retries. Token will be saved when available.');
+          return false;
+        }
+        logger.d('APNS token obtained: ${apnsToken.substring(0, 20)}...');
+      }
+
       // Get FCM token
       final token = await _messaging.getToken();
       if (token != null && token.isNotEmpty) {
@@ -257,21 +282,21 @@ class FCMService with WidgetsBindingObserver {
     } catch (e) {
       final errorStr = e.toString();
       final isAPNSError = errorStr.contains('apns-token-not-set');
-      
+
       // Check if it's an APNS token error on iOS
       if (Platform.isIOS && isAPNSError && retryCount < maxRetries) {
         logger.d('APNS token not ready, retrying in ${retryDelay.inSeconds} seconds... (attempt ${retryCount + 1}/$maxRetries)');
         await Future.delayed(retryDelay);
         return _requestTokenAndSave(retryCount: retryCount + 1);
       }
-      
+
       // If APNS token error after all retries, don't throw - just return false
       // The listener is already set up, so token will be saved when available
       if (Platform.isIOS && isAPNSError) {
         logger.w('APNS token not ready after $maxRetries retries. Token will be saved automatically when available.');
         return false; // Don't throw - listener will handle it
       }
-      
+
       logger.e('Error getting FCM token: $e');
       rethrow; // Re-throw non-APNS errors
     }
@@ -347,6 +372,16 @@ class FCMService with WidgetsBindingObserver {
 
       // Attempt to get and save token
       try {
+        // CRITICAL FIX: On iOS, request APNS token first
+        if (Platform.isIOS) {
+          final apnsToken = await _messaging.getAPNSToken();
+          if (apnsToken == null) {
+            logger.w('APNS token not available during manual refresh - listener will save when ready');
+            return false;
+          }
+          logger.d('APNS token verified during manual refresh');
+        }
+
         final token = await _messaging.getToken();
         if (token != null && token.isNotEmpty) {
           await _saveFCMToken(token);
@@ -359,8 +394,8 @@ class FCMService with WidgetsBindingObserver {
       } catch (e) {
         if (Platform.isIOS && e.toString().contains('apns-token-not-set')) {
           logger.w('APNS token not ready during manual refresh - listener will save when available');
-          // Return true because permissions are granted and listener is active
-          return true;
+          // Return false because we couldn't get the token
+          return false;
         }
         logger.e('Error during manual token refresh: $e');
         return false;

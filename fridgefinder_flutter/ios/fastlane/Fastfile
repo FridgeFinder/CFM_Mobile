@@ -60,7 +60,7 @@ platform :ios do
 
     # Install provisioning profile to system location
     # Xcode looks for profiles in ~/Library/MobileDevice/Provisioning Profiles/
-    mobileprovision_path = File.expand_path("profiles/dev-tester.mobileprovision", __dir__)
+    mobileprovision_path = File.expand_path("profiles/firebase-beta.mobileprovision", __dir__)
 
     if File.exist?(mobileprovision_path)
       UI.message "📦 Installing provisioning profile..."

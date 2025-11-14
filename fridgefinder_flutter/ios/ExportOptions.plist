@@ -5,11 +5,11 @@
 	<key>compileBitcode</key>
 	<false/>
 	<key>method</key>
-	<string>development</string>
+	<string>ad-hoc</string>
 	<key>provisioningProfiles</key>
 	<dict>
 		<key>com.fridgefinder.fridgefinderFlutterApp</key>
-		<string>f4d7efba-e172-4d06-8eed-c959bcb0109d</string>
+		<string>1c5c7b88-ff40-483f-86f7-3790d6661295</string>
 	</dict>
 	<key>signingStyle</key>
 	<string>manual</string>
