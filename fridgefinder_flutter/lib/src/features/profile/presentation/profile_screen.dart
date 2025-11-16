@@ -6,11 +6,13 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:design_system/design_system.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/providers/theme_provider.dart';
 import '../../../core/providers/environment_provider.dart';
 import '../../../core/providers/location_provider.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/points_provider.dart';
+import '../../../core/constants/app_constants.dart';
 import '../../../features/auth/domain/models/user_profile.dart';
 import '../../../features/auth/presentation/widgets/sign_in_widget.dart';
 import '../../../features/auth/presentation/widgets/reauthenticate_dialog.dart';
@@ -28,7 +30,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   // Local state for optimistic updates
   bool? _localNotificationsEnabled;
   bool? _localGeofencingEnabled;
-  NotificationFrequency? _localNotificationFrequency;
+  // NotificationFrequency? _localNotificationFrequency; // TODO: Restore when frequency UI is re-enabled
 
   @override
   Widget build(BuildContext context) {
@@ -70,6 +72,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             onPressed: () {
                               DialogM3E.showCustom(
                                 context: context,
+                                barrierDismissible: true,
                                 child: Padding(
                                   padding: M3ESpacing.all(M3ESpacing.xl),
                                   child: SignInWidget(),
@@ -458,6 +461,59 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       mode: AppThemeMode.dark,
                       isSelected: themeMode == AppThemeMode.dark,
                       icon: Icons.dark_mode,
+                    ),
+                  ],
+                ),
+              ),
+              M3ESpacing.verticalMD,
+              // Privacy Policy Section
+              CardM3E(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.privacy_tip_outlined,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        M3ESpacing.horizontalSM,
+                        Text(
+                          'Privacy & Legal',
+                          style: M3ETypography.titleMedium.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                    M3ESpacing.verticalSM,
+                    Text(
+                      'Learn how we protect and handle your data',
+                      style: M3ETypography.bodyMedium.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    M3ESpacing.verticalMD,
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButtonM3E(
+                        onPressed: () async {
+                          final uri = Uri.parse(AppConstants.privacyPolicyUrl);
+                          if (!await launchUrl(
+                            uri,
+                            mode: LaunchMode.externalApplication,
+                          )) {
+                            if (context.mounted) {
+                              showSnackbarM3E(
+                                context: context,
+                                message: 'Could not open privacy policy',
+                              );
+                            }
+                          }
+                        },
+                        icon: Icons.open_in_new,
+                        child: const Text('View Privacy Policy'),
+                      ),
                     ),
                   ],
                 ),
@@ -980,83 +1036,79 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
           M3ESpacing.verticalSM,
         ],
-        // Center the notification frequency group
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Text('Notification Frequency', style: M3ETypography.bodyLarge),
-            M3ESpacing.verticalXS,
-            SegmentedButtonM3E<NotificationFrequency>(
-              showSelectedIcon: false,
-              emptySelectionAllowed: false,
-              segments: const [
-                ButtonSegment(
-                  value: NotificationFrequency.immediate,
-                  label: Text('Immediate'),
-                ),
-                ButtonSegment(
-                  value: NotificationFrequency.daily,
-                  label: Text('Daily'),
-                ),
-                ButtonSegment(
-                  value: NotificationFrequency.weekly,
-                  label: Text('Weekly'),
-                ),
-              ],
-              selected: {
-                _localNotificationFrequency ??
-                    profile.settings.notificationFrequency,
-              },
-              onSelectionChanged: (Set<NotificationFrequency> selected) async {
-                if (selected.isNotEmpty) {
-                  // Optimistic update - change UI immediately
-                  setState(() => _localNotificationFrequency = selected.first);
-
-                  try {
-                    final updatedProfile = profile.copyWith(
-                      settings: profile.settings.copyWith(
-                        notificationFrequency: selected.first,
-                      ),
-                    );
-                    final repository = ref.read(authRepositoryProvider);
-                    await repository.updateUserProfile(updatedProfile);
-
-                    // Invalidate to refresh data, but local state prevents jank
-                    ref.invalidate(userProfileProvider);
-
-                    // Clear local state after a delay to let new data load
-                    Future.delayed(const Duration(milliseconds: 500), () {
-                      if (mounted) {
-                        setState(() => _localNotificationFrequency = null);
-                      }
-                    });
-
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Notification frequency updated'),
-                        ),
-                      );
-                    }
-                  } catch (e) {
-                    // On error, revert local state and show error
-                    if (mounted) {
-                      setState(
-                        () => _localNotificationFrequency =
-                            profile.settings.notificationFrequency,
-                      );
-                    }
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(
-                        context,
-                      ).showSnackBar(SnackBar(content: Text('Error: $e')));
-                    }
-                  }
-                }
-              },
-            ),
-          ],
-        ),
+        // TODO: Notification Frequency - Hidden until batching implementation complete
+        // Requires: Cloud Function batching logic, scheduled functions, pending notifications queue
+        // See: NOTIFICATION_SYSTEM_DOCUMENTATION.md section on "Implement Notification Frequency"
+        //
+        // Uncomment this section when backend batching is implemented:
+        // Column(
+        //   crossAxisAlignment: CrossAxisAlignment.center,
+        //   children: [
+        //     Text('Notification Frequency', style: M3ETypography.bodyLarge),
+        //     M3ESpacing.verticalXS,
+        //     SegmentedButtonM3E<NotificationFrequency>(
+        //       showSelectedIcon: false,
+        //       emptySelectionAllowed: false,
+        //       segments: const [
+        //         ButtonSegment(
+        //           value: NotificationFrequency.immediate,
+        //           label: Text('Immediate'),
+        //         ),
+        //         ButtonSegment(
+        //           value: NotificationFrequency.daily,
+        //           label: Text('Daily'),
+        //         ),
+        //         ButtonSegment(
+        //           value: NotificationFrequency.weekly,
+        //           label: Text('Weekly'),
+        //         ),
+        //       ],
+        //       selected: {
+        //         _localNotificationFrequency ??
+        //             profile.settings.notificationFrequency,
+        //       },
+        //       onSelectionChanged: (Set<NotificationFrequency> selected) async {
+        //         if (selected.isNotEmpty) {
+        //           setState(() => _localNotificationFrequency = selected.first);
+        //           try {
+        //             final updatedProfile = profile.copyWith(
+        //               settings: profile.settings.copyWith(
+        //                 notificationFrequency: selected.first,
+        //               ),
+        //             );
+        //             final repository = ref.read(authRepositoryProvider);
+        //             await repository.updateUserProfile(updatedProfile);
+        //             ref.invalidate(userProfileProvider);
+        //             Future.delayed(const Duration(milliseconds: 500), () {
+        //               if (mounted) {
+        //                 setState(() => _localNotificationFrequency = null);
+        //               }
+        //             });
+        //             if (context.mounted) {
+        //               ScaffoldMessenger.of(context).showSnackBar(
+        //                 const SnackBar(
+        //                   content: Text('Notification frequency updated'),
+        //                 ),
+        //               );
+        //             }
+        //           } catch (e) {
+        //             if (mounted) {
+        //               setState(
+        //                 () => _localNotificationFrequency =
+        //                     profile.settings.notificationFrequency,
+        //               );
+        //             }
+        //             if (context.mounted) {
+        //               ScaffoldMessenger.of(
+        //                 context,
+        //               ).showSnackBar(SnackBar(content: Text('Error: $e')));
+        //             }
+        //           }
+        //         }
+        //       },
+        //     ),
+        //   ],
+        // ),
       ],
     );
   }

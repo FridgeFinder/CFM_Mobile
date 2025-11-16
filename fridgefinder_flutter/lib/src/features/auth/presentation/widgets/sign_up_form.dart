@@ -2,8 +2,10 @@ import 'package:flutter/material.dart' hide StepperType;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:design_system/design_system.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/utils/app_logger.dart';
+import '../../../../core/constants/app_constants.dart';
 import '../../domain/models/user_profile.dart';
 import 'username_generator.dart';
 
@@ -11,10 +13,7 @@ import 'username_generator.dart';
 class SignUpForm extends ConsumerStatefulWidget {
   final firebase_auth.UserCredential userCredential;
 
-  const SignUpForm({
-    super.key,
-    required this.userCredential,
-  });
+  const SignUpForm({super.key, required this.userCredential});
 
   @override
   ConsumerState<SignUpForm> createState() => _SignUpFormState();
@@ -158,7 +157,7 @@ class _SignUpFormState extends ConsumerState<SignUpForm>
       );
 
       await repository.createUserProfile(profile);
-      
+
       // Invalidate providers to refresh UI
       ref.invalidate(authUserProvider);
       ref.invalidate(userProfileProvider);
@@ -170,9 +169,9 @@ class _SignUpFormState extends ConsumerState<SignUpForm>
     } catch (e) {
       logger.e('Error completing sign up: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error completing sign up: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error completing sign up: $e')));
       }
     }
   }
@@ -184,31 +183,60 @@ class _SignUpFormState extends ConsumerState<SignUpForm>
       child: FadeTransition(
         opacity: _fadeAnimation,
         child: IntrinsicHeight(
-          child: StepperM3E(
-          currentStep: _currentStep,
-          type: StepperType.horizontal,
-          steps: [
-            StepperStepM3E(
-              title: 'Volunteer',
-              content: _buildVolunteerStep(),
-            ),
-            StepperStepM3E(
-              title: _isVolunteer ? 'Zip Code' : 'Username',
-              content: _buildUsernameStep(),
-            ),
-          ],
-          onStepTapped: (index) {
-            if (index <= _currentStep) {
-              setState(() {
-                _currentStep = index;
-                _fadeController.reset();
-                _fadeController.forward();
-              });
-            }
-          },
-          onStepContinue: _nextStep,
-          onStepCancel: _previousStep,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              StepperM3E(
+                currentStep: _currentStep,
+                type: StepperType.horizontal,
+                steps: [
+                  StepperStepM3E(
+                    title: 'Volunteer',
+                    content: _buildVolunteerStep(),
+                  ),
+                  StepperStepM3E(
+                    title: _isVolunteer ? 'Zip Code' : 'Username',
+                    content: _buildUsernameStep(),
+                  ),
+                ],
+                onStepTapped: (index) {
+                  if (index <= _currentStep) {
+                    setState(() {
+                      _currentStep = index;
+                      _fadeController.reset();
+                      _fadeController.forward();
+                    });
+                  }
+                },
+                onStepContinue: _nextStep,
+                onStepCancel: _previousStep,
+              ),
+              M3ESpacing.verticalMD,
+              _buildPrivacyPolicyLink(context),
+            ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPrivacyPolicyLink(BuildContext context) {
+    return TextButton(
+      onPressed: () async {
+        final uri = Uri.parse(AppConstants.privacyPolicyUrl);
+        if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Could not open privacy policy')),
+            );
+          }
+        }
+      },
+      child: Text(
+        'Privacy Policy',
+        style: M3ETypography.bodySmall.copyWith(
+          decoration: TextDecoration.underline,
+          color: Theme.of(context).colorScheme.primary,
         ),
       ),
     );
@@ -218,10 +246,7 @@ class _SignUpFormState extends ConsumerState<SignUpForm>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Are you a volunteer?',
-          style: M3ETypography.titleLarge,
-        ),
+        Text('Are you a volunteer?', style: M3ETypography.titleLarge),
         M3ESpacing.verticalXS,
         Text(
           'Volunteers help maintain and stock community fridges',
@@ -266,10 +291,7 @@ class _SignUpFormState extends ConsumerState<SignUpForm>
           ),
           M3ESpacing.verticalXL,
         ],
-        Text(
-          'Your username',
-          style: M3ETypography.titleMedium,
-        ),
+        Text('Your username', style: M3ETypography.titleMedium),
         M3ESpacing.verticalXS,
         Container(
           padding: M3ESpacing.all(M3ESpacing.md),
@@ -312,8 +334,70 @@ class _SignUpFormState extends ConsumerState<SignUpForm>
           'Click the dice icon to generate a new username',
           style: M3ETypography.bodySmall,
         ),
+        M3ESpacing.verticalMD,
+        // Privacy Policy reminder
+        Container(
+          padding: M3ESpacing.all(M3ESpacing.sm),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(M3EShapes.small),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.info_outline,
+                size: 16,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              M3ESpacing.horizontalXS,
+              Expanded(
+                child: Text.rich(
+                  TextSpan(
+                    style: M3ETypography.bodySmall.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                    children: [
+                      const TextSpan(text: 'By continuing, you agree to our '),
+                      WidgetSpan(
+                        alignment: PlaceholderAlignment.baseline,
+                        baseline: TextBaseline.alphabetic,
+                        child: GestureDetector(
+                          onTap: () async {
+                            final uri = Uri.parse(
+                              AppConstants.privacyPolicyUrl,
+                            );
+                            if (!await launchUrl(
+                              uri,
+                              mode: LaunchMode.externalApplication,
+                            )) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Could not open privacy policy',
+                                    ),
+                                  ),
+                                );
+                              }
+                            }
+                          },
+                          child: Text(
+                            'Privacy Policy',
+                            style: M3ETypography.bodySmall.copyWith(
+                              color: Theme.of(context).colorScheme.primary,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ],
     );
   }
 }
-

@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:design_system/design_system.dart';
+import 'package:url_launcher/url_launcher.dart';
 import './bottom_nav_bar.dart';
 import '../common_widgets/index.dart' as common_widgets;
 import '../core/providers/auth_provider.dart';
 import '../core/providers/drawer_provider.dart';
 import '../core/providers/subscriptions_provider.dart';
+import '../core/constants/app_constants.dart';
 import '../features/auth/presentation/widgets/sign_in_widget.dart';
 
 /// Main shell layout that keeps the bottom navigation bar constant
@@ -263,6 +265,35 @@ class _MainShellState extends ConsumerState<MainShell>
                 footer: Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
+                    // Privacy Policy Link
+                    TextButton.icon(
+                      onPressed: () async {
+                        final uri = Uri.parse(AppConstants.privacyPolicyUrl);
+                        if (!await launchUrl(
+                          uri,
+                          mode: LaunchMode.externalApplication,
+                        )) {
+                          if (context.mounted) {
+                            showSnackbarM3E(
+                              context: context,
+                              message: 'Could not open privacy policy',
+                            );
+                          }
+                        }
+                      },
+                      icon: Icon(
+                        Icons.privacy_tip_outlined,
+                        size: 16,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                      label: Text(
+                        'Privacy Policy',
+                        style: M3ETypography.bodySmall.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
                     // Keep divider full width
                     SizedBox(
                       width: double.infinity,
@@ -286,7 +317,7 @@ class _MainShellState extends ConsumerState<MainShell>
                                   DialogM3E.showCustom(
                                     context: context,
                                     child: Padding(
-                                      padding: M3ESpacing.all(M3ESpacing.xl),
+                                      padding: M3ESpacing.all(0),
                                       child: SignInWidget(),
                                     ),
                                   );

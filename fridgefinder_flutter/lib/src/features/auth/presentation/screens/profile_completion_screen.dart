@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:design_system/design_system.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/utils/app_logger.dart';
 import '../../domain/models/user_profile.dart';
 import '../widgets/username_generator.dart';
+import '../widgets/dice_roll_animation.dart';
 
 /// Screen shown when user is authenticated but profile is incomplete
 /// Forces user to complete required profile fields before accessing the app
@@ -23,6 +26,7 @@ class _ProfileCompletionScreenState
   String _username = '';
   bool _isVolunteer = false;
   bool _isSubmitting = false;
+  bool _isRollingDice = false;
   String? _errorMessage;
 
   Future<void> _createProfile() async {
@@ -122,9 +126,7 @@ class _ProfileCompletionScreenState
       }
 
       // Update profile with zipCode
-      final updatedProfile = profileAsync.copyWith(
-        zipCode: _zipCode,
-      );
+      final updatedProfile = profileAsync.copyWith(zipCode: _zipCode);
 
       await repository.updateUserProfile(updatedProfile);
 
@@ -152,16 +154,29 @@ class _ProfileCompletionScreenState
   }
 
   Future<void> _generateUsername() async {
+    // Start dice roll animation
+    setState(() => _isRollingDice = true);
+
     try {
       final repository = ref.read(authRepositoryProvider);
       final generator = UsernameGenerator(repository);
       final username = await generator.generateUniqueUsername(
         isVolunteer: _isVolunteer,
       );
-      setState(() => _username = username);
+
+      // Wait for animation to complete before updating username
+      await Future.delayed(const Duration(milliseconds: 800));
+
+      if (mounted) {
+        setState(() {
+          _username = username;
+          _isRollingDice = false;
+        });
+      }
     } catch (e) {
       logger.e('Error generating username: $e');
       if (mounted) {
+        setState(() => _isRollingDice = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error generating username: $e')),
         );
@@ -181,9 +196,7 @@ class _ProfileCompletionScreenState
           title: const Text('Complete Your Profile'),
         ),
         body: profileAsync.when(
-          loading: () => const Center(
-            child: LoadingIndicatorM3E(),
-          ),
+          loading: () => const Center(child: LoadingIndicatorM3E()),
           error: (error, stack) => Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -222,19 +235,98 @@ class _ProfileCompletionScreenState
                       size: 64,
                       color: Color(0xFF88B3FF),
                     ),
-                    const SizedBox(height: 24),
-                    Text(
-                      'Complete Your Profile',
-                      style: M3ETypography.headlineMedium,
-                      textAlign: TextAlign.center,
-                    ),
                     const SizedBox(height: 16),
                     Text(
                       'Please complete your profile to continue using the app.',
                       style: M3ETypography.bodyMedium,
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 24),
+                    // Username field with dice button
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Username *',
+                          style: M3ETypography.labelLarge.copyWith(
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 16,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.surfaceContainerHighest,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: Theme.of(context).colorScheme.outline
+                                        .withValues(alpha: 0.2),
+                                  ),
+                                ),
+                                child: Text(
+                                  _username.isEmpty
+                                      ? 'Generating...'
+                                      : _username,
+                                  style: M3ETypography.bodyLarge.copyWith(
+                                    color: _username.isEmpty
+                                        ? Theme.of(
+                                            context,
+                                          ).colorScheme.onSurfaceVariant
+                                        : Theme.of(
+                                            context,
+                                          ).colorScheme.onSurface,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            // Dice button with animation
+                            Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: _isRollingDice
+                                    ? null
+                                    : _generateUsername,
+                                borderRadius: BorderRadius.circular(12),
+                                child: Container(
+                                  width: 56,
+                                  height: 56,
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primaryContainer,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: DiceRollAnimation(
+                                    isRolling: _isRollingDice,
+                                    size: 32,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Tap the dice to generate a new username',
+                          style: M3ETypography.bodySmall.copyWith(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
                     // Volunteer checkbox
                     CheckboxM3E(
                       label: 'I am a volunteer',
@@ -242,26 +334,6 @@ class _ProfileCompletionScreenState
                       onChanged: (value) {
                         setState(() => _isVolunteer = value ?? false);
                       },
-                    ),
-                    const SizedBox(height: 24),
-                    // Username field
-                    TextFieldM3E(
-                      labelText: 'Username *',
-                      hintText: _username.isEmpty ? 'Generating...' : _username,
-                      onChanged: (value) {
-                        setState(() {
-                          _username = value;
-                          _errorMessage = null;
-                        });
-                      },
-                    ),
-                    const SizedBox(height: 8),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton(
-                        onPressed: _generateUsername,
-                        child: const Text('Generate New Username'),
-                      ),
                     ),
                     const SizedBox(height: 16),
                     // Zip code field (if volunteer)
@@ -279,7 +351,7 @@ class _ProfileCompletionScreenState
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'We collect zip codes for non-profit funding purposes.',
+                        'We collect zip codes for non-profit funding purposes and don\'t share data with anyone.',
                         style: M3ETypography.bodySmall.copyWith(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
@@ -305,11 +377,39 @@ class _ProfileCompletionScreenState
                               width: 20,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                valueColor:
-                                    AlwaysStoppedAnimation(Colors.white),
+                                valueColor: AlwaysStoppedAnimation(
+                                  Colors.white,
+                                ),
                               ),
                             )
                           : const Text('Create Profile'),
+                    ),
+                    TextButton.icon(
+                      onPressed: () async {
+                        final uri = Uri.parse(AppConstants.privacyPolicyUrl);
+                        if (!await launchUrl(
+                          uri,
+                          mode: LaunchMode.externalApplication,
+                        )) {
+                          if (context.mounted) {
+                            showSnackbarM3E(
+                              context: context,
+                              message: 'Could not open privacy policy',
+                            );
+                          }
+                        }
+                      },
+                      icon: Icon(
+                        Icons.privacy_tip_outlined,
+                        size: 16,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                      label: Text(
+                        'Privacy Policy',
+                        style: M3ETypography.bodySmall.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -317,7 +417,8 @@ class _ProfileCompletionScreenState
             }
 
             // Check if volunteer needs to provide zip code
-            final needsZipCode = profile.isVolunteer &&
+            final needsZipCode =
+                profile.isVolunteer &&
                 (profile.zipCode == null || profile.zipCode!.isEmpty);
 
             if (!needsZipCode) {
@@ -389,8 +490,7 @@ class _ProfileCompletionScreenState
                             width: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor:
-                                  AlwaysStoppedAnimation(Colors.white),
+                              valueColor: AlwaysStoppedAnimation(Colors.white),
                             ),
                           )
                         : const Text('Complete Profile'),

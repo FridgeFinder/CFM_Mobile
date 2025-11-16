@@ -60,7 +60,9 @@ class _StatusUpdateFormState extends ConsumerState<StatusUpdateForm> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to pick image: ${e.toString()}'),
-          backgroundColor: const Color(0xFFFFB300), // M3E Vibrant AMBER for warning
+          backgroundColor: const Color(
+            0xFFFFB300,
+          ), // M3E Vibrant AMBER for warning
         ),
       );
     }
@@ -86,7 +88,8 @@ class _StatusUpdateFormState extends ConsumerState<StatusUpdateForm> {
 
       // Use current condition as default if user didn't select one
       // This keeps the field optional in UI but satisfies API requirements
-      final conditionToSubmit = _selectedCondition ??
+      final conditionToSubmit =
+          _selectedCondition ??
           widget.fridge.latestFridgeReport?.condition ??
           FridgeCondition.good;
 
@@ -127,7 +130,9 @@ class _StatusUpdateFormState extends ConsumerState<StatusUpdateForm> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Status update submitted for ${widget.fridge.name}'),
-          backgroundColor: const Color(0xFF5FD65F), // M3E Vibrant GREEN for success
+          backgroundColor: const Color(
+            0xFF5FD65F,
+          ), // M3E Vibrant GREEN for success
         ),
       );
 
@@ -146,7 +151,9 @@ class _StatusUpdateFormState extends ConsumerState<StatusUpdateForm> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to submit update: ${e.toString()}'),
-          backgroundColor: const Color(0xFFFF7043), // M3E Vibrant CORAL for errors
+          backgroundColor: const Color(
+            0xFFFF7043,
+          ), // M3E Vibrant CORAL for errors
         ),
       );
     }
@@ -174,18 +181,9 @@ class _StatusUpdateFormState extends ConsumerState<StatusUpdateForm> {
       currentStep: _currentStep,
       type: StepperType.horizontal,
       steps: [
-        StepperStepM3E(
-          title: 'Condition',
-          content: _buildConditionStep(),
-        ),
-        StepperStepM3E(
-          title: 'Food Level',
-          content: _buildFoodLevelStep(),
-        ),
-        StepperStepM3E(
-          title: 'Details',
-          content: _buildDetailsStep(),
-        ),
+        StepperStepM3E(title: 'Condition', content: _buildConditionStep()),
+        StepperStepM3E(title: 'Food Level', content: _buildFoodLevelStep()),
+        StepperStepM3E(title: 'Details', content: _buildDetailsStep()),
       ],
       onStepTapped: (index) {
         if (index <= _currentStep) {
@@ -234,10 +232,7 @@ class _StatusUpdateFormState extends ConsumerState<StatusUpdateForm> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Fridge Condition (Optional)',
-            style: M3ETypography.labelLarge,
-          ),
+          Text('Fridge Condition (Optional)', style: M3ETypography.labelLarge),
           SizedBox(height: M3ESpacing.xs),
           ...FridgeCondition.values
               .where((condition) => condition != FridgeCondition.ghost)
@@ -261,13 +256,9 @@ class _StatusUpdateFormState extends ConsumerState<StatusUpdateForm> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Food Level',
-            style: M3ETypography.labelLarge,
-          ),
+          Text('Food Level', style: M3ETypography.labelLarge),
           // Fixed height container to prevent layout shifts when tooltip appears
           SizedBox(
-            height: 80, // Tall enough to accommodate slider + tooltip
             child: SliderM3E(
               value: _foodPercentage,
               onChanged: (value) {
@@ -301,22 +292,7 @@ class _StatusUpdateFormState extends ConsumerState<StatusUpdateForm> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Additional Notes (Optional)',
-            style: M3ETypography.labelLarge,
-          ),
-          SizedBox(height: M3ESpacing.xs),
-          TextFieldM3E(
-            controller: _notesController,
-            maxLines: 3,
-            hintText: 'Any additional information...',
-            filled: true,
-          ),
-          SizedBox(height: M3ESpacing.md),
-          Text(
-            'Photo (Optional)',
-            style: M3ETypography.labelLarge,
-          ),
+          Text('Photo of Fridge Contents', style: M3ETypography.labelLarge),
           SizedBox(height: M3ESpacing.xs),
           if (_selectedImage != null)
             Stack(
@@ -350,10 +326,7 @@ class _StatusUpdateFormState extends ConsumerState<StatusUpdateForm> {
                   child: OutlinedButtonM3E(
                     icon: Icons.camera_alt,
                     onPressed: () => _pickImage(ImageSource.camera),
-                    child: Text(
-                      'Camera',
-                      style: M3ETypography.labelLarge,
-                    ),
+                    child: Text('Camera', style: M3ETypography.labelLarge),
                   ),
                 ),
                 SizedBox(width: M3ESpacing.xs),
@@ -361,14 +334,20 @@ class _StatusUpdateFormState extends ConsumerState<StatusUpdateForm> {
                   child: OutlinedButtonM3E(
                     icon: Icons.photo_library,
                     onPressed: () => _pickImage(ImageSource.gallery),
-                    child: Text(
-                      'Gallery',
-                      style: M3ETypography.labelLarge,
-                    ),
+                    child: Text('Gallery', style: M3ETypography.labelLarge),
                   ),
                 ),
               ],
             ),
+          SizedBox(height: M3ESpacing.md),
+          Text('Additional Notes (Optional)', style: M3ETypography.labelLarge),
+          SizedBox(height: M3ESpacing.xs),
+          TextFieldM3E(
+            controller: _notesController,
+            maxLines: 3,
+            hintText: 'Any additional information...',
+            filled: true,
+          ),
         ],
       ),
     );

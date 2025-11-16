@@ -57,3 +57,9 @@
     java.lang.Object writeReplace();
     java.lang.Object readResolve();
 }
+
+# Play Core - Suppress warnings for deferred components (Flutter embedding)
+-dontwarn com.google.android.play.core.tasks.OnFailureListener
+-dontwarn com.google.android.play.core.tasks.OnSuccessListener
+-dontwarn com.google.android.play.core.tasks.Task
+-dontwarn com.google.android.play.core.**

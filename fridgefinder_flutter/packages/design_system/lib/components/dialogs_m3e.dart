@@ -105,10 +105,7 @@ class DialogM3E {
       barrierColor: barrierColor ?? Colors.black54,
       transitionDuration: M3EMotion.getDuration(M3EMotion.long2), // 500ms
       pageBuilder: (context, animation, secondaryAnimation) {
-        return Dialog(
-          shape: M3EShapes.dialog,
-          child: child,
-        );
+        return child;
       },
       transitionBuilder: (context, animation, secondaryAnimation, child) {
         return _DialogTransition(animation: animation, child: child);
@@ -134,12 +131,6 @@ class _DialogTransition extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Scrim fade (0-30% of animation)
-    final scrimAnimation = CurvedAnimation(
-      parent: animation,
-      curve: const Interval(0.0, 0.3, curve: Curves.easeOut),
-    );
-
     // Dialog scale with spring (0-100%)
     final scaleAnimation = Tween<double>(
       begin: 0.8,
@@ -155,31 +146,19 @@ class _DialogTransition extends StatelessWidget {
       curve: const Interval(0.3, 1.0, curve: Curves.easeIn),
     );
 
-    return Stack(
-      children: [
-        // Scrim backdrop
-        FadeTransition(
-          opacity: scrimAnimation,
-          child: Container(
-            color: Colors.black54,
+    // Dialog with scale animation (scrim is handled by showGeneralDialog's barrier)
+    return Center(
+      child: FadeTransition(
+        opacity: contentFadeAnimation,
+        child: ScaleTransition(
+          scale: scaleAnimation,
+          child: Dialog(
+            elevation: M3EElevation.dialog,
+            shape: M3EShapes.dialog,
+            child: child,
           ),
         ),
-        // Dialog with scale animation
-        Center(
-          child: FadeTransition(
-            opacity: contentFadeAnimation,
-            child: ScaleTransition(
-              scale: scaleAnimation,
-              child: Material(
-                elevation: M3EElevation.dialog,
-                shape: M3EShapes.dialog,
-                color: Colors.transparent,
-                child: child,
-              ),
-            ),
-          ),
-        ),
-      ],
+      ),
     );
   }
 }

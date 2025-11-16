@@ -21,9 +21,9 @@ class Environment extends _$Environment {
   ApiEnvironment build() {
     // Load environment asynchronously without blocking
     Future.microtask(() => _loadEnvironment());
-    // Default to dev for fridge data API
+    // Default to prod for fridge data API
     // Note: Firebase services (auth, messaging, functions) use production config
-    return ApiEnvironment.dev;
+    return ApiEnvironment.prod;
   }
 
   Future<void> _loadEnvironment() async {

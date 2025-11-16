@@ -27,6 +27,7 @@ class TextFieldM3E extends StatefulWidget {
   final int? maxLines;
   final int? minLines;
   final bool filled;
+  final Iterable<String>? autofillHints;
 
   const TextFieldM3E({
     super.key,
@@ -46,6 +47,7 @@ class TextFieldM3E extends StatefulWidget {
     this.maxLines = 1,
     this.minLines,
     this.filled = true,
+    this.autofillHints,
   });
 
   @override
@@ -161,6 +163,7 @@ class _TextFieldM3EState extends State<TextFieldM3E>
             enabled: widget.enabled,
             maxLines: widget.maxLines,
             minLines: widget.minLines,
+            autofillHints: widget.autofillHints,
             decoration: InputDecoration(
               labelText: widget.labelText,
               hintText: widget.hintText,

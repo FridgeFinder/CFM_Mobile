@@ -39,6 +39,14 @@ Upload existing IPA to Firebase App Distribution
 
 Build and upload to Firebase App Distribution
 
+### ios upload_release
+
+```sh
+[bundle exec] fastlane ios upload_release
+```
+
+Upload existing IPA to App Store Connect
+
 ### ios release
 
 ```sh

@@ -220,6 +220,7 @@ class _ReauthenticateDialogState extends ConsumerState<ReauthenticateDialog> {
                 prefixIcon: Icons.lock,
                 keyboardType: TextInputType.number,
                 maxLines: 1,
+                autofillHints: const [AutofillHints.oneTimeCode],
               ),
               M3ESpacing.verticalMD,
               FilledButtonM3E(

@@ -16,7 +16,7 @@ dependencies {
   implementation(platform("com.google.firebase:firebase-bom:34.5.0"))
 
   // Firebase dependencies (versions inherited from BoM)
-  implementation("com.google.firebase:firebase-analytics")
+  // Note: firebase-analytics removed - not used and adds AD_ID permission
   implementation("com.google.firebase:firebase-auth")
   implementation("com.google.firebase:firebase-database")
   implementation("com.google.firebase:firebase-messaging")
@@ -67,7 +67,7 @@ android {
 
         // Explicit SDK versions for Play Store compliance
         minSdk = 24      // Android 7.0 (Flutter 3.35+ requirement)
-        targetSdk = 34   // Android 14 (REQUIRED for Play Store 2024+)
+        targetSdk = 35   // Android 15 (REQUIRED for Play Store 2025+)
 
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -97,14 +97,14 @@ android {
                 signingConfig = signingConfigs.getByName("debug")
             }
 
-            // Disable minification for beta builds to avoid Play Core issues
-            // TODO: Re-enable with proper ProGuard rules for production
-            isMinifyEnabled = false
-            isShrinkResources = false
-            // proguardFiles(
-            //     getDefaultProguardFile("proguard-android-optimize.txt"),
-            //     "proguard-rules.pro"
-            // )
+            // Enable R8 minification for smaller app size and deobfuscation support
+            // ProGuard rules configured in proguard-rules.pro
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
 }

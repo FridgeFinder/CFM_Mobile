@@ -41,10 +41,13 @@ class _SignInWidgetState extends ConsumerState<SignInWidget> {
 
     // Format phone number to E.164 format
     final formattedPhone = PhoneNumberHelper.formatPhoneNumber(phoneNumber);
-    if (formattedPhone == null || !PhoneNumberHelper.isValidPhoneNumber(phoneNumber)) {
+    if (formattedPhone == null ||
+        !PhoneNumberHelper.isValidPhoneNumber(phoneNumber)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please enter a valid phone number (e.g., +1234567890)'),
+          content: Text(
+            'Please enter a valid phone number (e.g., +1234567890)',
+          ),
         ),
       );
       return;
@@ -77,9 +80,9 @@ class _SignInWidgetState extends ConsumerState<SignInWidget> {
       logger.e('Error signing in with phone: $e');
       setState(() => _isLoading = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     }
   }
@@ -156,7 +159,9 @@ class _SignInWidgetState extends ConsumerState<SignInWidget> {
       } else {
         // Existing user - update profile with new userId if needed
         if (existingProfile.userId != credential.user!.uid) {
-          logger.i('Migrating profile from ${existingProfile.userId} to ${credential.user!.uid}');
+          logger.i(
+            'Migrating profile from ${existingProfile.userId} to ${credential.user!.uid}',
+          );
           final updatedProfile = existingProfile.copyWith(
             userId: credential.user!.uid,
           );
@@ -180,9 +185,9 @@ class _SignInWidgetState extends ConsumerState<SignInWidget> {
       logger.e('Error verifying code: $e');
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error verifying code: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error verifying code: $e')));
       }
     }
   }
@@ -250,7 +255,9 @@ class _SignInWidgetState extends ConsumerState<SignInWidget> {
       } else {
         // Existing user - update profile with new userId if needed
         if (existingProfile.userId != credential.user!.uid) {
-          logger.i('Migrating profile from ${existingProfile.userId} to ${credential.user!.uid}');
+          logger.i(
+            'Migrating profile from ${existingProfile.userId} to ${credential.user!.uid}',
+          );
           final updatedProfile = existingProfile.copyWith(
             userId: credential.user!.uid,
           );
@@ -274,9 +281,9 @@ class _SignInWidgetState extends ConsumerState<SignInWidget> {
       logger.e('Error signing in with Google: $e');
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Google Sign-In error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Google Sign-In error: $e')));
       }
     }
   }
@@ -290,10 +297,7 @@ class _SignInWidgetState extends ConsumerState<SignInWidget> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              'Sign In',
-              style: M3ETypography.titleLarge,
-            ),
+            Text('Sign In', style: M3ETypography.titleLarge),
             M3ESpacing.verticalMD,
 
             if (!_isCodeSent) ...[
@@ -318,10 +322,7 @@ class _SignInWidgetState extends ConsumerState<SignInWidget> {
                 child: const Text('Sign In with Gmail'),
               ),
             ] else ...[
-              Text(
-                'Enter verification code',
-                style: M3ETypography.titleMedium,
-              ),
+              Text('Enter verification code', style: M3ETypography.titleMedium),
               M3ESpacing.verticalXS,
               TextFieldM3E(
                 controller: _codeController,
@@ -330,6 +331,7 @@ class _SignInWidgetState extends ConsumerState<SignInWidget> {
                 prefixIcon: Icons.lock,
                 keyboardType: TextInputType.number,
                 maxLines: 1,
+                autofillHints: const [AutofillHints.oneTimeCode],
               ),
               M3ESpacing.verticalMD,
               FilledButtonM3E(
@@ -360,4 +362,3 @@ class _SignInWidgetState extends ConsumerState<SignInWidget> {
     );
   }
 }
-

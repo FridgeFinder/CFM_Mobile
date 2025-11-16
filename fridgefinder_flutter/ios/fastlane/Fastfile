@@ -103,31 +103,61 @@ platform :ios do
     firebase_app_distribution(firebase_params)
   end
 
-  desc "Build and upload to App Store Connect"
-  lane :release do
-    # Ensure we're on the correct branch/tag
-    # ensure_git_status_clean
-    
-    # Set locale to UTF-8 to avoid CocoaPods warnings
-    ENV["LANG"] = "en_US.UTF-8"
-    ENV["LC_ALL"] = "en_US.UTF-8"
-    
-    # Flutter will automatically run pod install during the build process
-    # Even if it detects CocoaPods as "broken", it usually still works
-    
-    # Note: sync_code_signing removed due to issues - certificates should be managed via Xcode automatic signing
-    # Or ensure certificates are already in keychain before building
-    
-    # Build the app using Flutter
-    sh("cd .. && flutter build ipa --release")
-    
+  desc "Upload existing IPA to App Store Connect"
+  lane :upload_release do
+    # Set up App Store Connect API Key
+    api_key = app_store_connect_api_key(
+      key_id: ENV["APP_STORE_CONNECT_API_KEY_ID"],
+      issuer_id: ENV["APP_STORE_CONNECT_ISSUER_ID"],
+      key_filepath: ENV["APP_STORE_CONNECT_API_KEY_PATH"]
+    )
+
     # Upload to App Store Connect
     upload_to_app_store(
+      api_key: api_key,
       ipa: "../build/ios/ipa/FridgeFinder.ipa",
       force: true,
       skip_metadata: true,
       skip_screenshots: true,
-      skip_app_version_update: false
+      skip_app_version_update: false,
+      run_precheck_before_submit: false  # Disable precheck (doesn't work with API keys)
+    )
+  end
+
+  desc "Build and upload to App Store Connect"
+  lane :release do
+    # Ensure we're on the correct branch/tag
+    # ensure_git_status_clean
+
+    # Set locale to UTF-8 to avoid CocoaPods warnings
+    ENV["LANG"] = "en_US.UTF-8"
+    ENV["LC_ALL"] = "en_US.UTF-8"
+
+    # Flutter will automatically run pod install during the build process
+    # Even if it detects CocoaPods as "broken", it usually still works
+
+    # Note: sync_code_signing removed due to issues - certificates should be managed via Xcode automatic signing
+    # Or ensure certificates are already in keychain before building
+
+    # Build the app using Flutter
+    sh("cd .. && flutter build ipa --release")
+
+    # Set up App Store Connect API Key
+    api_key = app_store_connect_api_key(
+      key_id: ENV["APP_STORE_CONNECT_API_KEY_ID"],
+      issuer_id: ENV["APP_STORE_CONNECT_ISSUER_ID"],
+      key_filepath: ENV["APP_STORE_CONNECT_API_KEY_PATH"]
+    )
+
+    # Upload to App Store Connect
+    upload_to_app_store(
+      api_key: api_key,
+      ipa: "../build/ios/ipa/FridgeFinder.ipa",
+      force: true,
+      skip_metadata: true,
+      skip_screenshots: true,
+      skip_app_version_update: false,
+      run_precheck_before_submit: false  # Disable precheck (doesn't work with API keys)
     )
   end
 end
