@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delete Account - FridgeFinder</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #e74c3c;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+        }
+        .warning-box {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .warning-box strong {
+            color: #856404;
+        }
+        .info-box {
+            background-color: #e8f4f8;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .success-box {
+            background-color: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+            display: none;
+        }
+        .error-box {
+            background-color: #f8d7da;
+            border-left: 4px solid #dc3545;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+            display: none;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #34495e;
+        }
+        input[type="email"],
+        input[type="tel"],
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+        input[type="email"]:focus,
+        input[type="tel"]:focus,
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+        .btn {
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s, opacity 0.3s;
+        }
+        .btn-primary {
+            background-color: #3498db;
+            color: white;
+        }
+        .btn-primary:hover:not(:disabled) {
+            background-color: #2980b9;
+        }
+        .btn-danger {
+            background-color: #e74c3c;
+            color: white;
+        }
+        .btn-danger:hover:not(:disabled) {
+            background-color: #c0392b;
+        }
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .btn-container {
+            margin-top: 20px;
+        }
+        ul {
+            margin-left: 20px;
+        }
+        ul li {
+            margin-bottom: 8px;
+        }
+        a {
+            color: #3498db;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .step {
+            display: none;
+        }
+        .step.active {
+            display: block;
+        }
+        .contact-info {
+            background-color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 30px;
+        }
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .hidden {
+            display: none;
+        }
+        .radio-group {
+            margin-bottom: 15px;
+        }
+        .radio-group label {
+            display: inline-block;
+            margin-right: 20px;
+            font-weight: normal;
+        }
+        .radio-group input[type="radio"] {
+            margin-right: 5px;
+        }
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+            body {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Delete Your FridgeFinder Account</h1>
+
+        <div class="warning-box">
+            <strong>⚠️ Warning:</strong> Account deletion is permanent and cannot be undone. All your data will be permanently removed from our servers.
+        </div>
+
+        <!-- Step 1: Enter identifier and get verification code -->
+        <div id="step1" class="step active">
+            <h2>Step 1: Request Account Deletion</h2>
+
+            <div class="info-box">
+                <strong>What will be deleted:</strong>
+                <ul>
+                    <li>Your user account and profile information</li>
+                    <li>Fridge subscriptions and notification preferences</li>
+                    <li>Volunteer points and activity history</li>
+                    <li>All personal data associated with your account</li>
+                </ul>
+                <p><strong>Note:</strong> Status reports you've submitted will remain anonymized (no connection to your account) to maintain community fridge history.</p>
+            </div>
+
+            <form id="requestForm">
+                <div class="form-group">
+                    <label>How did you sign up?</label>
+                    <div class="radio-group">
+                        <label>
+                            <input type="radio" name="authMethod" value="email" checked>
+                            Email (Google Sign-In)
+                        </label>
+                        <label>
+                            <input type="radio" name="authMethod" value="phone">
+                            Phone Number
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group" id="emailGroup">
+                    <label for="email">Email Address:</label>
+                    <input type="email" id="email" name="email" placeholder="your.email@example.com" required>
+                    <small style="color: #7f8c8d; display: block; margin-top: 5px;">
+                        Enter the email address you used to sign in with Google
+                    </small>
+                </div>
+
+                <div class="form-group hidden" id="phoneGroup">
+                    <label for="phone">Phone Number:</label>
+                    <input type="tel" id="phone" name="phone" placeholder="+1 (555) 123-4567">
+                    <small style="color: #7f8c8d; display: block; margin-top: 5px;">
+                        Enter the phone number you used for SMS sign-in (include country code)
+                    </small>
+                </div>
+
+                <div id="requestError" class="error-box"></div>
+
+                <div class="btn-container">
+                    <button type="submit" id="requestBtn" class="btn btn-primary">
+                        Send Verification Code
+                    </button>
+                    <span id="requestSpinner" class="spinner hidden"></span>
+                </div>
+            </form>
+        </div>
+
+        <!-- Step 2: Enter verification code and confirm deletion -->
+        <div id="step2" class="step">
+            <h2>Step 2: Verify and Confirm Deletion</h2>
+
+            <div class="info-box">
+                <p>We've sent a 6-digit verification code to <strong id="userIdentifier"></strong>.</p>
+                <p>Please enter the code below to confirm account deletion.</p>
+                <p><small>The code will expire in 15 minutes.</small></p>
+            </div>
+
+            <form id="confirmForm">
+                <div class="form-group">
+                    <label for="verificationCode">Verification Code:</label>
+                    <input type="text" id="verificationCode" name="verificationCode"
+                           placeholder="123456" maxlength="6" pattern="[0-9]{6}" required>
+                    <small style="color: #7f8c8d; display: block; margin-top: 5px;">
+                        Enter the 6-digit code sent to your email/phone
+                    </small>
+                </div>
+
+                <div id="confirmError" class="error-box"></div>
+
+                <div class="btn-container">
+                    <button type="submit" id="confirmBtn" class="btn btn-danger">
+                        Delete My Account Permanently
+                    </button>
+                    <span id="confirmSpinner" class="spinner hidden"></span>
+                </div>
+
+                <div class="btn-container">
+                    <button type="button" id="resendBtn" class="btn btn-primary" style="background-color: #95a5a6;">
+                        Resend Code
+                    </button>
+                    <button type="button" id="backBtn" class="btn btn-primary" style="background-color: #7f8c8d;">
+                        Back
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Success Message -->
+        <div id="successMessage" class="step">
+            <div class="success-box" style="display: block;">
+                <strong>✓ Account Successfully Deleted</strong>
+                <p>Your FridgeFinder account and all associated data have been permanently deleted.</p>
+                <p>Thank you for using FridgeFinder. We're sorry to see you go!</p>
+            </div>
+        </div>
+
+        <!-- Alternative Contact Method -->
+        <div class="contact-info">
+            <strong>Having trouble?</strong>
+            <p>If you're unable to delete your account using this form, please contact us at:</p>
+            <p>Email: <a href="mailto:support@communityfridgefinder.com">support@communityfridgefinder.com</a></p>
+            <p>We'll process your deletion request within 48 hours.</p>
+        </div>
+
+        <p style="margin-top: 30px; text-align: center;">
+            <a href="privacy-policy.html">View Privacy Policy</a> |
+            <a href="https://communityfridgefinder.com">Return to FridgeFinder</a>
+        </p>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-functions-compat.js"></script>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBkojMiASYv7sH0W7FimcNATZ7piPhKVCQ",
+            authDomain: "fridgefinder-app.firebaseapp.com",
+            databaseURL: "https://fridgefinder-app-default-rtdb.firebaseio.com",
+            projectId: "fridgefinder-app",
+            storageBucket: "fridgefinder-app.firebasestorage.app",
+            messagingSenderId: "576156648133",
+            appId: "1:576156648133:ios:a8bcb9f2c07d53688666ac"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const functions = firebase.functions();
+
+        // For local testing, uncomment this line:
+        // functions.useEmulator("localhost", 5001);
+
+        // DOM Elements
+        const requestForm = document.getElementById('requestForm');
+        const confirmForm = document.getElementById('confirmForm');
+        const step1 = document.getElementById('step1');
+        const step2 = document.getElementById('step2');
+        const successMessage = document.getElementById('successMessage');
+        const emailGroup = document.getElementById('emailGroup');
+        const phoneGroup = document.getElementById('phoneGroup');
+        const requestError = document.getElementById('requestError');
+        const confirmError = document.getElementById('confirmError');
+        const requestBtn = document.getElementById('requestBtn');
+        const confirmBtn = document.getElementById('confirmBtn');
+        const requestSpinner = document.getElementById('requestSpinner');
+        const confirmSpinner = document.getElementById('confirmSpinner');
+        const userIdentifier = document.getElementById('userIdentifier');
+        const resendBtn = document.getElementById('resendBtn');
+        const backBtn = document.getElementById('backBtn');
+
+        // Store user data for resend
+        let currentUserData = null;
+
+        // Toggle between email and phone input
+        document.querySelectorAll('input[name="authMethod"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                if (e.target.value === 'email') {
+                    emailGroup.classList.remove('hidden');
+                    phoneGroup.classList.add('hidden');
+                    document.getElementById('email').required = true;
+                    document.getElementById('phone').required = false;
+                } else {
+                    emailGroup.classList.add('hidden');
+                    phoneGroup.classList.remove('hidden');
+                    document.getElementById('email').required = false;
+                    document.getElementById('phone').required = true;
+                }
+            });
+        });
+
+        // Step 1: Request verification code
+        requestForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const authMethod = document.querySelector('input[name="authMethod"]:checked').value;
+            const identifier = authMethod === 'email'
+                ? document.getElementById('email').value.trim()
+                : document.getElementById('phone').value.trim();
+
+            if (!identifier) {
+                showError(requestError, 'Please enter your email or phone number.');
+                return;
+            }
+
+            currentUserData = { authMethod, identifier };
+
+            setLoading(requestBtn, requestSpinner, true);
+            hideError(requestError);
+
+            try {
+                const sendVerificationCode = functions.httpsCallable('sendAccountDeletionCode');
+                const result = await sendVerificationCode({
+                    authMethod,
+                    identifier
+                });
+
+                if (result.data.success) {
+                    userIdentifier.textContent = identifier;
+                    showStep(2);
+                } else {
+                    showError(requestError, result.data.message || 'Failed to send verification code. Please try again.');
+                }
+            } catch (error) {
+                console.error('Error sending verification code:', error);
+                showError(requestError, error.message || 'An error occurred. Please try again or contact support.');
+            } finally {
+                setLoading(requestBtn, requestSpinner, false);
+            }
+        });
+
+        // Step 2: Confirm deletion with verification code
+        confirmForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const code = document.getElementById('verificationCode').value.trim();
+
+            if (!/^\d{6}$/.test(code)) {
+                showError(confirmError, 'Please enter a valid 6-digit code.');
+                return;
+            }
+
+            if (!currentUserData) {
+                showError(confirmError, 'Session expired. Please start over.');
+                return;
+            }
+
+            setLoading(confirmBtn, confirmSpinner, true);
+            hideError(confirmError);
+
+            try {
+                const deleteAccount = functions.httpsCallable('deleteUserAccount');
+                const result = await deleteAccount({
+                    authMethod: currentUserData.authMethod,
+                    identifier: currentUserData.identifier,
+                    verificationCode: code
+                });
+
+                if (result.data.success) {
+                    showStep(3);
+                } else {
+                    showError(confirmError, result.data.message || 'Invalid verification code. Please try again.');
+                }
+            } catch (error) {
+                console.error('Error deleting account:', error);
+                showError(confirmError, error.message || 'An error occurred. Please try again or contact support.');
+            } finally {
+                setLoading(confirmBtn, confirmSpinner, false);
+            }
+        });
+
+        // Resend verification code
+        resendBtn.addEventListener('click', async () => {
+            if (!currentUserData) {
+                showError(confirmError, 'Session expired. Please start over.');
+                return;
+            }
+
+            setLoading(resendBtn, confirmSpinner, true);
+            hideError(confirmError);
+
+            try {
+                const sendVerificationCode = functions.httpsCallable('sendAccountDeletionCode');
+                const result = await sendVerificationCode(currentUserData);
+
+                if (result.data.success) {
+                    showError(confirmError, 'Verification code resent successfully!');
+                    confirmError.style.backgroundColor = '#d4edda';
+                    confirmError.style.borderColor = '#28a745';
+                    setTimeout(() => {
+                        hideError(confirmError);
+                    }, 3000);
+                } else {
+                    showError(confirmError, result.data.message || 'Failed to resend code. Please try again.');
+                }
+            } catch (error) {
+                console.error('Error resending code:', error);
+                showError(confirmError, 'Failed to resend code. Please try again.');
+            } finally {
+                setLoading(resendBtn, confirmSpinner, false);
+            }
+        });
+
+        // Back button
+        backBtn.addEventListener('click', () => {
+            showStep(1);
+            document.getElementById('verificationCode').value = '';
+            hideError(confirmError);
+        });
+
+        // Helper functions
+        function showStep(stepNumber) {
+            step1.classList.remove('active');
+            step2.classList.remove('active');
+            successMessage.classList.remove('active');
+
+            switch(stepNumber) {
+                case 1:
+                    step1.classList.add('active');
+                    break;
+                case 2:
+                    step2.classList.add('active');
+                    break;
+                case 3:
+                    successMessage.classList.add('active');
+                    break;
+            }
+        }
+
+        function setLoading(button, spinner, isLoading) {
+            button.disabled = isLoading;
+            if (isLoading) {
+                spinner.classList.remove('hidden');
+            } else {
+                spinner.classList.add('hidden');
+            }
+        }
+
+        function showError(element, message) {
+            element.textContent = message;
+            element.style.display = 'block';
+        }
+
+        function hideError(element) {
+            element.style.display = 'none';
+            element.textContent = '';
+        }
+    </script>
+</body>
+</html>
