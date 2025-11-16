@@ -8,7 +8,7 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             line-height: 1.6;
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
             padding: 20px;
             color: #333;
@@ -20,7 +20,13 @@
         }
         h2 {
             color: #34495e;
-            margin-top: 30px;
+            margin-top: 40px;
+            border-bottom: 1px solid #ecf0f1;
+            padding-bottom: 5px;
+        }
+        h3 {
+            color: #34495e;
+            margin-top: 25px;
         }
         .last-updated {
             color: #7f8c8d;
@@ -33,108 +39,575 @@
             border-radius: 5px;
             margin-top: 30px;
         }
+        .highlight-box {
+            background-color: #e8f4f8;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .important {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        ul, ol {
+            margin-left: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        a {
+            color: #3498db;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
     <h1>Privacy Policy for FridgeFinder</h1>
-    <p class="last-updated"><strong>Effective Date:</strong> December 2025</p>
-    <p><strong>Last Updated:</strong> December 2025</p>
+    <p class="last-updated"><strong>Effective Date:</strong> November 15, 2025</p>
+    <p><strong>Last Updated:</strong> November 15, 2025</p>
 
     <h2>Introduction</h2>
-    <p>FridgeFinder ("we", "our", or "us") respects your privacy and is committed to protecting your personal data. This privacy policy explains how we collect, use, and protect your information when you use our mobile application.</p>
+    <p>FridgeFinder ("we", "our", or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our mobile application ("App"). By using FridgeFinder, you agree to the collection and use of information in accordance with this policy.</p>
 
-    <h2>Information We Collect</h2>
+    <p><strong>Contact Information:</strong><br>
+    FridgeFinder<br>
+    Email: <a href="mailto:privacy@communityfridgefinder.com">privacy@communityfridgefinder.com</a><br>
+    Website: <a href="https://communityfridgefinder.com" target="_blank">https://communityfridgefinder.com</a></p>
 
-    <h3>Location Data</h3>
-    <ul>
-        <li><strong>What we collect:</strong> Your device's precise GPS location</li>
-        <li><strong>Why we collect it:</strong> To show nearby community fridges on the map and calculate distances</li>
-        <li><strong>How it's used:</strong> Displayed on the map in real-time, used for distance calculations</li>
-        <li><strong>Stored:</strong> Location is <strong>NOT stored</strong> on our servers. It is only used in real-time on your device and sent to our API to fetch nearby fridges. The location data is not retained after the API request completes.</li>
-        <li><strong>Optional:</strong> You can use the app without granting location access, but map functionality and distance calculations will be limited</li>
-        <li><strong>Precision:</strong> We request precise location (not approximate) to accurately show fridge locations</li>
-    </ul>
-
-    <h3>Device Information (if Firebase Analytics is enabled)</h3>
-    <ul>
-        <li><strong>What we collect:</strong> Anonymous device identifier, operating system version, app version, device type</li>
-        <li><strong>Why we collect it:</strong> To improve app performance, fix bugs, and understand usage patterns</li>
-        <li><strong>How it's used:</strong> Aggregated analytics only - no individual user tracking</li>
-        <li><strong>Linked to user:</strong> No - data is anonymous and not linked to your identity</li>
-        <li><strong>Used for tracking:</strong> No - we do not use this data for advertising or tracking purposes</li>
-    </ul>
-
-    <h3>Photos (Optional - when you submit a fridge status report)</h3>
-    <ul>
-        <li><strong>What we collect:</strong> Photos you choose to upload when reporting fridge status</li>
-        <li><strong>Why we collect it:</strong> To document fridge conditions for the community</li>
-        <li><strong>How it's used:</strong> Displayed publicly in fridge profiles for community benefit</li>
-        <li><strong>You control:</strong> You choose whether to upload photos - it's completely optional</li>
-        <li><strong>Storage:</strong> Photos are stored on our servers (Amazon S3) and are publicly accessible</li>
-        <li><strong>Deletion:</strong> Photos become part of the public fridge record and are retained for community reference</li>
-    </ul>
-
-    <h2>Information We Do NOT Collect</h2>
-    <ul>
-        <li>We do <strong>NOT</strong> collect your name, email, or phone number (unless you create an account in future versions)</li>
-        <li>We do <strong>NOT</strong> sell your data to third parties</li>
-        <li>We do <strong>NOT</strong> use your location for advertising or tracking</li>
-        <li>We do <strong>NOT</strong> track your movements outside the app</li>
-        <li>We do <strong>NOT</strong> collect contact lists, messages, or other personal information</li>
-    </ul>
-
-    <h2>Data Sharing</h2>
-    <p>We do <strong>NOT</strong> share your personal data with third parties except:</p>
-    <ul>
-        <li><strong>Map tiles:</strong> OpenStreetMap (OSM) provides map tiles. OSM may collect anonymous usage data per their privacy policy: <a href="https://wiki.osmfoundation.org/wiki/Privacy_Policy" target="_blank">https://wiki.osmfoundation.org/wiki/Privacy_Policy</a></li>
-        <li><strong>API hosting:</strong> Your location queries are sent to our API server to fetch nearby fridges. Location data is not stored on our servers.</li>
-        <li><strong>Firebase services:</strong> If Firebase Analytics is enabled, Google may collect anonymous usage data per their privacy policy: <a href="https://policies.google.com/privacy" target="_blank">https://policies.google.com/privacy</a></li>
-        <li><strong>Legal requirements:</strong> We may disclose data if required by law or to protect our rights</li>
-    </ul>
-
-    <h2>Data Security</h2>
-    <ul>
-        <li><strong>Encryption:</strong> All data transmitted between your device and our servers uses HTTPS encryption</li>
-        <li><strong>Storage:</strong> Location data is not stored. Photos are stored securely on Amazon S3</li>
-        <li><strong>Access:</strong> Only authorized personnel can access server logs (which don't contain location data)</li>
-    </ul>
-
-    <h2>Data Retention</h2>
-    <ul>
-        <li><strong>Location data:</strong> Not retained - used only in real-time</li>
-        <li><strong>Device information:</strong> Retained in aggregated form for analytics (no individual identifiers)</li>
-        <li><strong>Photos:</strong> Retained indefinitely as part of public fridge records</li>
-    </ul>
-
-    <h2>Your Rights</h2>
-    <p>You have the right to:</p>
-    <ul>
-        <li><strong>Disable location access</strong> at any time in your device settings or app settings</li>
-        <li><strong>Control photo uploads</strong> - you choose whether to upload photos</li>
-        <li><strong>Delete your data:</strong> Since we don't store personal data on our servers (except photos you upload), simply uninstalling the app removes all local data</li>
-        <li><strong>Request information:</strong> Contact us to learn what data we have about you (if any)</li>
-    </ul>
-
-    <h2>Children's Privacy</h2>
-    <p>FridgeFinder is not intended for children under 13 years of age. We do not knowingly collect data from children under 13. If you are a parent or guardian and believe your child has provided us with personal information, please contact us immediately.</p>
-
-    <h2>International Users</h2>
-    <p>If you are using FridgeFinder from outside the United States, please note that your data may be transferred to, stored, and processed in the United States where our servers are located.</p>
-
-    <h2>Changes to This Policy</h2>
-    <p>We may update this privacy policy occasionally to reflect changes in our practices or for legal reasons. Changes will be posted in the app and on this page with a new effective date. We encourage you to review this policy periodically.</p>
-
-    <h2>Contact Us</h2>
-    <div class="contact-info">
-        <p>If you have questions about this privacy policy or our data practices, please contact us at:</p>
-        <p><strong>Email:</strong> privacy@communityfridgefinder.com</p>
-        <p><strong>Website:</strong> <a href="https://communityfridgefinder.com" target="_blank">https://communityfridgefinder.com</a></p>
+    <div class="highlight-box">
+        <strong>Privacy-First Approach:</strong> We collect only the minimum data necessary to operate our service. We do NOT use analytics, advertising networks, or behavioral tracking. Your location is NEVER stored on our servers.
     </div>
 
-    <hr style="margin-top: 40px; border: none; border-top: 1px solid #ddd;">
-    <p style="text-align: center; color: #7f8c8d; font-size: 0.9em;">
-        © 2025 FridgeFinder. All rights reserved.
-    </p>
+    <h2>Table of Contents</h2>
+    <ol>
+        <li><a href="#information-we-collect">Information We Collect</a></li>
+        <li><a href="#what-we-dont-collect">What We Do NOT Collect</a></li>
+        <li><a href="#how-we-use-info">How We Use Your Information</a></li>
+        <li><a href="#data-sharing">Third-Party Service Providers & Data Sharing</a></li>
+        <li><a href="#data-security">Data Security</a></li>
+        <li><a href="#data-retention">Data Retention & Deletion</a></li>
+        <li><a href="#your-rights">Your Privacy Rights</a></li>
+        <li><a href="#permissions">App Permissions Explained</a></li>
+        <li><a href="#childrens-privacy">Children's Privacy (COPPA)</a></li>
+        <li><a href="#international-users">International Users & Data Transfers</a></li>
+        <li><a href="#state-privacy">U.S. State Privacy Rights (CCPA/CPRA)</a></li>
+        <li><a href="#gdpr">European Users (GDPR)</a></li>
+        <li><a href="#changes">Changes to This Policy</a></li>
+        <li><a href="#contact">Contact Us</a></li>
+    </ol>
+
+    <h2 id="information-we-collect">1. Information We Collect</h2>
+
+    <p>We collect only the information necessary to provide our services. Here's what we collect and why:</p>
+
+    <h3>1.1 Account Information</h3>
+    <p><strong>When you create an account, we collect:</strong></p>
+    <ul>
+        <li><strong>Phone Number or Email Address:</strong> Used for authentication via Firebase Authentication. You choose either phone number (with SMS verification) or Google Sign-In.</li>
+        <li><strong>Username:</strong> A display name you choose for your account</li>
+        <li><strong>Volunteer Status:</strong> Whether you're registering as a volunteer or food finder</li>
+        <li><strong>Zip Code (Volunteers only):</strong> Required for volunteers to support non-profit funding reporting. This is NOT shared with third parties and is used solely for internal grant reporting purposes.</li>
+    </ul>
+    <p><strong>Legal Basis (GDPR):</strong> Necessary for performance of contract (account creation and service delivery)</p>
+    <p><strong>Linked to Identity:</strong> Yes</p>
+
+    <h3>1.2 Location Data</h3>
+    <div class="important">
+        <strong>IMPORTANT:</strong> Your location is NEVER stored on our servers. Location data is processed in real-time on your device only and is immediately discarded. We do not maintain any location history.
+    </div>
+
+    <p><strong>What we collect:</strong> Your device's precise GPS location (latitude and longitude)</p>
+    <p><strong>How we collect it:</strong></p>
+    <ul>
+        <li><strong>When App is Open:</strong> Real-time location with updates every 10 meters when the map is active</li>
+        <li><strong>Background Location (Volunteers Only):</strong> If you enable geofencing, we monitor your location in the background (updates every 50 meters) to send notifications when you're near a fridge that needs help (within 400 meters/~4 city blocks)</li>
+    </ul>
+    <p><strong>Why we collect it:</strong></p>
+    <ul>
+        <li>Display your location on the map</li>
+        <li>Calculate distances to nearby community fridges</li>
+        <li>Sort fridges by proximity</li>
+        <li>Send geofencing notifications to volunteers when near fridges needing assistance</li>
+    </ul>
+    <p><strong>Your Control:</strong></p>
+    <ul>
+        <li>You can deny location permissions and still use the app (with limited functionality)</li>
+        <li>You can disable background location/geofencing at any time in settings</li>
+        <li>You can disable location access entirely in your device settings</li>
+    </ul>
+    <p><strong>Legal Basis (GDPR):</strong> Legitimate interest (providing core map functionality) and Consent (for background geofencing)</p>
+    <p><strong>Linked to Identity:</strong> No (location is never stored or associated with your account)</p>
+    <p><strong>Used for Tracking:</strong> No</p>
+
+    <h3>1.3 Photos and User-Generated Content</h3>
+    <p><strong>What we collect:</strong> Photos you voluntarily upload when submitting fridge status reports</p>
+    <p><strong>How we handle photos:</strong></p>
+    <ul>
+        <li>Photos are compressed to WebP format at 85% quality (reduces file size)</li>
+        <li>EXIF metadata (including GPS coordinates) is removed during compression</li>
+        <li>Photos are uploaded to our secure servers and stored on AWS S3</li>
+        <li>Photos are publicly visible in fridge profiles to help the community</li>
+    </ul>
+    <p><strong>Additional content:</strong> Optional text notes you add to status reports</p>
+    <p><strong>Permissions required:</strong></p>
+    <ul>
+        <li>Android: CAMERA, READ_MEDIA_IMAGES</li>
+        <li>iOS: NSCameraUsageDescription, NSPhotoLibraryUsageDescription</li>
+    </ul>
+    <p><strong>Your Control:</strong> Photo uploads are completely optional. You can submit status reports without photos.</p>
+    <p><strong>Legal Basis (GDPR):</strong> Consent (voluntary upload)</p>
+    <p><strong>Linked to Identity:</strong> Yes (when you submit a report)</p>
+
+    <h3>1.4 Device and Technical Information</h3>
+    <p><strong>What we collect:</strong></p>
+    <ul>
+        <li><strong>Firebase Cloud Messaging (FCM) Token:</strong> A unique token generated by Firebase to send push notifications to your device</li>
+        <li><strong>Device Type and OS Version:</strong> To ensure app compatibility</li>
+        <li><strong>App Version:</strong> To provide appropriate features and support</li>
+    </ul>
+    <p><strong>Legal Basis (GDPR):</strong> Legitimate interest (technical operation of the app)</p>
+    <p><strong>Linked to Identity:</strong> FCM token is linked to your account; device info is not</p>
+
+    <h3>1.5 Usage and Subscription Data</h3>
+    <p><strong>What we collect:</strong></p>
+    <ul>
+        <li><strong>Subscribed Fridges:</strong> Which community fridges you follow for notifications</li>
+        <li><strong>Notification Preferences:</strong> Your preferences for notification types (e.g., when fridges are empty, need cleaning, restocked)</li>
+        <li><strong>Status Reports:</strong> Reports you submit about fridge conditions (condition, food level, notes, photos)</li>
+        <li><strong>Volunteer Points:</strong> A gamification score based on your status report submissions</li>
+        <li><strong>Last Login Time:</strong> When you last accessed the app (for account activity monitoring, not behavioral tracking)</li>
+    </ul>
+    <p><strong>Legal Basis (GDPR):</strong> Necessary for performance of contract (providing notification and engagement features)</p>
+    <p><strong>Linked to Identity:</strong> Yes</p>
+
+    <h3>1.6 Local Device Storage</h3>
+    <p><strong>What we store locally on your device:</strong></p>
+    <ul>
+        <li>App preferences (theme, API environment selection)</li>
+        <li>Map filter settings</li>
+        <li>Cached map tiles (for offline viewing)</li>
+    </ul>
+    <p>This data never leaves your device and is deleted when you uninstall the app.</p>
+
+    <h2 id="what-we-dont-collect">2. What We Do NOT Collect</h2>
+
+    <p>We prioritize your privacy. Here's what we <strong>do NOT collect</strong>:</p>
+    <ul>
+        <li><strong>NO Advertising Identifiers:</strong> We do not collect IDFA (iOS) or GAID (Android) for advertising or tracking</li>
+        <li><strong>NO Analytics or Behavioral Tracking:</strong> We do not use Firebase Analytics, Google Analytics, or any analytics SDK. We do not track your usage patterns or behavior</li>
+        <li><strong>NO Location History:</strong> Your location is never stored, tracked over time, or used for profiling</li>
+        <li><strong>NO Contact List Access:</strong> We never access your contacts, messages, or call logs</li>
+        <li><strong>NO Biometric Data:</strong> We do not collect fingerprints, face recognition data, or other biometric information</li>
+        <li><strong>NO Sensitive Personal Data:</strong> We do not collect racial or ethnic origin, political opinions, religious beliefs, sexual orientation, health data, or genetic data</li>
+        <li><strong>NO Sale of Data:</strong> We do not sell, rent, or trade your personal information to third parties</li>
+        <li><strong>NO Cross-App Tracking:</strong> We do not track your activity across other apps or websites</li>
+        <li><strong>NO Microphone Access:</strong> We do not access your microphone</li>
+        <li><strong>NO Clipboard Access:</strong> We do not read your clipboard</li>
+    </ul>
+
+    <h2 id="how-we-use-info">3. How We Use Your Information</h2>
+
+    <p>We use the collected information for the following purposes:</p>
+    <ul>
+        <li><strong>Provide and maintain the App:</strong> Including account management, authentication, and core features</li>
+        <li><strong>Display nearby fridges:</strong> Using real-time location to show fridges on the map and calculate distances</li>
+        <li><strong>Send notifications:</strong> Based on your subscription preferences (fridge updates, status changes, geofencing alerts)</li>
+        <li><strong>Process user-generated content:</strong> Display status reports and photos to help the community</li>
+        <li><strong>Improve the App:</strong> Fix bugs, ensure compatibility, and enhance user experience</li>
+        <li><strong>Communicate with you:</strong> Respond to your inquiries and provide customer support</li>
+        <li><strong>Comply with legal obligations:</strong> Respond to lawful requests and prevent fraud</li>
+    </ul>
+
+    <h2 id="data-sharing">4. Third-Party Service Providers & Data Sharing</h2>
+
+    <p>We do <strong>NOT</strong> sell, rent, or trade your personal data. We share data only with trusted service providers necessary to operate the App:</p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Service Provider</th>
+                <th>Purpose</th>
+                <th>Data Shared</th>
+                <th>Privacy Policy</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Firebase (Google)</strong></td>
+                <td>Authentication, database, push notifications, cloud functions</td>
+                <td>Email/phone, user ID, FCM token, user profile data, status reports</td>
+                <td><a href="https://policies.google.com/privacy" target="_blank">Google Privacy Policy</a></td>
+            </tr>
+            <tr>
+                <td><strong>Google Sign-In</strong></td>
+                <td>OAuth authentication</td>
+                <td>Email address (if you choose Google Sign-In)</td>
+                <td><a href="https://policies.google.com/privacy" target="_blank">Google Privacy Policy</a></td>
+            </tr>
+            <tr>
+                <td><strong>MapTiler</strong></td>
+                <td>Map tiles for display</td>
+                <td>Anonymous map tile requests (no personal data)</td>
+                <td><a href="https://www.maptiler.com/privacy-policy/" target="_blank">MapTiler Privacy Policy</a></td>
+            </tr>
+            <tr>
+                <td><strong>AWS S3 (optional)</strong></td>
+                <td>Photo storage</td>
+                <td>Photos you upload (publicly accessible)</td>
+                <td><a href="https://aws.amazon.com/privacy/" target="_blank">AWS Privacy Notice</a></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <p><strong>Data Processing Agreement:</strong> Our service providers (Firebase/Google) have Data Processing Agreements in place and comply with GDPR requirements for data transfers.</p>
+
+    <p><strong>When we may disclose data:</strong></p>
+    <ul>
+        <li><strong>Legal requirements:</strong> If required by law, regulation, legal process, or governmental request</li>
+        <li><strong>Protect rights:</strong> To protect our rights, property, or safety, and that of our users or the public</li>
+        <li><strong>Enforce policies:</strong> To enforce our Terms of Service</li>
+        <li><strong>With your consent:</strong> In any other circumstances with your explicit consent</li>
+    </ul>
+
+    <h2 id="data-security">5. Data Security</h2>
+
+    <p>We implement appropriate technical and organizational measures to protect your data:</p>
+    <ul>
+        <li><strong>Encryption in Transit:</strong> All data transmitted between your device and our servers uses HTTPS/TLS encryption</li>
+        <li><strong>Encryption at Rest:</strong> Data stored in Firebase Realtime Database is encrypted at rest by Google</li>
+        <li><strong>Authentication Security:</strong> Firebase Authentication uses industry-standard OAuth 2.0 and phone verification</li>
+        <li><strong>Access Controls:</strong> Firebase Security Rules restrict data access to authenticated users and their own data</li>
+        <li><strong>No Password Storage:</strong> We do not store passwords; authentication is handled by Firebase/Google</li>
+        <li><strong>EXIF Stripping:</strong> Photo metadata (including GPS coordinates) is removed before upload</li>
+        <li><strong>Regular Updates:</strong> We keep our SDKs and dependencies up-to-date with security patches</li>
+    </ul>
+
+    <p><strong>Data Breach Notification:</strong> In the unlikely event of a data breach affecting your personal information, we will notify you and applicable regulatory authorities as required by law.</p>
+
+    <h2 id="data-retention">6. Data Retention & Deletion</h2>
+
+    <h3>Retention Periods</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Data Type</th>
+                <th>Retention Period</th>
+                <th>Reason</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Account Information</td>
+                <td>Until account deletion</td>
+                <td>Required for service delivery</td>
+            </tr>
+            <tr>
+                <td>Location Data</td>
+                <td>NOT stored (real-time only)</td>
+                <td>N/A</td>
+            </tr>
+            <tr>
+                <td>FCM Tokens</td>
+                <td>Until account deletion or sign-out</td>
+                <td>Push notification delivery</td>
+            </tr>
+            <tr>
+                <td>Status Reports</td>
+                <td>Indefinitely (anonymized after account deletion)</td>
+                <td>Community benefit and historical record</td>
+            </tr>
+            <tr>
+                <td>Photos</td>
+                <td>Indefinitely (publicly accessible)</td>
+                <td>Community benefit and historical record</td>
+            </tr>
+            <tr>
+                <td>Local Storage</td>
+                <td>Until app uninstall</td>
+                <td>Device-local only</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>Account Deletion Process</h3>
+    <p>You can delete your account at any time from the Profile > Settings screen:</p>
+    <ol>
+        <li>Navigate to Profile > Settings > Delete Account</li>
+        <li>Re-authenticate with your phone number or Google account (security verification)</li>
+        <li>Confirm deletion</li>
+    </ol>
+
+    <p><strong>What gets deleted:</strong></p>
+    <ul>
+        <li>Your user profile (email, phone, username, zip code, points)</li>
+        <li>Your Firebase Authentication account</li>
+        <li>Your FCM token</li>
+        <li>Your subscription preferences</li>
+        <li>Your notification settings</li>
+    </ul>
+
+    <p><strong>What is NOT deleted:</strong></p>
+    <ul>
+        <li><strong>Status Reports:</strong> Anonymized and retained for community historical record (user identification removed)</li>
+        <li><strong>Photos:</strong> Remain publicly accessible as part of community fridge profiles</li>
+        <li><strong>Location Data:</strong> Not applicable (never stored)</li>
+    </ul>
+
+    <h2 id="your-rights">7. Your Privacy Rights</h2>
+
+    <p>You have the following rights regarding your personal data:</p>
+
+    <h3>Rights Available to All Users</h3>
+    <ul>
+        <li><strong>Access:</strong> View your account information in the Profile screen</li>
+        <li><strong>Correction:</strong> Update your username, zip code, and notification preferences in Settings</li>
+        <li><strong>Deletion:</strong> Delete your account and associated data (see Section 6)</li>
+        <li><strong>Opt-Out of Notifications:</strong> Disable push notifications in Settings or device settings</li>
+        <li><strong>Opt-Out of Geofencing:</strong> Disable background location monitoring in Settings</li>
+        <li><strong>Withdraw Consent:</strong> Revoke location permissions in device settings</li>
+    </ul>
+
+    <h3>How to Exercise Your Rights</h3>
+    <ul>
+        <li><strong>In-App:</strong> Most rights can be exercised through the Profile > Settings screen</li>
+        <li><strong>Email:</strong> Contact us at <a href="mailto:privacy@communityfridgefinder.com">privacy@communityfridgefinder.com</a> for assistance</li>
+        <li><strong>Response Time:</strong> We will respond to requests within 30 days (45 days for CCPA requests)</li>
+    </ul>
+
+    <h2 id="permissions">8. App Permissions Explained</h2>
+
+    <p>The App requests the following permissions. You can manage these in your device settings at any time.</p>
+
+    <h3>Android Permissions</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Permission</th>
+                <th>Why We Need It</th>
+                <th>When Requested</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>ACCESS_FINE_LOCATION</td>
+                <td>Display your location on map, calculate distances</td>
+                <td>When you open the map</td>
+            </tr>
+            <tr>
+                <td>ACCESS_COARSE_LOCATION</td>
+                <td>Approximate location for map display</td>
+                <td>When you open the map</td>
+            </tr>
+            <tr>
+                <td>ACCESS_BACKGROUND_LOCATION</td>
+                <td>Geofencing notifications (volunteers only)</td>
+                <td>When you enable geofencing</td>
+            </tr>
+            <tr>
+                <td>CAMERA</td>
+                <td>Take photos for status reports</td>
+                <td>When you tap "Take Photo"</td>
+            </tr>
+            <tr>
+                <td>READ_MEDIA_IMAGES</td>
+                <td>Select photos from your library</td>
+                <td>When you tap "Choose Photo"</td>
+            </tr>
+            <tr>
+                <td>POST_NOTIFICATIONS</td>
+                <td>Send push notifications</td>
+                <td>When you subscribe to a fridge</td>
+            </tr>
+            <tr>
+                <td>INTERNET</td>
+                <td>Connect to our servers</td>
+                <td>Required for app operation</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>iOS Permissions</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Permission</th>
+                <th>Description</th>
+                <th>When Requested</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Location (When In Use)</td>
+                <td>"FridgeFinder needs your location to show nearby community fridges on the map and calculate distances. Your location is never stored or shared."</td>
+                <td>When you open the map</td>
+            </tr>
+            <tr>
+                <td>Location (Always)</td>
+                <td>"FridgeFinder needs background location access to send you notifications when you're near a community fridge that needs volunteers or has fresh food available."</td>
+                <td>When you enable geofencing</td>
+            </tr>
+            <tr>
+                <td>Camera</td>
+                <td>Take photos for status reports</td>
+                <td>When you tap "Take Photo"</td>
+            </tr>
+            <tr>
+                <td>Photo Library</td>
+                <td>Select photos for status reports</td>
+                <td>When you tap "Choose Photo"</td>
+            </tr>
+            <tr>
+                <td>Notifications</td>
+                <td>Receive push notifications about fridges</td>
+                <td>When you subscribe to a fridge</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2 id="childrens-privacy">9. Children's Privacy (COPPA Compliance)</h2>
+
+    <p><strong>Age Restriction:</strong> FridgeFinder is not intended for children under the age of 13. We do not knowingly collect personal information from children under 13.</p>
+
+    <p><strong>If you are a parent or guardian:</strong> If you believe your child under 13 has provided personal information to us, please contact us immediately at <a href="mailto:privacy@communityfridgefinder.com">privacy@communityfridgefinder.com</a>. We will delete the information within 30 days of verification.</p>
+
+    <p><strong>Age Verification:</strong> We do not actively verify the age of users but rely on honest self-reporting during account creation.</p>
+
+    <h2 id="international-users">10. International Users & Data Transfers</h2>
+
+    <p><strong>Data Storage Location:</strong> Your data is stored on Firebase servers, which may be located in the United States or other countries where Google operates data centers.</p>
+
+    <p><strong>International Transfers:</strong> If you are accessing FridgeFinder from outside the United States, please be aware that your information may be transferred to, stored, and processed in the United States where our servers and service providers are located. The United States may have data protection laws that are different from those in your country.</p>
+
+    <p><strong>GDPR Safeguards:</strong> For users in the European Economic Area (EEA), UK, or Switzerland, we rely on:</p>
+    <ul>
+        <li><strong>Standard Contractual Clauses:</strong> Firebase/Google uses EU-approved Standard Contractual Clauses for data transfers</li>
+        <li><strong>Adequacy Decisions:</strong> Where applicable, we rely on EU Commission adequacy decisions</li>
+        <li><strong>Data Processing Agreement:</strong> Firebase acts as a data processor under our Data Processing Agreement</li>
+    </ul>
+
+    <h2 id="state-privacy">11. U.S. State Privacy Rights (CCPA/CPRA)</h2>
+
+    <p><strong>For California Residents:</strong> The California Consumer Privacy Act (CCPA) and California Privacy Rights Act (CPRA) provide California residents with specific rights regarding their personal information.</p>
+
+    <h3>Categories of Personal Information We Collect</h3>
+    <ul>
+        <li><strong>Identifiers:</strong> Phone number, email, username, unique user ID</li>
+        <li><strong>Geolocation Data:</strong> Precise location (real-time only, not stored)</li>
+        <li><strong>Visual Information:</strong> Photos you upload</li>
+        <li><strong>Internet/Network Activity:</strong> FCM token, device type, OS version, app version</li>
+        <li><strong>Inferences:</strong> Volunteer points (derived from your activity)</li>
+    </ul>
+
+    <h3>Your California Privacy Rights</h3>
+    <ul>
+        <li><strong>Right to Know:</strong> Request disclosure of what personal information we collect, use, and disclose</li>
+        <li><strong>Right to Delete:</strong> Request deletion of your personal information (subject to exceptions)</li>
+        <li><strong>Right to Correct:</strong> Request correction of inaccurate personal information</li>
+        <li><strong>Right to Opt-Out of Sale/Sharing:</strong> We do NOT sell or share your personal information for cross-context behavioral advertising</li>
+        <li><strong>Right to Limit Use of Sensitive Personal Information:</strong> We do not use or disclose sensitive personal information for purposes beyond providing our services</li>
+        <li><strong>Right to Non-Discrimination:</strong> We will not discriminate against you for exercising your privacy rights</li>
+    </ul>
+
+    <h3>How to Exercise CCPA Rights</h3>
+    <p>Email us at <a href="mailto:privacy@communityfridgefinder.com">privacy@communityfridgefinder.com</a> with the subject line "California Privacy Request". We will verify your identity and respond within 45 days.</p>
+
+    <p><strong>Authorized Agents:</strong> You may designate an authorized agent to make requests on your behalf. We may require written proof of authorization.</p>
+
+    <p><strong>Other States:</strong> Residents of Virginia, Colorado, Connecticut, Utah, and other states with privacy laws have similar rights. Contact us using the same process.</p>
+
+    <h2 id="gdpr">12. European Users (GDPR)</h2>
+
+    <p><strong>For EEA, UK, and Swiss Residents:</strong> The General Data Protection Regulation (GDPR) provides you with specific rights regarding your personal data.</p>
+
+    <h3>Legal Bases for Processing</h3>
+    <ul>
+        <li><strong>Contract Performance:</strong> Account creation, authentication, core app features</li>
+        <li><strong>Legitimate Interest:</strong> Technical operation, security, fraud prevention</li>
+        <li><strong>Consent:</strong> Background location (geofencing), photo uploads, marketing communications (if any)</li>
+        <li><strong>Legal Obligation:</strong> Compliance with applicable laws</li>
+    </ul>
+
+    <h3>Your GDPR Rights</h3>
+    <ul>
+        <li><strong>Right of Access:</strong> Obtain a copy of your personal data</li>
+        <li><strong>Right to Rectification:</strong> Correct inaccurate or incomplete data</li>
+        <li><strong>Right to Erasure ("Right to be Forgotten"):</strong> Request deletion of your data</li>
+        <li><strong>Right to Restrict Processing:</strong> Limit how we use your data</li>
+        <li><strong>Right to Data Portability:</strong> Receive your data in a structured, machine-readable format</li>
+        <li><strong>Right to Object:</strong> Object to processing based on legitimate interest</li>
+        <li><strong>Right to Withdraw Consent:</strong> Withdraw consent for geofencing or photo uploads at any time</li>
+        <li><strong>Right to Lodge a Complaint:</strong> File a complaint with your local data protection authority</li>
+    </ul>
+
+    <h3>Data Protection Officer</h3>
+    <p>For GDPR-related inquiries, contact our privacy team at <a href="mailto:privacy@communityfridgefinder.com">privacy@communityfridgefinder.com</a></p>
+
+    <h3>EU Representative</h3>
+    <p>If required by law, we will appoint an EU representative. Contact information will be updated here.</p>
+
+    <h2 id="changes">13. Changes to This Privacy Policy</h2>
+
+    <p>We may update this Privacy Policy from time to time to reflect changes in our practices, legal requirements, or app features.</p>
+
+    <p><strong>How we notify you:</strong></p>
+    <ul>
+        <li>We will post the updated policy in the app and on our website</li>
+        <li>We will update the "Last Updated" date at the top of this policy</li>
+        <li>For material changes, we may send an in-app notification or email</li>
+    </ul>
+
+    <p><strong>Your continued use:</strong> By continuing to use the App after changes take effect, you accept the updated Privacy Policy.</p>
+
+    <p><strong>Version History:</strong></p>
+    <ul>
+        <li>Version 2.0 - November 15, 2025: Comprehensive update for GDPR, CCPA, COPPA compliance; added detailed data collection disclosures</li>
+        <li>Version 1.0 - December 2024: Initial privacy policy</li>
+    </ul>
+
+    <h2 id="contact">14. Contact Us</h2>
+
+    <div class="contact-info">
+        <p><strong>If you have questions, concerns, or requests regarding this Privacy Policy or our data practices, please contact us:</strong></p>
+
+        <p><strong>Email:</strong> <a href="mailto:privacy@communityfridgefinder.com">privacy@communityfridgefinder.com</a></p>
+        <p><strong>Website:</strong> <a href="https://communityfridgefinder.com" target="_blank">https://communityfridgefinder.com</a></p>
+
+        <p><strong>For GDPR Inquiries:</strong> <a href="mailto:privacy@communityfridgefinder.com">privacy@communityfridgefinder.com</a></p>
+        <p><strong>For CCPA Inquiries:</strong> <a href="mailto:privacy@communityfridgefinder.com">privacy@communityfridgefinder.com</a> (Subject: "California Privacy Request")</p>
+        <p><strong>For Data Deletion Requests:</strong> Use in-app deletion (Profile > Settings > Delete Account) or email us</p>
+
+        <p><strong>Response Time:</strong> We aim to respond to all privacy inquiries within 30 days (45 days for CCPA requests).</p>
+    </div>
+
+    <hr style="margin-top: 40px; border: none; border-top: 2px solid #ddd;">
+
+    <div style="text-align: center; margin-top: 40px; padding: 20px; background-color: #f8f9fa; border-radius: 5px;">
+        <p style="color: #7f8c8d; font-size: 0.9em; margin: 10px 0;">
+            <strong>Privacy Summary:</strong><br>
+            ✓ No analytics or tracking | ✓ Location never stored | ✓ No data sales | ✓ Minimal data collection<br>
+            ✓ GDPR compliant | ✓ CCPA compliant | ✓ COPPA compliant | ✓ Easy account deletion
+        </p>
+        <p style="text-align: center; color: #7f8c8d; font-size: 0.9em; margin-top: 20px;">
+            © 2025 FridgeFinder. All rights reserved.<br>
+            <em>Building community, respecting privacy.</em>
+        </p>
+    </div>
 </body>
 </html>
-
