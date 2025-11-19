@@ -468,6 +468,641 @@ exports.sendGeofencingNotification = functions.https.onCall(async (data, context
 
 /**
  * ============================================================================
+ * DASHBOARD STATISTICS FUNCTIONS
+ * For web dashboard analytics and reporting
+ * ============================================================================
+ */
+
+/**
+ * HTTP Callable Function: Verify dashboard password
+ * Simple password verification for dashboard access
+ *
+ * Expected request data:
+ * {
+ *   passwordHash: string (SHA-256 hash of password)
+ * }
+ */
+exports.verifyDashboardPassword = functions.https.onCall(async (data, context) => {
+  const {passwordHash} = data;
+
+  if (!passwordHash) {
+    throw new functions.https.HttpsError(
+      'invalid-argument',
+      'Missing required field: passwordHash',
+    );
+  }
+
+  // Get dashboard password from environment config
+  // Set this with: firebase functions:config:set dashboard.password="your_password_here"
+  const config = functions.config();
+  const correctPassword = config.dashboard?.password || 'changeme123';
+
+  // In production, store the hash of the password in config, not plaintext
+  // For now, we compare the provided hash with a hash of the stored password
+  const crypto = require('crypto');
+  const correctHash = crypto
+    .createHash('sha256')
+    .update(correctPassword)
+    .digest('hex');
+
+  if (passwordHash === correctHash) {
+    // Generate session token
+    const sessionToken = crypto.randomBytes(32).toString('hex');
+    const expiresAt = Date.now() + (60 * 60 * 1000); // 1 hour
+
+    // Store session in database
+    await db.ref(`dashboardSessions/${sessionToken}`).set({
+      createdAt: Date.now(),
+      expiresAt: expiresAt,
+    });
+
+    return {
+      success: true,
+      sessionToken: sessionToken,
+      expiresAt: expiresAt,
+    };
+  } else {
+    // Add small delay to prevent brute force
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    throw new functions.https.HttpsError(
+      'permission-denied',
+      'Invalid password',
+    );
+  }
+});
+
+/**
+ * HTTP Callable Function: Get aggregated statistics
+ * Returns pre-aggregated statistics for the dashboard
+ *
+ * Expected request data:
+ * {
+ *   sessionToken: string,
+ *   timeFilter: '24h' | '7d' | 'all' (optional, defaults to 'all')
+ * }
+ */
+exports.getAggregatedStats = functions.https.onCall(async (data, context) => {
+  const {sessionToken, timeFilter = 'all'} = data;
+
+  // Verify session token
+  if (!sessionToken) {
+    throw new functions.https.HttpsError(
+      'unauthenticated',
+      'Session token required',
+    );
+  }
+
+  const sessionRef = db.ref(`dashboardSessions/${sessionToken}`);
+  const sessionSnapshot = await sessionRef.once('value');
+  const sessionData = sessionSnapshot.val();
+
+  if (!sessionData || sessionData.expiresAt < Date.now()) {
+    throw new functions.https.HttpsError(
+      'permission-denied',
+      'Invalid or expired session',
+    );
+  }
+
+  // Calculate time threshold based on filter
+  let timeThreshold = 0;
+  if (timeFilter === '24h') {
+    timeThreshold = Date.now() - (24 * 60 * 60 * 1000);
+  } else if (timeFilter === '7d') {
+    timeThreshold = Date.now() - (7 * 24 * 60 * 60 * 1000);
+  }
+
+  // Get all users
+  const usersSnapshot = await db.ref('users').once('value');
+  const users = usersSnapshot.val() || {};
+
+  // Get all status reports
+  const reportsSnapshot = await db.ref('statusReports').once('value');
+  const reports = reportsSnapshot.val() || {};
+
+  // Aggregate user statistics
+  const userStats = {
+    total: 0,
+    regular: 0,
+    volunteer: 0,
+    zipCodes: {},
+    geofencingEnabled: 0,
+  };
+
+  for (const userData of Object.values(users)) {
+    // Apply time filter if needed
+    if (timeFilter !== 'all' && userData.createdAt) {
+      const createdDate = new Date(userData.createdAt).getTime();
+      if (createdDate < timeThreshold) continue;
+    }
+
+    userStats.total++;
+
+    if (userData.isVolunteer) {
+      userStats.volunteer++;
+      if (userData.zipCode) {
+        userStats.zipCodes[userData.zipCode] =
+          (userStats.zipCodes[userData.zipCode] || 0) + 1;
+      }
+    } else {
+      userStats.regular++;
+    }
+
+    if (userData.settings?.geofencingEnabled) {
+      userStats.geofencingEnabled++;
+    }
+  }
+
+  // Aggregate subscription statistics
+  const subscriptionStats = {
+    total: 0,
+    byFridge: {},
+  };
+
+  for (const userData of Object.values(users)) {
+    if (userData.subscribedFridges) {
+      for (const [fridgeId, subscription] of Object.entries(
+        userData.subscribedFridges,
+      )) {
+        // Apply time filter if needed
+        if (timeFilter !== 'all' && subscription.subscribedAt) {
+          const subDate = new Date(subscription.subscribedAt).getTime();
+          if (subDate < timeThreshold) continue;
+        }
+
+        subscriptionStats.total++;
+        subscriptionStats.byFridge[fridgeId] =
+          (subscriptionStats.byFridge[fridgeId] || 0) + 1;
+      }
+    }
+  }
+
+  // Aggregate status report statistics
+  const reportStats = {
+    total: 0,
+    byCondition: {
+      'good': 0,
+      'dirty': 0,
+      'out of order': 0,
+      'not at location': 0,
+    },
+    byFoodLevel: {
+      empty: 0,
+      low: 0,
+      medium: 0,
+      full: 0,
+    },
+    byFridge: {},
+  };
+
+  for (const reportData of Object.values(reports)) {
+    // Apply time filter if needed
+    if (timeFilter !== 'all' && reportData.reportDate) {
+      const reportDate = new Date(reportData.reportDate).getTime();
+      if (reportDate < timeThreshold) continue;
+    }
+
+    reportStats.total++;
+
+    // Count by condition
+    if (reportData.condition) {
+      reportStats.byCondition[reportData.condition] =
+        (reportStats.byCondition[reportData.condition] || 0) + 1;
+    }
+
+    // Count by food level
+    if (reportData.foodPercentage !== undefined) {
+      if (reportData.foodPercentage === 0) {
+        reportStats.byFoodLevel.empty++;
+      } else if (reportData.foodPercentage <= 0.33) {
+        reportStats.byFoodLevel.low++;
+      } else if (reportData.foodPercentage <= 0.66) {
+        reportStats.byFoodLevel.medium++;
+      } else {
+        reportStats.byFoodLevel.full++;
+      }
+    }
+
+    // Count by fridge
+    if (reportData.fridgeId) {
+      reportStats.byFridge[reportData.fridgeId] =
+        (reportStats.byFridge[reportData.fridgeId] || 0) + 1;
+    }
+  }
+
+  // Cache the results
+  await db.ref('statistics/aggregated').set({
+    users: userStats,
+    subscriptions: subscriptionStats,
+    reports: reportStats,
+    lastUpdated: Date.now(),
+    timeFilter: timeFilter,
+  });
+
+  return {
+    users: userStats,
+    subscriptions: subscriptionStats,
+    reports: reportStats,
+    lastUpdated: Date.now(),
+  };
+});
+
+/**
+ * HTTP Callable Function: Geocode volunteer zip codes
+ * Uses OpenStreetMap Nominatim API to geocode zip codes
+ *
+ * Expected request data:
+ * {
+ *   sessionToken: string,
+ *   zipCodes: string[] (array of zip codes to geocode)
+ * }
+ */
+exports.geocodeVolunteerZipCodes = functions.https.onCall(
+  async (data, context) => {
+    const {sessionToken, zipCodes} = data;
+
+    // Verify session token
+    if (!sessionToken) {
+      throw new functions.https.HttpsError(
+        'unauthenticated',
+        'Session token required',
+      );
+    }
+
+    const sessionRef = db.ref(`dashboardSessions/${sessionToken}`);
+    const sessionSnapshot = await sessionRef.once('value');
+    const sessionData = sessionSnapshot.val();
+
+    if (!sessionData || sessionData.expiresAt < Date.now()) {
+      throw new functions.https.HttpsError(
+        'permission-denied',
+        'Invalid or expired session',
+      );
+    }
+
+    if (!zipCodes || !Array.isArray(zipCodes)) {
+      throw new functions.https.HttpsError(
+        'invalid-argument',
+        'zipCodes must be an array',
+      );
+    }
+
+    const axios = require('axios');
+    const results = {};
+
+    // Check if zip codes are already cached
+    const cachedRef = db.ref('statistics/geocodedZips');
+    const cachedSnapshot = await cachedRef.once('value');
+    const cached = cachedSnapshot.val() || {};
+
+    for (const zipCode of zipCodes) {
+      // Check cache first
+      if (cached[zipCode]) {
+        results[zipCode] = cached[zipCode];
+        continue;
+      }
+
+      try {
+        // Rate limit: 1 request per second (Nominatim policy)
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
+        const response = await axios.get(
+          'https://nominatim.openstreetmap.org/search',
+          {
+            params: {
+              postalcode: zipCode,
+              country: 'US',
+              format: 'json',
+              limit: 1,
+            },
+            headers: {
+              'User-Agent': 'FridgeFinder-Dashboard/1.0',
+            },
+          },
+        );
+
+        if (response.data && response.data.length > 0) {
+          const location = response.data[0];
+          const geocoded = {
+            zipCode: zipCode,
+            city: location.display_name.split(',')[0],
+            state: location.display_name.split(',')[1]?.trim() || '',
+            lat: parseFloat(location.lat),
+            lng: parseFloat(location.lon),
+            lastUpdated: Date.now(),
+          };
+
+          results[zipCode] = geocoded;
+
+          // Cache the result
+          await cachedRef.child(zipCode).set(geocoded);
+        } else {
+          results[zipCode] = {
+            zipCode: zipCode,
+            error: 'Not found',
+          };
+        }
+      } catch (error) {
+        console.error(`Error geocoding ${zipCode}:`, error.message);
+        results[zipCode] = {
+          zipCode: zipCode,
+          error: error.message,
+        };
+      }
+    }
+
+    return {
+      success: true,
+      results: results,
+    };
+  },
+);
+
+/**
+ * HTTP Callable Function: Get app download statistics
+ * Fetches download stats from App Store Connect and Google Play Console APIs
+ *
+ * Expected request data:
+ * {
+ *   sessionToken: string
+ * }
+ */
+exports.getAppDownloads = functions.https.onCall(async (data, context) => {
+  const {sessionToken} = data;
+
+  // Verify session token
+  if (!sessionToken) {
+    throw new functions.https.HttpsError(
+      'unauthenticated',
+      'Session token required',
+    );
+  }
+
+  const sessionRef = db.ref(`dashboardSessions/${sessionToken}`);
+  const sessionSnapshot = await sessionRef.once('value');
+  const sessionData = sessionSnapshot.val();
+
+  if (!sessionData || sessionData.expiresAt < Date.now()) {
+    throw new functions.https.HttpsError(
+      'permission-denied',
+      'Invalid or expired session',
+    );
+  }
+
+  const config = functions.config();
+  const axios = require('axios');
+  const jwt = require('jsonwebtoken');
+
+  const results = {
+    ios: 0,
+    android: 0,
+    lastUpdated: Date.now(),
+    iosError: null,
+    androidError: null,
+  };
+
+  const bundleId = 'com.fridgefinder.fridgefinderFlutterApp';
+  const packageName = 'com.fridgefinder.fridgefinderapp';
+
+  // Fetch iOS downloads from App Store Connect API
+  try {
+    const appStoreConfig = config.appstore;
+    if (appStoreConfig && appStoreConfig.key_id && appStoreConfig.issuer_id &&
+        appStoreConfig.private_key) {
+      // Generate JWT token for App Store Connect API
+      const token = jwt.sign(
+        {
+          iss: appStoreConfig.issuer_id,
+          exp: Math.floor(Date.now() / 1000) + (20 * 60), // 20 minutes
+          aud: 'appstoreconnect-v1',
+        },
+        appStoreConfig.private_key.replace(/\\n/g, '\n'),
+        {
+          algorithm: 'ES256',
+          header: {
+            kid: appStoreConfig.key_id,
+            typ: 'JWT',
+          },
+        },
+      );
+
+      // Step 1: Find the app by bundle ID
+      const appsResponse = await axios.get(
+        'https://api.appstoreconnect.apple.com/v1/apps',
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          params: {
+            'filter[bundleId]': bundleId,
+            'limit': 1,
+          },
+        },
+      );
+
+      if (appsResponse.data.data && appsResponse.data.data.length > 0) {
+        const appId = appsResponse.data.data[0].id;
+        console.log(`Found iOS app: ${appId}`);
+
+        // Step 2: Get app analytics (units sold/downloads)
+        // Note: App Store Connect API doesn't provide direct download counts
+        // The Analytics Reports API requires asynchronous report generation
+        // For now, we'll use App Analytics web scraping or manual entry
+
+        // Alternative: Use Sales Reports API (requires separate setup)
+        // For this implementation, we'll log success and recommend manual entry
+        console.log('App Store Connect API authenticated successfully');
+        console.log('To get download numbers, use App Store Connect web portal');
+        console.log('or implement Sales Reports API integration');
+
+        results.iosError = 'API authenticated. Manual entry required for download counts.';
+      } else {
+        console.log(`App with bundle ID ${bundleId} not found`);
+        results.iosError = 'App not found in App Store Connect';
+      }
+    } else {
+      console.log('App Store Connect API not configured');
+      results.iosError = 'API not configured';
+    }
+  } catch (error) {
+    console.error('Error fetching iOS downloads:', error.message);
+    if (error.response) {
+      console.error('Response status:', error.response.status);
+      console.error('Response data:', JSON.stringify(error.response.data));
+    }
+    results.iosError = error.message;
+  }
+
+  // Fetch Android downloads from Google Play Console API
+  try {
+    const playStoreConfig = config.playstore;
+    if (playStoreConfig && playStoreConfig.service_account) {
+      // Parse service account credentials
+      const credentials = JSON.parse(playStoreConfig.service_account);
+
+      // Generate JWT for Google APIs
+      const googleToken = jwt.sign(
+        {
+          iss: credentials.client_email,
+          scope: 'https://www.googleapis.com/auth/androidpublisher',
+          aud: 'https://oauth2.googleapis.com/token',
+          exp: Math.floor(Date.now() / 1000) + (60 * 60), // 1 hour
+          iat: Math.floor(Date.now() / 1000),
+        },
+        credentials.private_key,
+        {algorithm: 'RS256'},
+      );
+
+      // Exchange JWT for access token
+      const tokenResponse = await axios.post(
+        'https://oauth2.googleapis.com/token',
+        {
+          grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+          assertion: googleToken,
+        },
+      );
+
+      const accessToken = tokenResponse.data.access_token;
+
+      // Get app details to verify access
+      const appResponse = await axios.get(
+        `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${packageName}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+          },
+        },
+      );
+
+      console.log('Google Play Console API authenticated successfully');
+      console.log(`Found Android app: ${appResponse.data.packageName}`);
+
+      // Note: Google Play Developer API doesn't provide total download counts
+      // It provides:
+      // - Reviews and ratings
+      // - In-app purchases
+      // - Subscriptions
+      // For download stats, use Google Play Console web interface
+      // or Play Console Reports API (requires Google Cloud Storage setup)
+
+      results.androidError = 'API authenticated. Download stats require Play Console Reports setup.';
+    } else {
+      console.log('Google Play Console API not configured');
+      results.androidError = 'API not configured';
+    }
+  } catch (error) {
+    console.error('Error fetching Android downloads:', error.message);
+    if (error.response) {
+      console.error('Response status:', error.response.status);
+      console.error('Response data:', JSON.stringify(error.response.data));
+    }
+    results.androidError = error.message;
+  }
+
+  // Check if we have manually entered download stats
+  const downloadsRef = db.ref('statistics/downloads');
+  const latestSnapshot = await downloadsRef
+    .orderByKey()
+    .limitToLast(1)
+    .once('value');
+
+  if (latestSnapshot.exists()) {
+    const latest = Object.values(latestSnapshot.val())[0];
+    results.ios = latest.ios || 0;
+    results.android = latest.android || 0;
+    results.lastUpdated = latest.timestamp || Date.now();
+  }
+
+  return results;
+});
+
+/**
+ * Scheduled Function: Update app download statistics daily
+ * Runs daily at 6 AM EST to fetch latest download numbers
+ */
+exports.updateAppDownloads = functions.pubsub
+  .schedule('0 6 * * *')
+  .timeZone('America/New_York')
+  .onRun(async (context) => {
+    console.log('Running scheduled download stats update');
+
+    // For now, this logs a reminder to manually update stats
+    // In the future, this could integrate with Sales Reports API
+    console.log('Reminder: Update download statistics manually in Firebase Console');
+    console.log('Path: Realtime Database > statistics > downloads');
+
+    return null;
+  });
+
+/**
+ * HTTP Callable Function: Manually update download statistics
+ * Allows authorized users to manually enter download numbers
+ *
+ * Expected request data:
+ * {
+ *   sessionToken: string,
+ *   ios: number,
+ *   android: number
+ * }
+ */
+exports.updateDownloadStats = functions.https.onCall(async (data, context) => {
+  const {sessionToken, ios, android} = data;
+
+  // Verify session token
+  if (!sessionToken) {
+    throw new functions.https.HttpsError(
+      'unauthenticated',
+      'Session token required',
+    );
+  }
+
+  const sessionRef = db.ref(`dashboardSessions/${sessionToken}`);
+  const sessionSnapshot = await sessionRef.once('value');
+  const sessionData = sessionSnapshot.val();
+
+  if (!sessionData || sessionData.expiresAt < Date.now()) {
+    throw new functions.https.HttpsError(
+      'permission-denied',
+      'Invalid or expired session',
+    );
+  }
+
+  // Validate input
+  if (typeof ios !== 'number' || typeof android !== 'number') {
+    throw new functions.https.HttpsError(
+      'invalid-argument',
+      'ios and android must be numbers',
+    );
+  }
+
+  if (ios < 0 || android < 0) {
+    throw new functions.https.HttpsError(
+      'invalid-argument',
+      'Download numbers must be positive',
+    );
+  }
+
+  // Store in database
+  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+  await db.ref(`statistics/downloads/${today}`).set({
+    ios: ios,
+    android: android,
+    timestamp: Date.now(),
+    updatedAt: new Date().toISOString(),
+  });
+
+  console.log(`Download stats updated: iOS=${ios}, Android=${android}`);
+
+  return {
+    success: true,
+    ios: ios,
+    android: android,
+    date: today,
+  };
+});
+
+/**
+ * ============================================================================
  * ACCOUNT DELETION FUNCTIONS
  * For Google Play compliance and user privacy
  * ============================================================================

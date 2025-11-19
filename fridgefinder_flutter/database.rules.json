@@ -11,6 +11,24 @@
     "statusReports": {
       ".read": "auth != null",
       ".write": "auth != null"
+    },
+    "statistics": {
+      ".read": "auth != null",
+      ".write": false
+    },
+    "dashboardSessions": {
+      "$sessionId": {
+        ".read": "auth != null",
+        ".write": false
+      }
+    },
+    "accountDeletionCodes": {
+      ".read": false,
+      ".write": false
+    },
+    "deletedAccounts": {
+      ".read": false,
+      ".write": false
     }
   }
 }

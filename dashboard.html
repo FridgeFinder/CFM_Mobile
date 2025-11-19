@@ -1,0 +1,1344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FridgeFinder Dashboard - Statistics & Analytics</title>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f7fa;
+        }
+
+        /* Password Modal */
+        .password-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        }
+
+        .password-modal.hidden {
+            display: none;
+        }
+
+        .password-box {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+        }
+
+        .password-box h1 {
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+
+        .password-box p {
+            margin-bottom: 25px;
+            color: #7f8c8d;
+        }
+
+        .password-box input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+
+        .password-box input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .password-box button {
+            width: 100%;
+            padding: 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .password-box button:hover {
+            background: #5568d3;
+        }
+
+        .password-box button:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+        }
+
+        .password-error {
+            color: #e74c3c;
+            margin-top: 10px;
+            display: none;
+        }
+
+        /* Header */
+        .header {
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            font-size: 24px;
+        }
+
+        .header-right {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .last-updated {
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+
+        .new-data-badge {
+            background: #e74c3c;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            display: none;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .logout-btn {
+            padding: 8px 16px;
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .logout-btn:hover {
+            background: #c0392b;
+        }
+
+        /* Time Filter Bar */
+        .filter-bar {
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .filter-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            gap: 10px;
+        }
+
+        .filter-btn {
+            padding: 10px 20px;
+            background: #ecf0f1;
+            border: 2px solid transparent;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            color: #34495e;
+            transition: all 0.3s;
+        }
+
+        .filter-btn:hover {
+            background: #d5dbdb;
+        }
+
+        .filter-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            position: relative;
+        }
+
+        .stat-card h3 {
+            color: #7f8c8d;
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .stat-card .value {
+            font-size: 36px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .stat-card .subvalue {
+            font-size: 14px;
+            color: #95a5a6;
+        }
+
+        .stat-card .badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: #3498db;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        /* Section */
+        .section {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 30px;
+        }
+
+        .section h2 {
+            color: #2c3e50;
+            font-size: 22px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+        }
+
+        /* Charts */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        /* Maps */
+        .map {
+            height: 500px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        /* Table */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ecf0f1;
+        }
+
+        .data-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #2c3e50;
+            position: sticky;
+            top: 0;
+        }
+
+        .data-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .data-table td.sortable {
+            cursor: pointer;
+        }
+
+        /* Status Badges */
+        .status-good {
+            background: #5FD65F;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-dirty {
+            background: #FFB300;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-outoforder {
+            background: #FF7043;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-notatlocation {
+            background: #757575;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 28px;
+            font-weight: 700;
+            color: #95a5a6;
+            cursor: pointer;
+            background: none;
+            border: none;
+        }
+
+        .modal-close:hover {
+            color: #e74c3c;
+        }
+
+        .modal h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+
+        .modal img {
+            max-width: 100%;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        .modal-info {
+            margin: 10px 0;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .modal-info strong {
+            color: #7f8c8d;
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header-content {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .filter-content {
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Password Modal -->
+    <div id="passwordModal" class="password-modal">
+        <div class="password-box">
+            <h1>FridgeFinder Dashboard</h1>
+            <p>Enter password to access statistics</p>
+            <input type="password" id="passwordInput" placeholder="Enter password" autocomplete="off">
+            <button id="passwordSubmit">Access Dashboard</button>
+            <p class="password-error" id="passwordError">Incorrect password. Please try again.</p>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <h1>FridgeFinder Dashboard</h1>
+            <div class="header-right">
+                <span class="new-data-badge" id="newDataBadge">New Data</span>
+                <span class="last-updated" id="lastUpdated">Loading...</span>
+                <button class="logout-btn" id="logoutBtn">Logout</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Time Filter Bar -->
+    <div class="filter-bar">
+        <div class="filter-content">
+            <button class="filter-btn active" data-filter="24h">Past 24 Hours</button>
+            <button class="filter-btn" data-filter="7d">Past Week</button>
+            <button class="filter-btn" data-filter="all">All Time</button>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Key Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Total Downloads</h3>
+                <div class="value" id="totalDownloads">-</div>
+                <div class="subvalue">iOS: <span id="iosDownloads">-</span> | Android: <span id="androidDownloads">-</span></div>
+                <button id="updateDownloadsBtn" style="margin-top: 10px; padding: 6px 12px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">Update Stats</button>
+            </div>
+            <div class="stat-card">
+                <h3>User Accounts</h3>
+                <div class="value" id="totalUsers">-</div>
+                <div class="subvalue">Regular: <span id="regularUsers">-</span> | Volunteers: <span id="volunteerUsers">-</span></div>
+            </div>
+            <div class="stat-card">
+                <h3>Fridge Subscriptions</h3>
+                <div class="value" id="totalSubscriptions">-</div>
+                <div class="subvalue">Geofencing: <span id="geofencingUsers">-</span> enabled</div>
+            </div>
+            <div class="stat-card">
+                <h3>Status Reports</h3>
+                <div class="value" id="totalReports">-</div>
+                <div class="subvalue">Community updates</div>
+            </div>
+        </div>
+
+        <!-- User Statistics Section -->
+        <div class="section">
+            <h2>User Account Statistics</h2>
+            <div class="charts-grid">
+                <div class="chart-container">
+                    <canvas id="userTypeChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <canvas id="userGrowthChart"></canvas>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 30px; color: #2c3e50;">Volunteer Locations</h3>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Zip Code</th>
+                        <th>City, State</th>
+                        <th>Volunteers</th>
+                    </tr>
+                </thead>
+                <tbody id="zipCodeTable">
+                    <tr><td colspan="3" style="text-align: center;">Loading...</td></tr>
+                </tbody>
+            </table>
+
+            <div id="volunteerMap" class="map"></div>
+        </div>
+
+        <!-- Subscription Statistics Section -->
+        <div class="section">
+            <h2>Fridge Subscription Statistics</h2>
+            <div class="charts-grid">
+                <div class="chart-container">
+                    <canvas id="topFridgesChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <canvas id="notificationPrefsChart"></canvas>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 30px; color: #2c3e50;">Subscribed Fridges Map</h3>
+            <div id="subscriptionsMap" class="map"></div>
+        </div>
+
+        <!-- Status Reports Section -->
+        <div class="section">
+            <h2>Status Report Statistics</h2>
+            <div class="charts-grid">
+                <div class="chart-container">
+                    <canvas id="reportConditionChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <canvas id="reportFoodLevelChart"></canvas>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 30px; color: #2c3e50;">Fridge Condition Map</h3>
+            <div id="reportsMap" class="map"></div>
+        </div>
+    </div>
+
+    <!-- Fridge Details Modal -->
+    <div id="fridgeModal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" id="modalClose">&times;</button>
+            <h3 id="modalTitle">Fridge Details</h3>
+            <div id="modalBody">
+                <!-- Dynamic content will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Update Downloads Modal -->
+    <div id="downloadsModal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" id="downloadsModalClose">&times;</button>
+            <h3>Update Download Statistics</h3>
+            <p style="color: #7f8c8d; margin-bottom: 20px;">Enter the latest download counts from App Store Connect and Google Play Console.</p>
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">iOS Downloads:</label>
+                <input type="number" id="iosDownloadInput" min="0" style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 6px; font-size: 16px;">
+            </div>
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Android Downloads:</label>
+                <input type="number" id="androidDownloadInput" min="0" style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 6px; font-size: 16px;">
+            </div>
+            <div id="downloadsError" style="color: #e74c3c; margin-bottom: 15px; display: none;"></div>
+            <button id="saveDownloadsBtn" style="width: 100%; padding: 12px; background: #2ecc71; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: 600; cursor: pointer;">Save Statistics</button>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-functions-compat.js"></script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <!-- Leaflet.js -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBkojMiASYv7sH0W7FimcNATZ7piPhKVCQ",
+            authDomain: "fridgefinder-app.firebaseapp.com",
+            databaseURL: "https://fridgefinder-app-default-rtdb.firebaseio.com",
+            projectId: "fridgefinder-app",
+            storageBucket: "fridgefinder-app.firebasestorage.app",
+            messagingSenderId: "576156648133",
+            appId: "1:576156648133:ios:a8bcb9f2c07d53688666ac"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const functions = firebase.functions();
+        const auth = firebase.auth();
+
+        // Global state
+        let sessionToken = null;
+        let currentFilter = '24h';
+        let statsData = null;
+        let fridgesData = [];
+        let geocodedZips = {};
+        let charts = {};
+        let maps = {};
+
+        // DOM Elements
+        const passwordModal = document.getElementById('passwordModal');
+        const passwordInput = document.getElementById('passwordInput');
+        const passwordSubmit = document.getElementById('passwordSubmit');
+        const passwordError = document.getElementById('passwordError');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const newDataBadge = document.getElementById('newDataBadge');
+        const filterBtns = document.querySelectorAll('.filter-btn');
+
+        // Password authentication
+        async function authenticateWithPassword() {
+            const password = passwordInput.value.trim();
+            if (!password) {
+                passwordError.style.display = 'block';
+                return;
+            }
+
+            passwordSubmit.disabled = true;
+            passwordSubmit.textContent = 'Verifying...';
+            passwordError.style.display = 'none';
+
+            try {
+                // Hash password with SHA-256
+                const encoder = new TextEncoder();
+                const data = encoder.encode(password);
+                const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                const passwordHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+                // Sign in anonymously first (required for database access)
+                await auth.signInAnonymously();
+
+                // Verify password
+                const verifyPassword = functions.httpsCallable('verifyDashboardPassword');
+                const result = await verifyPassword({ passwordHash });
+
+                if (result.data.success) {
+                    sessionToken = result.data.sessionToken;
+                    sessionStorage.setItem('dashboardSession', sessionToken);
+                    passwordModal.classList.add('hidden');
+                    await loadDashboard();
+                }
+            } catch (error) {
+                console.error('Authentication error:', error);
+                passwordError.textContent = error.message || 'Incorrect password. Please try again.';
+                passwordError.style.display = 'block';
+                passwordSubmit.disabled = false;
+                passwordSubmit.textContent = 'Access Dashboard';
+            }
+        }
+
+        // Check for existing session
+        async function checkSession() {
+            const savedSession = sessionStorage.getItem('dashboardSession');
+            if (savedSession) {
+                sessionToken = savedSession;
+                try {
+                    await auth.signInAnonymously();
+                    passwordModal.classList.add('hidden');
+                    await loadDashboard();
+                } catch (error) {
+                    console.error('Session check failed:', error);
+                    sessionStorage.removeItem('dashboardSession');
+                    sessionToken = null;
+                }
+            }
+        }
+
+        // Load dashboard data
+        async function loadDashboard() {
+            try {
+                // Load stats
+                await loadStats();
+
+                // Load fridges from API
+                await loadFridges();
+
+                // Load download stats
+                await loadDownloadStats();
+
+                // Setup real-time listeners
+                setupRealTimeListeners();
+
+                // Update last updated time
+                updateLastUpdated();
+
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+                alert('Error loading dashboard. Please try again.');
+            }
+        }
+
+        // Load statistics
+        async function loadStats() {
+            try {
+                const getStats = functions.httpsCallable('getAggregatedStats');
+                const result = await getStats({
+                    sessionToken: sessionToken,
+                    timeFilter: currentFilter
+                });
+
+                statsData = result.data;
+
+                // Update UI
+                updateStatsCards();
+                updateCharts();
+                await updateVolunteerMap();
+
+            } catch (error) {
+                console.error('Error loading stats:', error);
+                throw error;
+            }
+        }
+
+        // Load fridges from API
+        async function loadFridges() {
+            try {
+                const response = await fetch('https://api-prod.communityfridgefinder.com/v1/fridges');
+                const data = await response.json();
+                fridgesData = data.filter(f => !f.ghost);
+
+                updateSubscriptionsMap();
+                updateReportsMap();
+
+            } catch (error) {
+                console.error('Error loading fridges:', error);
+            }
+        }
+
+        // Update stats cards
+        function updateStatsCards() {
+            // Downloads (placeholder - will be populated when API integration is complete)
+            document.getElementById('totalDownloads').textContent = '-';
+            document.getElementById('iosDownloads').textContent = '-';
+            document.getElementById('androidDownloads').textContent = '-';
+
+            // Users
+            document.getElementById('totalUsers').textContent = statsData.users.total;
+            document.getElementById('regularUsers').textContent = statsData.users.regular;
+            document.getElementById('volunteerUsers').textContent = statsData.users.volunteer;
+
+            // Subscriptions
+            document.getElementById('totalSubscriptions').textContent = statsData.subscriptions.total;
+            document.getElementById('geofencingUsers').textContent = statsData.users.geofencingEnabled;
+
+            // Reports
+            document.getElementById('totalReports').textContent = statsData.reports.total;
+        }
+
+        // Update charts
+        function updateCharts() {
+            // User Type Pie Chart
+            const userTypeCtx = document.getElementById('userTypeChart').getContext('2d');
+            if (charts.userType) charts.userType.destroy();
+            charts.userType = new Chart(userTypeCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['Regular Users', 'Volunteers'],
+                    datasets: [{
+                        data: [statsData.users.regular, statsData.users.volunteer],
+                        backgroundColor: ['#3498db', '#2ecc71']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'User Types'
+                        }
+                    }
+                }
+            });
+
+            // User Growth Chart (placeholder - would need historical data)
+            const userGrowthCtx = document.getElementById('userGrowthChart').getContext('2d');
+            if (charts.userGrowth) charts.userGrowth.destroy();
+            charts.userGrowth = new Chart(userGrowthCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                    datasets: [{
+                        label: 'Users',
+                        data: [0, 0, 0, 0, 0, statsData.users.total],
+                        borderColor: '#667eea',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'User Growth (Sample Data)'
+                        }
+                    }
+                }
+            });
+
+            // Top Fridges Bar Chart
+            const topFridgesCtx = document.getElementById('topFridgesChart').getContext('2d');
+            const sortedFridges = Object.entries(statsData.subscriptions.byFridge)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 10);
+
+            if (charts.topFridges) charts.topFridges.destroy();
+            charts.topFridges = new Chart(topFridgesCtx, {
+                type: 'bar',
+                data: {
+                    labels: sortedFridges.map(([id, _]) => {
+                        const fridge = fridgesData.find(f => f.id === id);
+                        return fridge ? fridge.name.substring(0, 20) : id;
+                    }),
+                    datasets: [{
+                        label: 'Subscriptions',
+                        data: sortedFridges.map(([_, count]) => count),
+                        backgroundColor: '#667eea'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Most Subscribed Fridges (Top 10)'
+                        }
+                    }
+                }
+            });
+
+            // Notification Preferences Chart (placeholder)
+            const notifPrefsCtx = document.getElementById('notificationPrefsChart').getContext('2d');
+            if (charts.notifPrefs) charts.notifPrefs.destroy();
+            charts.notifPrefs = new Chart(notifPrefsCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Immediate', 'Daily', 'Weekly'],
+                    datasets: [{
+                        data: [70, 20, 10],
+                        backgroundColor: ['#e74c3c', '#f39c12', '#3498db']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Notification Frequency (Sample)'
+                        }
+                    }
+                }
+            });
+
+            // Report Condition Chart
+            const reportConditionCtx = document.getElementById('reportConditionChart').getContext('2d');
+            if (charts.reportCondition) charts.reportCondition.destroy();
+            charts.reportCondition = new Chart(reportConditionCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Good', 'Dirty', 'Out of Order', 'Not at Location'],
+                    datasets: [{
+                        label: 'Reports',
+                        data: [
+                            statsData.reports.byCondition.good || 0,
+                            statsData.reports.byCondition.dirty || 0,
+                            statsData.reports.byCondition['out of order'] || 0,
+                            statsData.reports.byCondition['not at location'] || 0
+                        ],
+                        backgroundColor: ['#5FD65F', '#FFB300', '#FF7043', '#757575']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Reports by Condition'
+                        }
+                    }
+                }
+            });
+
+            // Report Food Level Chart
+            const reportFoodCtx = document.getElementById('reportFoodLevelChart').getContext('2d');
+            if (charts.reportFood) charts.reportFood.destroy();
+            charts.reportFood = new Chart(reportFoodCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Empty', 'Low', 'Medium', 'Full'],
+                    datasets: [{
+                        label: 'Reports',
+                        data: [
+                            statsData.reports.byFoodLevel.empty || 0,
+                            statsData.reports.byFoodLevel.low || 0,
+                            statsData.reports.byFoodLevel.medium || 0,
+                            statsData.reports.byFoodLevel.full || 0
+                        ],
+                        backgroundColor: ['#e74c3c', '#f39c12', '#f1c40f', '#2ecc71']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Reports by Food Level'
+                        }
+                    }
+                }
+            });
+
+            // Update zip code table
+            updateZipCodeTable();
+        }
+
+        // Update zip code table
+        function updateZipCodeTable() {
+            const tbody = document.getElementById('zipCodeTable');
+            const zipCodes = Object.entries(statsData.users.zipCodes)
+                .sort((a, b) => b[1] - a[1]);
+
+            if (zipCodes.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align: center;">No volunteer data available</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = zipCodes.map(([zip, count]) => {
+                const geo = geocodedZips[zip];
+                const location = geo ? `${geo.city}, ${geo.state}` : 'Loading...';
+                return `<tr>
+                    <td>${zip}</td>
+                    <td>${location}</td>
+                    <td><strong>${count}</strong></td>
+                </tr>`;
+            }).join('');
+        }
+
+        // Update volunteer map
+        async function updateVolunteerMap() {
+            const zipCodes = Object.keys(statsData.users.zipCodes);
+
+            if (zipCodes.length === 0) return;
+
+            // Geocode zip codes
+            try {
+                const geocodeFunc = functions.httpsCallable('geocodeVolunteerZipCodes');
+                const result = await geocodeFunc({
+                    sessionToken: sessionToken,
+                    zipCodes: zipCodes
+                });
+
+                geocodedZips = result.data.results;
+                updateZipCodeTable();
+
+                // Create/update map
+                const mapEl = document.getElementById('volunteerMap');
+
+                if (maps.volunteer) {
+                    maps.volunteer.remove();
+                }
+
+                maps.volunteer = L.map('volunteerMap').setView([39.8283, -98.5795], 4);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; OpenStreetMap contributors'
+                }).addTo(maps.volunteer);
+
+                // Add markers
+                Object.entries(geocodedZips).forEach(([zip, geo]) => {
+                    if (geo.lat && geo.lng) {
+                        const count = statsData.users.zipCodes[zip];
+                        L.circleMarker([geo.lat, geo.lng], {
+                            radius: Math.sqrt(count) * 5,
+                            fillColor: '#2ecc71',
+                            color: '#27ae60',
+                            weight: 2,
+                            opacity: 1,
+                            fillOpacity: 0.6
+                        }).bindPopup(`
+                            <strong>${geo.city}, ${geo.state}</strong><br>
+                            Zip: ${zip}<br>
+                            Volunteers: ${count}
+                        `).addTo(maps.volunteer);
+                    }
+                });
+
+            } catch (error) {
+                console.error('Error geocoding zip codes:', error);
+            }
+        }
+
+        // Update subscriptions map
+        function updateSubscriptionsMap() {
+            const mapEl = document.getElementById('subscriptionsMap');
+
+            if (maps.subscriptions) {
+                maps.subscriptions.remove();
+            }
+
+            maps.subscriptions = L.map('subscriptionsMap').setView([39.8283, -98.5795], 4);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(maps.subscriptions);
+
+            // Add markers for subscribed fridges
+            fridgesData.forEach(fridge => {
+                const subCount = statsData.subscriptions.byFridge[fridge.id] || 0;
+                if (subCount > 0 && fridge.location) {
+                    L.circleMarker([fridge.location.geoLat, fridge.location.geoLng], {
+                        radius: Math.sqrt(subCount) * 5,
+                        fillColor: '#3498db',
+                        color: '#2980b9',
+                        weight: 2,
+                        opacity: 1,
+                        fillOpacity: 0.6
+                    }).bindPopup(`
+                        <strong>${fridge.name}</strong><br>
+                        ${fridge.location.street}<br>
+                        Subscriptions: ${subCount}
+                    `).addTo(maps.subscriptions);
+                }
+            });
+        }
+
+        // Update reports map
+        function updateReportsMap() {
+            const mapEl = document.getElementById('reportsMap');
+
+            if (maps.reports) {
+                maps.reports.remove();
+            }
+
+            maps.reports = L.map('reportsMap').setView([39.8283, -98.5795], 4);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(maps.reports);
+
+            // Add markers for fridges with reports
+            fridgesData.forEach(fridge => {
+                const reportCount = statsData.reports.byFridge[fridge.id] || 0;
+                if (reportCount > 0 && fridge.location && fridge.latestFridgeReport) {
+                    const report = fridge.latestFridgeReport;
+
+                    // Determine color based on condition and food level
+                    let color = '#5FD65F'; // green
+                    if (report.condition === 'out of order') color = '#FF7043';
+                    else if (report.condition === 'dirty') color = '#FFB300';
+                    else if (report.condition === 'not at location') color = '#757575';
+                    else if (report.foodPercentage <= 0.5) color = '#FFB300';
+
+                    const marker = L.circleMarker([fridge.location.geoLat, fridge.location.geoLng], {
+                        radius: 10,
+                        fillColor: color,
+                        color: '#fff',
+                        weight: 2,
+                        opacity: 1,
+                        fillOpacity: 0.8
+                    }).addTo(maps.reports);
+
+                    marker.on('click', () => {
+                        showFridgeModal(fridge, report);
+                    });
+                }
+            });
+        }
+
+        // Show fridge details modal
+        function showFridgeModal(fridge, report) {
+            const modal = document.getElementById('fridgeModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalBody = document.getElementById('modalBody');
+
+            modalTitle.textContent = fridge.name;
+
+            const foodLevel = report.foodPercentage === 0 ? 'Empty' :
+                            report.foodPercentage <= 0.33 ? 'Low' :
+                            report.foodPercentage <= 0.66 ? 'Medium' : 'Full';
+
+            let statusClass = 'status-good';
+            if (report.condition === 'out of order') statusClass = 'status-outoforder';
+            else if (report.condition === 'dirty') statusClass = 'status-dirty';
+            else if (report.condition === 'not at location') statusClass = 'status-notatlocation';
+
+            modalBody.innerHTML = `
+                <div class="modal-info">
+                    <strong>Address:</strong>
+                    <span>${fridge.location.street}, ${fridge.location.city}, ${fridge.location.state}</span>
+                </div>
+                <div class="modal-info">
+                    <strong>Condition:</strong>
+                    <span class="${statusClass}">${report.condition}</span>
+                </div>
+                <div class="modal-info">
+                    <strong>Food Level:</strong>
+                    <span>${foodLevel} (${Math.round(report.foodPercentage * 100)}%)</span>
+                </div>
+                <div class="modal-info">
+                    <strong>Last Updated:</strong>
+                    <span>${report.timestamp ? new Date(report.timestamp).toLocaleString() : 'N/A'}</span>
+                </div>
+                ${report.notes ? `<div class="modal-info"><strong>Notes:</strong><p>${report.notes}</p></div>` : ''}
+                ${report.photoUrl ? `<img src="${report.photoUrl}" alt="Fridge photo">` : ''}
+                <div class="modal-info">
+                    <strong>Total Reports:</strong>
+                    <span>${statsData.reports.byFridge[fridge.id] || 0}</span>
+                </div>
+            `;
+
+            modal.classList.add('show');
+        }
+
+        // Setup real-time listeners
+        function setupRealTimeListeners() {
+            // Listen for new users
+            db.ref('users').on('child_added', () => {
+                if (statsData) {
+                    showNewDataBadge();
+                }
+            });
+
+            // Listen for new reports
+            db.ref('statusReports').on('child_added', () => {
+                if (statsData) {
+                    showNewDataBadge();
+                }
+            });
+        }
+
+        // Show new data badge
+        function showNewDataBadge() {
+            newDataBadge.style.display = 'inline-block';
+            setTimeout(() => {
+                newDataBadge.style.display = 'none';
+            }, 5000);
+        }
+
+        // Update last updated time
+        function updateLastUpdated() {
+            const now = new Date();
+            document.getElementById('lastUpdated').textContent =
+                `Last updated: ${now.toLocaleTimeString()}`;
+
+            // Update every minute
+            setTimeout(updateLastUpdated, 60000);
+        }
+
+        // Event listeners
+        passwordSubmit.addEventListener('click', authenticateWithPassword);
+        passwordInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') authenticateWithPassword();
+        });
+
+        logoutBtn.addEventListener('click', () => {
+            sessionStorage.removeItem('dashboardSession');
+            location.reload();
+        });
+
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', async () => {
+                filterBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentFilter = btn.dataset.filter;
+                await loadStats();
+            });
+        });
+
+        document.getElementById('modalClose').addEventListener('click', () => {
+            document.getElementById('fridgeModal').classList.remove('show');
+        });
+
+        document.getElementById('fridgeModal').addEventListener('click', (e) => {
+            if (e.target.id === 'fridgeModal') {
+                document.getElementById('fridgeModal').classList.remove('show');
+            }
+        });
+
+        // Download stats functionality
+        document.getElementById('updateDownloadsBtn').addEventListener('click', () => {
+            // Pre-fill with current values if available
+            const currentIos = parseInt(document.getElementById('iosDownloads').textContent) || 0;
+            const currentAndroid = parseInt(document.getElementById('androidDownloads').textContent) || 0;
+
+            document.getElementById('iosDownloadInput').value = currentIos > 0 ? currentIos : '';
+            document.getElementById('androidDownloadInput').value = currentAndroid > 0 ? currentAndroid : '';
+            document.getElementById('downloadsError').style.display = 'none';
+            document.getElementById('downloadsModal').classList.add('show');
+        });
+
+        document.getElementById('downloadsModalClose').addEventListener('click', () => {
+            document.getElementById('downloadsModal').classList.remove('show');
+        });
+
+        document.getElementById('downloadsModal').addEventListener('click', (e) => {
+            if (e.target.id === 'downloadsModal') {
+                document.getElementById('downloadsModal').classList.remove('show');
+            }
+        });
+
+        document.getElementById('saveDownloadsBtn').addEventListener('click', async () => {
+            const ios = parseInt(document.getElementById('iosDownloadInput').value) || 0;
+            const android = parseInt(document.getElementById('androidDownloadInput').value) || 0;
+            const errorDiv = document.getElementById('downloadsError');
+            const saveBtn = document.getElementById('saveDownloadsBtn');
+
+            if (ios < 0 || android < 0) {
+                errorDiv.textContent = 'Download numbers must be positive';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Saving...';
+            errorDiv.style.display = 'none';
+
+            try {
+                const updateStats = functions.httpsCallable('updateDownloadStats');
+                const result = await updateStats({
+                    sessionToken: sessionToken,
+                    ios: ios,
+                    android: android
+                });
+
+                if (result.data.success) {
+                    // Update UI
+                    document.getElementById('iosDownloads').textContent = ios.toLocaleString();
+                    document.getElementById('androidDownloads').textContent = android.toLocaleString();
+                    document.getElementById('totalDownloads').textContent = (ios + android).toLocaleString();
+
+                    // Close modal
+                    document.getElementById('downloadsModal').classList.remove('show');
+
+                    // Show success
+                    alert('Download statistics updated successfully!');
+                }
+            } catch (error) {
+                console.error('Error updating download stats:', error);
+                errorDiv.textContent = error.message || 'Failed to update statistics';
+                errorDiv.style.display = 'block';
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Save Statistics';
+            }
+        });
+
+        // Load download stats
+        async function loadDownloadStats() {
+            try {
+                const getDownloads = functions.httpsCallable('getAppDownloads');
+                const result = await getDownloads({ sessionToken: sessionToken });
+
+                if (result.data) {
+                    const ios = result.data.ios || 0;
+                    const android = result.data.android || 0;
+                    const total = ios + android;
+
+                    document.getElementById('iosDownloads').textContent = ios > 0 ? ios.toLocaleString() : '-';
+                    document.getElementById('androidDownloads').textContent = android > 0 ? android.toLocaleString() : '-';
+                    document.getElementById('totalDownloads').textContent = total > 0 ? total.toLocaleString() : '-';
+
+                    // Log API status
+                    if (result.data.iosError) {
+                        console.log('iOS API Status:', result.data.iosError);
+                    }
+                    if (result.data.androidError) {
+                        console.log('Android API Status:', result.data.androidError);
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading download stats:', error);
+            }
+        }
+
+        // Initialize
+        checkSession();
+    </script>
+</body>
+</html>
