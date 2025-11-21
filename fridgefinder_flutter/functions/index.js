@@ -13,6 +13,22 @@ admin.initializeApp();
 const db = admin.database();
 
 /**
+ * Server-side caching for improved performance
+ */
+const statsCache = new Map();
+const STATS_CACHE_TTL = 2 * 60 * 1000; // 2 minutes
+
+/**
+ * Invalidate stats cache (called when data changes)
+ */
+async function invalidateStatsCache() {
+  statsCache.clear();
+  // Update cache version in Firebase for client awareness
+  await db.ref('cacheVersions/stats').set(Date.now());
+  console.log('Stats cache invalidated');
+}
+
+/**
  * Send notification to a user's FCM token
  */
 async function sendNotificationToUser(userId, notification) {
@@ -255,6 +271,33 @@ exports.onFridgeStatusUpdate = functions.database
 
     // Send all notifications in parallel
     await Promise.allSettled(notifications);
+
+    // Write to activity feed
+    try {
+      const timestamp = Date.now();
+      const reportId = context.params.reportId;
+
+      await db.ref(`activityFeed/${timestamp}_report_${reportId}`).set({
+        type: 'report',
+        timestamp: timestamp,
+        reportId: reportId,
+        fridgeId: reportData.fridgeId,
+        fridgeName: reportData.fridgeName || fridgeId,
+        condition: reportData.condition,
+        foodPercentage: reportData.foodPercentage || 0,
+        photoUrl: reportData.photoUrl || null,
+        reportDate: reportData.reportDate || new Date().toISOString(),
+      });
+
+      console.log(`Activity feed: Status report created - ${reportId}`);
+
+      // Invalidate stats cache since data changed
+      await invalidateStatsCache();
+    } catch (error) {
+      console.error('Error writing report to activity feed:', error);
+      // Don't throw - we don't want to block report creation
+    }
+
     return null;
   });
 
@@ -542,7 +585,7 @@ exports.verifyDashboardPassword = functions.https.onCall(async (data, context) =
  * }
  */
 exports.getAggregatedStats = functions.https.onCall(async (data, context) => {
-  const {sessionToken, timeFilter = 'all'} = data;
+  const {sessionToken, timeFilter = 'all', forceRefresh = false} = data;
 
   // Verify session token
   if (!sessionToken) {
@@ -561,6 +604,20 @@ exports.getAggregatedStats = functions.https.onCall(async (data, context) => {
       'permission-denied',
       'Invalid or expired session',
     );
+  }
+
+  // Check server-side cache (unless force refresh)
+  const cacheKey = `stats_${timeFilter}`;
+  if (!forceRefresh && statsCache.has(cacheKey)) {
+    const cached = statsCache.get(cacheKey);
+    if (Date.now() - cached.timestamp < STATS_CACHE_TTL) {
+      console.log(`Returning cached stats for ${timeFilter}`);
+      return {
+        ...cached.data,
+        cached: true,
+        cacheAge: Date.now() - cached.timestamp,
+      };
+    }
   }
 
   // Calculate time threshold based on filter
@@ -689,21 +746,23 @@ exports.getAggregatedStats = functions.https.onCall(async (data, context) => {
     }
   }
 
-  // Cache the results
-  await db.ref('statistics/aggregated').set({
-    users: userStats,
-    subscriptions: subscriptionStats,
-    reports: reportStats,
-    lastUpdated: Date.now(),
-    timeFilter: timeFilter,
+  // Build result object
+  const result = {
+    userStats: userStats,
+    subscriptionStats: subscriptionStats,
+    reportStats: reportStats,
+    timestamp: Date.now(),
+  };
+
+  // Cache result in memory for subsequent requests
+  statsCache.set(cacheKey, {
+    data: result,
+    timestamp: Date.now(),
   });
 
-  return {
-    users: userStats,
-    subscriptions: subscriptionStats,
-    reports: reportStats,
-    lastUpdated: Date.now(),
-  };
+  console.log(`Stats computed and cached for ${timeFilter}`);
+
+  return result;
 });
 
 /**
@@ -937,8 +996,10 @@ exports.getAppDownloads = functions.https.onCall(async (data, context) => {
   try {
     const playStoreConfig = config.playstore;
     if (playStoreConfig && playStoreConfig.service_account) {
-      // Parse service account credentials
-      const credentials = JSON.parse(playStoreConfig.service_account);
+      // Parse service account credentials (if it's a string) or use as-is (if already an object)
+      const credentials = typeof playStoreConfig.service_account === 'string' ?
+        JSON.parse(playStoreConfig.service_account) :
+        playStoreConfig.service_account;
 
       // Generate JWT for Google APIs
       const googleToken = jwt.sign(
@@ -1084,19 +1145,25 @@ exports.updateDownloadStats = functions.https.onCall(async (data, context) => {
 
   // Store in database
   const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-  await db.ref(`statistics/downloads/${today}`).set({
+  const downloadData = {
     ios: ios,
     android: android,
+    total: ios + android,
     timestamp: Date.now(),
     updatedAt: new Date().toISOString(),
-  });
+  };
 
-  console.log(`Download stats updated: iOS=${ios}, Android=${android}`);
+  // Write to daily stats
+  await db.ref(`statistics/downloads/${today}`).set(downloadData);
+
+  // Also write to "latest" for real-time dashboard updates
+  await db.ref('statistics/downloadLatest').set(downloadData);
+
+  console.log(`Download stats updated: iOS=${ios}, Android=${android}, Total=${ios + android}`);
 
   return {
     success: true,
-    ios: ios,
-    android: android,
+    data: downloadData,
     date: today,
   };
 });
@@ -1353,6 +1420,185 @@ exports.deleteUserAccount = functions.https.onCall(async (data, context) => {
     throw new functions.https.HttpsError(
       'internal',
       'Failed to delete account. Please contact support.',
+    );
+  }
+});
+
+/**
+ * Activity Feed Triggers
+ * These functions automatically write to the activityFeed node
+ * whenever relevant events occur
+ */
+
+/**
+ * Database Trigger: On User Account Creation
+ * Writes to activityFeed when a new user account is created
+ */
+exports.onUserAccountCreation = functions.database
+  .ref('/users/{userId}')
+  .onCreate(async (snapshot, context) => {
+    try {
+      const userData = snapshot.val();
+      const timestamp = Date.now();
+      const userId = context.params.userId;
+
+      // Write to activity feed
+      await db.ref(`activityFeed/${timestamp}_account_${userId}`).set({
+        type: 'account',
+        timestamp: timestamp,
+        userId: userId,
+        isVolunteer: userData.isVolunteer || false,
+        zipCode: userData.zipCode || null,
+        createdAt: userData.createdAt || new Date().toISOString(),
+      });
+
+      console.log(`Activity feed: User account created - ${userId}`);
+
+      // Invalidate stats cache since data changed
+      await invalidateStatsCache();
+    } catch (error) {
+      console.error('Error writing account creation to activity feed:', error);
+      // Don't throw - we don't want to block user creation
+    }
+  });
+
+/**
+ * Database Trigger: On Fridge Subscription
+ * Writes to activityFeed when a user subscribes to a fridge
+ */
+exports.onFridgeSubscription = functions.database
+  .ref('/users/{userId}/subscribedFridges/{fridgeId}')
+  .onCreate(async (snapshot, context) => {
+    try {
+      const subscription = snapshot.val();
+      const timestamp = Date.now();
+      const userId = context.params.userId;
+      const fridgeId = context.params.fridgeId;
+
+      // Write to activity feed
+      await db.ref(`activityFeed/${timestamp}_subscription_${userId}_${fridgeId}`).set({
+        type: 'subscription',
+        timestamp: timestamp,
+        userId: userId,
+        fridgeId: fridgeId,
+        subscribedAt: subscription.subscribedAt || new Date().toISOString(),
+      });
+
+      console.log(`Activity feed: Subscription created - ${userId} to ${fridgeId}`);
+
+      // Invalidate stats cache since data changed
+      await invalidateStatsCache();
+    } catch (error) {
+      console.error('Error writing subscription to activity feed:', error);
+      // Don't throw - we don't want to block subscription
+    }
+  });
+
+/**
+ * HTTP Callable Function: Get Activity Feed
+ * Returns chronological feed of user accounts, subscriptions, and status reports
+ *
+ * Expected request data:
+ * {
+ *   sessionToken: string,
+ *   timeFilter: '24h' | '7d' | 'all',
+ *   limit: number (default 20),
+ *   lastTimestamp: number (cursor for pagination),
+ *   direction: 'desc' | 'asc' (default 'desc')
+ * }
+ */
+exports.getActivityFeed = functions.https.onCall(async (data) => {
+  const {
+    sessionToken,
+    timeFilter = 'all',
+    limit = 20,
+    lastTimestamp = null,
+    direction = 'desc',
+  } = data;
+
+  // Verify session token
+  if (!sessionToken) {
+    throw new functions.https.HttpsError(
+      'unauthenticated',
+      'Session token required',
+    );
+  }
+
+  const sessionRef = db.ref(`dashboardSessions/${sessionToken}`);
+  const sessionSnapshot = await sessionRef.once('value');
+  const sessionData = sessionSnapshot.val();
+
+  if (!sessionData || sessionData.expiresAt < Date.now()) {
+    throw new functions.https.HttpsError(
+      'permission-denied',
+      'Invalid or expired session',
+    );
+  }
+
+  try {
+    // Calculate time threshold
+    const now = Date.now();
+    let startTimestamp = 0;
+    if (timeFilter === '24h') {
+      startTimestamp = now - (24 * 60 * 60 * 1000);
+    } else if (timeFilter === '7d') {
+      startTimestamp = now - (7 * 24 * 60 * 60 * 1000);
+    }
+
+    // Build query with cursor-based pagination
+    let query = db.ref('activityFeed').orderByKey();
+
+    if (direction === 'desc') {
+      // For newest first (default)
+      if (lastTimestamp) {
+        // Continue from last cursor - endBefore excludes the cursor itself
+        query = query.endBefore(`${lastTimestamp}`);
+      }
+      query = query.limitToLast(limit);
+    } else {
+      // For oldest first (less common)
+      if (lastTimestamp) {
+        query = query.startAfter(`${lastTimestamp}`);
+      }
+      query = query.limitToFirst(limit);
+    }
+
+    const snapshot = await query.once('value');
+    const activities = [];
+
+    snapshot.forEach((child) => {
+      const activity = child.val();
+      // Apply time filter
+      if (activity.timestamp >= startTimestamp) {
+        activities.push({
+          id: child.key,
+          ...activity,
+        });
+      }
+    });
+
+    // Sort (keys are already sorted, but reverse if desc)
+    if (direction === 'desc') {
+      activities.reverse();
+    }
+
+    // Get cursor for next page
+    const nextCursor = activities.length > 0 ?
+      activities[activities.length - 1].timestamp :
+      null;
+
+    return {
+      activities: activities,
+      nextCursor: nextCursor,
+      hasMore: activities.length === limit,
+      count: activities.length,
+      timeFilter: timeFilter,
+    };
+  } catch (error) {
+    console.error('Error fetching activity feed:', error);
+    throw new functions.https.HttpsError(
+      'internal',
+      'Failed to fetch activity feed',
     );
   }
 });

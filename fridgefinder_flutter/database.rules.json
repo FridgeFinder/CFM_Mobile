@@ -6,7 +6,7 @@
         ".write": "$userId === auth.uid"
       },
       ".read": "auth != null",
-      ".indexOn": ["username"]
+      ".indexOn": ["username", "createdAt"]
     },
     "statusReports": {
       ".read": "auth != null",
@@ -28,6 +28,19 @@
     },
     "deletedAccounts": {
       ".read": false,
+      ".write": false
+    },
+    "activityFeed": {
+      ".read": "auth != null",
+      ".write": false,
+      ".indexOn": ["timestamp"]
+    },
+    "cacheVersions": {
+      ".read": "auth != null",
+      ".write": false
+    },
+    "geocodingCache": {
+      ".read": "auth != null",
       ".write": false
     }
   }

@@ -172,6 +172,9 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
             padding: 15px;
             margin-bottom: 20px;
+            position: sticky;
+            top: 70px;
+            z-index: 999;
         }
 
         .filter-content {
@@ -201,6 +204,204 @@
             background: #667eea;
             color: white;
             border-color: #667eea;
+        }
+
+        /* Activity Timeline */
+        .activity-timeline {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+            margin-bottom: 30px;
+        }
+
+        .activity-timeline h2 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #2c3e50;
+            font-size: 22px;
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 10px;
+        }
+
+        .timeline-container {
+            position: relative;
+        }
+
+        .timeline-loading {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+        }
+
+        .timeline-loading .spinner {
+            border: 3px solid #ecf0f1;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .timeline-list {
+            position: relative;
+            padding-left: 30px;
+        }
+
+        .timeline-list::before {
+            content: '';
+            position: absolute;
+            left: 10px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(to bottom, #667eea, #764ba2);
+        }
+
+        .timeline-item {
+            position: relative;
+            padding: 15px 20px;
+            margin-bottom: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 3px solid #667eea;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .timeline-item:hover {
+            background: #e8eaf6;
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -33px;
+            top: 20px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: white;
+            border: 3px solid #667eea;
+            z-index: 1;
+        }
+
+        .timeline-item.account::before {
+            border-color: #27ae60;
+        }
+
+        .timeline-item.subscription::before {
+            border-color: #3498db;
+        }
+
+        .timeline-item.report::before {
+            border-color: #e67e22;
+        }
+
+        .timeline-item.account {
+            border-left-color: #27ae60;
+        }
+
+        .timeline-item.subscription {
+            border-left-color: #3498db;
+        }
+
+        .timeline-item.report {
+            border-left-color: #e67e22;
+        }
+
+        .timeline-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .timeline-title {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 15px;
+        }
+
+        .timeline-time {
+            font-size: 12px;
+            color: #7f8c8d;
+        }
+
+        .timeline-details {
+            color: #555;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .timeline-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-top: 8px;
+            text-transform: uppercase;
+        }
+
+        .timeline-badge.volunteer {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .timeline-badge.regular {
+            background: #cce5ff;
+            color: #004085;
+        }
+
+        .timeline-badge.good {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .timeline-badge.dirty {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .timeline-badge.broken {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .load-more-btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin-top: 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .load-more-btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .load-more-btn:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
         }
 
         /* Main Container */
@@ -504,6 +705,23 @@
 
     <!-- Main Container -->
     <div class="container">
+        <!-- Activity Timeline Widget -->
+        <div class="section activity-timeline">
+            <h2>Recent Activity</h2>
+            <div class="timeline-container">
+                <div class="timeline-loading" id="timelineLoading">
+                    <div class="spinner"></div>
+                    <p>Loading recent activity...</p>
+                </div>
+                <div class="timeline-list" id="activityTimeline" style="display: none;">
+                    <!-- Dynamic timeline items will be inserted here -->
+                </div>
+                <button class="load-more-btn" id="loadMoreActivity" style="display: none;">
+                    Load More
+                </button>
+            </div>
+        </div>
+
         <!-- Key Stats -->
         <div class="stats-grid">
             <div class="stat-card">
@@ -651,6 +869,119 @@
         const functions = firebase.functions();
         const auth = firebase.auth();
 
+        // ===== DASHBOARD CACHE CLASS =====
+        // Centralized caching system for improved performance
+        class DashboardCache {
+            constructor() {
+                this.caches = {
+                    stats: { '24h': null, '7d': null, 'all': null },
+                    fridges: null,
+                    downloads: null,
+                    geocoding: new Map(),
+                    activities: { '24h': null, '7d': null, 'all': null }
+                };
+
+                this.TTLs = {
+                    stats: 5 * 60 * 1000,      // 5 minutes
+                    fridges: 15 * 60 * 1000,    // 15 minutes
+                    downloads: 60 * 60 * 1000,  // 1 hour
+                    geocoding: Infinity,        // Never expire
+                    activities: 5 * 60 * 1000   // 5 minutes
+                };
+
+                this.versions = {
+                    stats: 0,
+                    activities: 0
+                };
+
+                this.loadFromLocalStorage();
+            }
+
+            get(key, filter = null) {
+                const cache = filter ? this.caches[key][filter] : this.caches[key];
+                if (!cache) return null;
+
+                const now = Date.now();
+                const ttl = this.TTLs[key];
+
+                if (cache.timestamp && (now - cache.timestamp) > ttl) {
+                    return null;
+                }
+
+                if (cache.version !== undefined && cache.version !== this.versions[key]) {
+                    return null;
+                }
+
+                return cache.data;
+            }
+
+            set(key, data, filter = null) {
+                const cacheEntry = {
+                    data: data,
+                    timestamp: Date.now(),
+                    version: this.versions[key] || 0
+                };
+
+                if (filter) {
+                    this.caches[key][filter] = cacheEntry;
+                } else {
+                    this.caches[key] = cacheEntry;
+                }
+
+                this.saveToLocalStorage();
+            }
+
+            invalidate(key) {
+                if (this.versions[key] !== undefined) {
+                    this.versions[key] = Date.now();
+                }
+                this.saveToLocalStorage();
+            }
+
+            loadFromLocalStorage() {
+                try {
+                    const geocoding = localStorage.getItem('cache_geocoding');
+                    if (geocoding) {
+                        this.caches.geocoding = new Map(JSON.parse(geocoding));
+                    }
+
+                    const fridges = localStorage.getItem('cache_fridges');
+                    if (fridges) {
+                        this.caches.fridges = JSON.parse(fridges);
+                    }
+                } catch (e) {
+                    console.warn('Failed to load cache from localStorage:', e);
+                }
+            }
+
+            saveToLocalStorage() {
+                try {
+                    localStorage.setItem('cache_geocoding',
+                        JSON.stringify(Array.from(this.caches.geocoding.entries())));
+
+                    if (this.caches.fridges) {
+                        localStorage.setItem('cache_fridges', JSON.stringify(this.caches.fridges));
+                    }
+                } catch (e) {
+                    console.warn('Failed to save cache to localStorage:', e);
+                }
+            }
+
+            clearAll() {
+                this.caches = {
+                    stats: { '24h': null, '7d': null, 'all': null },
+                    fridges: null,
+                    downloads: null,
+                    geocoding: new Map(),
+                    activities: { '24h': null, '7d': null, 'all': null }
+                };
+                localStorage.removeItem('cache_geocoding');
+                localStorage.removeItem('cache_fridges');
+            }
+        }
+
+        const cache = new DashboardCache();
+
         // Global state
         let sessionToken = null;
         let currentFilter = '24h';
@@ -659,6 +990,10 @@
         let geocodedZips = {};
         let charts = {};
         let maps = {};
+        let activityFeed = [];
+        let activityOffset = 0;
+        let activityHasMore = true;
+        const ACTIVITY_LIMIT = 20;
 
         // DOM Elements
         const passwordModal = document.getElementById('passwordModal');
@@ -731,6 +1066,9 @@
         // Load dashboard data
         async function loadDashboard() {
             try {
+                // Load activity feed first (most important)
+                await loadActivityFeed();
+
                 // Load stats
                 await loadStats();
 
@@ -755,13 +1093,43 @@
         // Load statistics
         async function loadStats() {
             try {
+                // Check cache first
+                const cached = cache.get('stats', currentFilter);
+                if (cached) {
+                    console.log('📦 Using cached stats');
+                    statsData = {
+                        users: cached.userStats,
+                        subscriptions: cached.subscriptionStats,
+                        reports: cached.reportStats
+                    };
+
+                    // Update UI
+                    updateStatsCards();
+                    updateCharts();
+                    await updateVolunteerMap();
+                    return;
+                }
+
+                // Not in cache - call Cloud Function
                 const getStats = functions.httpsCallable('getAggregatedStats');
                 const result = await getStats({
                     sessionToken: sessionToken,
                     timeFilter: currentFilter
                 });
 
-                statsData = result.data;
+                statsData = {
+                    users: result.data.userStats,
+                    subscriptions: result.data.subscriptionStats,
+                    reports: result.data.reportStats
+                };
+
+                // Cache the result
+                cache.set('stats', result.data, currentFilter);
+
+                // Log cache info
+                if (result.data.cached) {
+                    console.log(`⚡ Served from server cache (age: ${Math.round(result.data.cacheAge / 1000)}s)`);
+                }
 
                 // Update UI
                 updateStatsCards();
@@ -1178,16 +1546,52 @@
 
         // Setup real-time listeners
         function setupRealTimeListeners() {
+            let initialLoadComplete = false;
+
+            // Mark initial load as complete after 2 seconds
+            setTimeout(() => {
+                initialLoadComplete = true;
+            }, 2000);
+
+            // Listen for new activities in the activity feed
+            db.ref('activityFeed').orderByKey().limitToLast(1).on('child_added', (snapshot) => {
+                if (initialLoadComplete && activityFeed.length > 0) {
+                    const newActivity = { id: snapshot.key, ...snapshot.val() };
+
+                    // Check if this activity is already in our feed
+                    const exists = activityFeed.some(a => a.id === newActivity.id);
+                    if (!exists) {
+                        // Prepend new activity to the feed
+                        activityFeed.unshift(newActivity);
+                        renderActivityTimeline();
+
+                        // Invalidate activity cache
+                        cache.invalidate('activities');
+
+                        // Show badge
+                        showNewDataBadge();
+                    }
+                }
+            });
+
+            // Listen for cache version changes
+            db.ref('cacheVersions/stats').on('value', (snapshot) => {
+                if (initialLoadComplete && snapshot.val()) {
+                    cache.invalidate('stats');
+                    console.log('🔄 Stats cache invalidated by server');
+                }
+            });
+
             // Listen for new users
             db.ref('users').on('child_added', () => {
-                if (statsData) {
+                if (initialLoadComplete && statsData) {
                     showNewDataBadge();
                 }
             });
 
             // Listen for new reports
             db.ref('statusReports').on('child_added', () => {
-                if (statsData) {
+                if (initialLoadComplete && statsData) {
                     showNewDataBadge();
                 }
             });
@@ -1227,8 +1631,18 @@
                 filterBtns.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 currentFilter = btn.dataset.filter;
-                await loadStats();
+
+                // Reload both stats and activity feed with new filter
+                await Promise.all([
+                    loadStats(),
+                    loadActivityFeed()
+                ]);
             });
+        });
+
+        // Load More Activity button
+        document.getElementById('loadMoreActivity').addEventListener('click', async () => {
+            await loadActivityFeed(true);
         });
 
         document.getElementById('modalClose').addEventListener('click', () => {
@@ -1312,28 +1726,218 @@
         // Load download stats
         async function loadDownloadStats() {
             try {
-                const getDownloads = functions.httpsCallable('getAppDownloads');
-                const result = await getDownloads({ sessionToken: sessionToken });
-
-                if (result.data) {
-                    const ios = result.data.ios || 0;
-                    const android = result.data.android || 0;
-                    const total = ios + android;
+                // Check cache first for instant load
+                const cached = cache.get('downloads');
+                if (cached) {
+                    console.log('📦 Using cached download stats');
+                    const ios = cached.ios || 0;
+                    const android = cached.android || 0;
+                    const total = cached.total || 0;
 
                     document.getElementById('iosDownloads').textContent = ios > 0 ? ios.toLocaleString() : '-';
                     document.getElementById('androidDownloads').textContent = android > 0 ? android.toLocaleString() : '-';
                     document.getElementById('totalDownloads').textContent = total > 0 ? total.toLocaleString() : '-';
-
-                    // Log API status
-                    if (result.data.iosError) {
-                        console.log('iOS API Status:', result.data.iosError);
-                    }
-                    if (result.data.androidError) {
-                        console.log('Android API Status:', result.data.androidError);
-                    }
                 }
+
+                // Set up real-time listener for download stats
+                const downloadRef = firebase.database().ref('statistics/downloadLatest');
+                downloadRef.on('value', (snapshot) => {
+                    const data = snapshot.val();
+                    if (data) {
+                        const ios = data.ios || 0;
+                        const android = data.android || 0;
+                        const total = data.total || 0;
+
+                        document.getElementById('iosDownloads').textContent = ios > 0 ? ios.toLocaleString() : '-';
+                        document.getElementById('androidDownloads').textContent = android > 0 ? android.toLocaleString() : '-';
+                        document.getElementById('totalDownloads').textContent = total > 0 ? total.toLocaleString() : '-';
+
+                        // Cache the result
+                        cache.set('downloads', data);
+                    }
+                });
             } catch (error) {
                 console.error('Error loading download stats:', error);
+            }
+        }
+
+        // Activity Timeline Functions
+        function getTimeAgo(timestamp) {
+            const now = Date.now();
+            const diff = now - timestamp;
+            const seconds = Math.floor(diff / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const hours = Math.floor(minutes / 60);
+            const days = Math.floor(hours / 24);
+
+            if (seconds < 60) return 'just now';
+            if (minutes < 60) return `${minutes}m ago`;
+            if (hours < 24) return `${hours}h ago`;
+            if (days < 7) return `${days}d ago`;
+            return new Date(timestamp).toLocaleDateString();
+        }
+
+        function renderAccountCreation(activity) {
+            const userType = activity.isVolunteer ? 'Volunteer' : 'Regular';
+            const badgeClass = activity.isVolunteer ? 'volunteer' : 'regular';
+            const zipInfo = activity.zipCode ? ` in ${activity.zipCode}` : '';
+
+            return `
+                <div class="timeline-item account">
+                    <div class="timeline-header">
+                        <div class="timeline-title">New User Account</div>
+                        <div class="timeline-time">${getTimeAgo(activity.timestamp)}</div>
+                    </div>
+                    <div class="timeline-details">
+                        A new ${userType.toLowerCase()} user account was created${zipInfo}
+                        <span class="timeline-badge ${badgeClass}">${userType}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderSubscription(activity) {
+            return `
+                <div class="timeline-item subscription">
+                    <div class="timeline-header">
+                        <div class="timeline-title">New Fridge Subscription</div>
+                        <div class="timeline-time">${getTimeAgo(activity.timestamp)}</div>
+                    </div>
+                    <div class="timeline-details">
+                        User subscribed to fridge: <strong>${activity.fridgeId}</strong>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderStatusReport(activity) {
+            const conditionClass = activity.condition?.toLowerCase() || 'unknown';
+            const conditionLabel = activity.condition || 'Unknown';
+
+            return `
+                <div class="timeline-item report">
+                    <div class="timeline-header">
+                        <div class="timeline-title">Status Report</div>
+                        <div class="timeline-time">${getTimeAgo(activity.timestamp)}</div>
+                    </div>
+                    <div class="timeline-details">
+                        <strong>${activity.fridgeName || activity.fridgeId}</strong>
+                        <br>Condition: <span class="timeline-badge ${conditionClass}">${conditionLabel}</span>
+                        <br>Food Level: ${activity.foodPercentage || 0}%
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderActivityTimeline() {
+            const timelineElement = document.getElementById('activityTimeline');
+
+            if (activityFeed.length === 0) {
+                timelineElement.innerHTML = '<div style="text-align: center; padding: 40px; color: #7f8c8d;">No recent activity</div>';
+                timelineElement.style.display = 'block';
+                return;
+            }
+
+            let html = '';
+            for (const activity of activityFeed) {
+                if (activity.type === 'account') {
+                    html += renderAccountCreation(activity);
+                } else if (activity.type === 'subscription') {
+                    html += renderSubscription(activity);
+                } else if (activity.type === 'report') {
+                    html += renderStatusReport(activity);
+                }
+            }
+
+            timelineElement.innerHTML = html;
+            timelineElement.style.display = 'block';
+
+            // Show/hide Load More button
+            const loadMoreBtn = document.getElementById('loadMoreActivity');
+            if (activityHasMore) {
+                loadMoreBtn.style.display = 'block';
+            } else {
+                loadMoreBtn.style.display = 'none';
+            }
+        }
+
+        async function loadActivityFeed(append = false) {
+            const timelineLoading = document.getElementById('timelineLoading');
+            const timelineElement = document.getElementById('activityTimeline');
+            const loadMoreBtn = document.getElementById('loadMoreActivity');
+
+            if (!append) {
+                // Initial load - show loading state
+                timelineLoading.style.display = 'block';
+                timelineElement.style.display = 'none';
+                activityFeed = [];
+                activityOffset = 0;
+            } else {
+                // Loading more - disable button
+                loadMoreBtn.disabled = true;
+                loadMoreBtn.textContent = 'Loading...';
+            }
+
+            try {
+                // Check cache first
+                if (!append) {
+                    const cached = cache.get('activities', currentFilter);
+                    if (cached) {
+                        console.log('📦 Using cached activity feed');
+                        activityFeed = cached.activities || [];
+                        activityHasMore = cached.hasMore || false;
+                        activityOffset = cached.nextCursor || 0;
+
+                        timelineLoading.style.display = 'none';
+                        renderActivityTimeline();
+                        return;
+                    }
+                }
+
+                // Call Cloud Function
+                const getActivityFeed = functions.httpsCallable('getActivityFeed');
+                const result = await getActivityFeed({
+                    sessionToken: sessionToken,
+                    timeFilter: currentFilter,
+                    limit: ACTIVITY_LIMIT,
+                    lastTimestamp: append ? activityOffset : null,
+                    direction: 'desc'
+                });
+
+                if (result.data) {
+                    const newActivities = result.data.activities || [];
+
+                    if (append) {
+                        activityFeed = activityFeed.concat(newActivities);
+                    } else {
+                        activityFeed = newActivities;
+                    }
+
+                    activityHasMore = result.data.hasMore || false;
+                    activityOffset = result.data.nextCursor || 0;
+
+                    // Cache the initial load
+                    if (!append) {
+                        cache.set('activities', {
+                            activities: activityFeed,
+                            hasMore: activityHasMore,
+                            nextCursor: activityOffset
+                        }, currentFilter);
+                    }
+
+                    timelineLoading.style.display = 'none';
+                    renderActivityTimeline();
+                }
+            } catch (error) {
+                console.error('Error loading activity feed:', error);
+                timelineElement.innerHTML = '<div style="text-align: center; padding: 40px; color: #e74c3c;">Error loading activity feed</div>';
+                timelineElement.style.display = 'block';
+                timelineLoading.style.display = 'none';
+            } finally {
+                if (append) {
+                    loadMoreBtn.disabled = false;
+                    loadMoreBtn.textContent = 'Load More';
+                }
             }
         }
 
