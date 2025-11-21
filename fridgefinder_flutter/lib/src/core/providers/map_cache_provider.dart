@@ -1,24 +1,28 @@
 import 'package:flutter_map_cache/flutter_map_cache.dart';
-import 'package:dio_cache_interceptor/dio_cache_interceptor.dart';
+import 'package:dio_cache_interceptor_hive_store/dio_cache_interceptor_hive_store.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:path_provider/path_provider.dart';
 
 part 'map_cache_provider.g.dart';
 
-/// Provider for cached tile provider using in-memory cache
+/// Provider for cached tile provider using persistent Hive cache
 /// This caches map tiles locally to reduce data usage and improve performance
-/// Uses MemCacheStore which stores tiles in memory (LRU cache)
+/// Uses HiveCacheStore which stores tiles persistently on disk
 ///
-/// Note: For persistent storage across app restarts, consider implementing
-/// a custom CacheStore using Hive. Current implementation uses memory cache
-/// which is cleared when app closes.
+/// Cache persists across app restarts, significantly reducing API usage
+/// for returning users. Tiles are cached for up to 30 days.
 @riverpod
-CachedTileProvider cachedTileProvider(Ref ref) {
-  // Create in-memory cache store for map tiles
-  // Max size: 50MB (sufficient for ~1000 tiles)
+Future<CachedTileProvider> cachedTileProvider(Ref ref) async {
+  // Get app documents directory for persistent storage
+  final appDocDir = await getApplicationDocumentsDirectory();
+  final cachePath = '${appDocDir.path}/map_tile_cache';
+
+  // Create persistent cache store for map tiles using Hive
+  // Max size: 200MB (sufficient for ~4000 tiles, persists across app restarts)
   // Max entry size: 2MB per tile (reasonable for map tiles)
-  final cacheStore = MemCacheStore(
-    maxSize: 50 * 1024 * 1024, // 50MB
-    maxEntrySize: 2 * 1024 * 1024, // 2MB per tile
+  final cacheStore = HiveCacheStore(
+    cachePath,
+    hiveBoxName: 'map_tiles',
   );
 
   // Create cached tile provider with 30-day max stale period

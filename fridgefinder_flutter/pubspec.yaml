@@ -28,7 +28,8 @@ dependencies:
 
   # HTTP & API
   dio: ^5.4.0
-  dio_cache_interceptor: ^4.0.0
+  dio_cache_interceptor: ^3.5.0
+  dio_cache_interceptor_hive_store: ^3.2.2 # Persistent cache storage for map tiles
   connectivity_plus: ^5.0.0 # Network connectivity detection
 
   # Firebase
@@ -58,12 +59,13 @@ dependencies:
   hive: ^2.2.3
   hive_flutter: ^1.1.0
   flutter_cache_manager: ^3.3.1 # For caching map tiles
+  path_provider: ^2.1.5 # For getting application directories
 
   # Utilities
   intl: ^0.20.2
   flutter_svg: ^2.0.10 # For custom SVG icons
   logger: ^2.0.0 # Structured logging for debugging and production
-  flutter_map_cache: ^2.0.0+1
+  flutter_map_cache: ^1.5.2
   share_plus: ^10.1.2 # Native share functionality
   url_launcher: ^6.3.1 # Open URLs and maps
   image_picker: ^1.1.2 # Photo upload for status reports

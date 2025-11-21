@@ -396,9 +396,10 @@ class _MapScreenState extends ConsumerState<MapScreen>
       '📍 build: userLocationProvider state = ${userLocationAsync.runtimeType}, hasValue = ${userLocationAsync.hasValue}',
     );
 
-    final userLocationStream = ref.watch(userLocationStreamProvider);
+    // Note: userLocationStreamProvider is now watched only in the user location marker Consumer
+    // This prevents unnecessary rebuilds of the entire map when location updates
     _log(
-      '🌊 build: userLocationStreamProvider state = ${userLocationStream.runtimeType}',
+      '🌊 build: userLocationStream now watched only in Consumer (prevents full rebuilds)',
     );
 
     final locationAccessEnabled = ref.watch(locationAccessProvider);
@@ -562,8 +563,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   ),
                   children: [
                     // Tile layer with caching
-                    Builder(
-                      builder: (context) {
+                    Consumer(
+                      builder: (context, ref, child) {
                         _log('🧱 Building TileLayer');
                         // Use MapTiler Streets if API key is available, otherwise fallback to OpenStreetMap
                         final tileUrl =
@@ -576,39 +577,63 @@ class _MapScreenState extends ConsumerState<MapScreen>
                         // Note: Attribution is required by MapTiler and OpenStreetMap terms of service
                         // Attribution: © MapTiler © OpenStreetMap contributors (when using MapTiler)
                         // Attribution: © OpenStreetMap contributors (when using OpenStreetMap)
-                        return TileLayer(
-                          urlTemplate: tileUrl,
-                          userAgentPackageName: 'com.example.fridgefinder',
-                          tileProvider: ref.watch(cachedTileProviderProvider),
+
+                        // Handle async tile provider (now using persistent Hive cache)
+                        final tileProviderAsync = ref.watch(cachedTileProviderProvider);
+                        return tileProviderAsync.when(
+                          data: (tileProvider) => TileLayer(
+                            urlTemplate: tileUrl,
+                            userAgentPackageName: 'com.example.fridgefinder',
+                            tileProvider: tileProvider,
+                          ),
+                          loading: () => TileLayer(
+                            urlTemplate: tileUrl,
+                            userAgentPackageName: 'com.example.fridgefinder',
+                            // Use default NetworkTileProvider while cache initializes
+                          ),
+                          error: (error, stack) {
+                            _log('❌ Error loading tile cache: $error');
+                            return TileLayer(
+                              urlTemplate: tileUrl,
+                              userAgentPackageName: 'com.example.fridgefinder',
+                              // Fallback to default NetworkTileProvider on error
+                            );
+                          },
                         );
                       },
                     ),
                     // User location marker with pulsating circle
-                    userLocationStream.when(
-                      data: (userLocation) {
-                        if (userLocation != null) {
-                          _log(
-                            '👤 Building user location marker at (${userLocation.position.latitude}, ${userLocation.position.longitude})',
-                          );
-                          return MarkerLayer(
-                            markers: [
-                              Marker(
-                                point: userLocation.position,
-                                child: UserLocationIndicator(),
-                              ),
-                            ],
-                          );
-                        }
-                        _log('👤 User location is null, skipping marker');
-                        return const SizedBox.shrink();
-                      },
-                      loading: () {
-                        _log('👤 User location stream: LOADING');
-                        return const SizedBox.shrink();
-                      },
-                      error: (error, _) {
-                        _log('👤 User location stream: ERROR - $error');
-                        return const SizedBox.shrink();
+                    // Wrapped in Consumer to isolate rebuilds - only this marker rebuilds on location updates
+                    Consumer(
+                      builder: (context, ref, child) {
+                        final userLocationStream = ref.watch(userLocationStreamProvider);
+                        return userLocationStream.when(
+                          data: (userLocation) {
+                            if (userLocation != null) {
+                              _log(
+                                '👤 Building user location marker at (${userLocation.position.latitude}, ${userLocation.position.longitude})',
+                              );
+                              return MarkerLayer(
+                                markers: [
+                                  Marker(
+                                    point: userLocation.position,
+                                    child: UserLocationIndicator(),
+                                  ),
+                                ],
+                              );
+                            }
+                            _log('👤 User location is null, skipping marker');
+                            return const SizedBox.shrink();
+                          },
+                          loading: () {
+                            _log('👤 User location stream: LOADING');
+                            return const SizedBox.shrink();
+                          },
+                          error: (error, _) {
+                            _log('👤 User location stream: ERROR - $error');
+                            return const SizedBox.shrink();
+                          },
+                        );
                       },
                     ),
                     // Fridge markers with clustering - use filtered fridges
