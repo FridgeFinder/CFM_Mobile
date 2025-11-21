@@ -551,7 +551,7 @@ exports.verifyDashboardPassword = functions.https.onCall(async (data, context) =
   if (passwordHash === correctHash) {
     // Generate session token
     const sessionToken = crypto.randomBytes(32).toString('hex');
-    const expiresAt = Date.now() + (60 * 60 * 1000); // 1 hour
+    const expiresAt = Date.now() + (7 * 24 * 60 * 60 * 1000); // 7 days
 
     // Store session in database
     await db.ref(`dashboardSessions/${sessionToken}`).set({
@@ -1599,6 +1599,146 @@ exports.getActivityFeed = functions.https.onCall(async (data) => {
     throw new functions.https.HttpsError(
       'internal',
       'Failed to fetch activity feed',
+    );
+  }
+});
+
+/**
+ * Backfill Activity Feed
+ * One-time function to populate activity feed with historical data
+ * Call this once to populate the feed with existing users, subscriptions, and reports
+ */
+exports.backfillActivityFeed = functions.https.onCall(async (data) => {
+  try {
+    const {sessionToken} = data;
+
+    // Verify session
+    if (!sessionToken) {
+      throw new functions.https.HttpsError(
+        'unauthenticated',
+        'Session token is required',
+      );
+    }
+
+    const sessionRef = db.ref(`dashboardSessions/${sessionToken}`);
+    const sessionSnapshot = await sessionRef.once('value');
+    const sessionData = sessionSnapshot.val();
+
+    if (!sessionData || sessionData.expiresAt < Date.now()) {
+      throw new functions.https.HttpsError(
+        'permission-denied',
+        'Invalid or expired session',
+      );
+    }
+
+    console.log('Starting activity feed backfill...');
+
+    let totalActivities = 0;
+    const batchSize = 500; // Firebase has a limit on writes
+
+    // 1. Backfill users (account creations)
+    console.log('Backfilling user accounts...');
+    const usersSnapshot = await db.ref('users').once('value');
+    const users = usersSnapshot.val() || {};
+
+    for (const [userId, userData] of Object.entries(users)) {
+      if (userData.createdAt) {
+        const timestamp = new Date(userData.createdAt).getTime();
+        await db.ref(`activityFeed/${timestamp}_account_${userId}`).set({
+          'type': 'account',
+          'timestamp': timestamp,
+          'userId': userId,
+          'isVolunteer': userData.isVolunteer || false,
+          'zipCode': userData.zipCode || null,
+          'createdAt': userData.createdAt,
+        });
+        totalActivities++;
+
+        // Throttle to avoid rate limits
+        if (totalActivities % batchSize === 0) {
+          console.log(`Processed ${totalActivities} activities...`);
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+        }
+      }
+    }
+
+    console.log(`Backfilled ${totalActivities} user accounts`);
+
+    // 2. Backfill status reports
+    console.log('Backfilling status reports...');
+    const reportsSnapshot = await db.ref('statusReports').once('value');
+    const reports = reportsSnapshot.val() || {};
+
+    for (const [reportId, reportData] of Object.entries(reports)) {
+      if (reportData.reportDate) {
+        const timestamp = new Date(reportData.reportDate).getTime();
+        await db.ref(`activityFeed/${timestamp}_report_${reportId}`).set({
+          'type': 'report',
+          'timestamp': timestamp,
+          'reportId': reportId,
+          'fridgeId': reportData.fridgeId,
+          'fridgeName': reportData.fridgeName || reportData.fridgeId,
+          'condition': reportData.condition,
+          'foodPercentage': reportData.foodPercentage || 0,
+          'photoUrl': reportData.photoUrl || null,
+          'reportDate': reportData.reportDate,
+        });
+        totalActivities++;
+
+        // Throttle to avoid rate limits
+        if (totalActivities % batchSize === 0) {
+          console.log(`Processed ${totalActivities} activities...`);
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+        }
+      }
+    }
+
+    console.log(`Backfilled ${Object.keys(reports).length} status reports`);
+
+    // 3. Backfill subscriptions
+    console.log('Backfilling subscriptions...');
+    for (const [userId, userData] of Object.entries(users)) {
+      if (userData.subscribedFridges) {
+        for (const [fridgeId, subscription] of
+          Object.entries(userData.subscribedFridges)) {
+          if (subscription.subscribedAt) {
+            const timestamp = new Date(subscription.subscribedAt).getTime();
+            await db.ref(
+              `activityFeed/${timestamp}_subscription_${userId}_${fridgeId}`,
+            ).set({
+              'type': 'subscription',
+              'timestamp': timestamp,
+              'userId': userId,
+              'fridgeId': fridgeId,
+              'subscribedAt': subscription.subscribedAt,
+            });
+            totalActivities++;
+
+            // Throttle to avoid rate limits
+            if (totalActivities % batchSize === 0) {
+              console.log(`Processed ${totalActivities} activities...`);
+              await new Promise((resolve) => setTimeout(resolve, 1000));
+            }
+          }
+        }
+      }
+    }
+
+    // Invalidate cache
+    await invalidateStatsCache();
+
+    console.log(`Activity feed backfill complete! Total: ${totalActivities}`);
+
+    return {
+      'success': true,
+      'totalActivities': totalActivities,
+      'message': `Successfully backfilled ${totalActivities} activities`,
+    };
+  } catch (error) {
+    console.error('Error backfilling activity feed:', error);
+    throw new functions.https.HttpsError(
+      'internal',
+      `Failed to backfill activity feed: ${error.message}`,
     );
   }
 });

@@ -377,6 +377,31 @@
             color: #721c24;
         }
 
+        .timeline-badge.empty {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .timeline-badge.few-items {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .timeline-badge.many-items {
+            background: #cce5ff;
+            color: #004085;
+        }
+
+        .timeline-badge.full {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .timeline-badge.unknown {
+            background: #e2e3e5;
+            color: #383d41;
+        }
+
         .load-more-btn {
             display: block;
             width: 100%;
@@ -1544,6 +1569,73 @@
             modal.classList.add('show');
         }
 
+        // Show status report modal with full details
+        async function showStatusReportModal(reportId, fridgeId) {
+            const modal = document.getElementById('fridgeModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalBody = document.getElementById('modalBody');
+
+            // Show loading state
+            modalTitle.textContent = 'Loading...';
+            modalBody.innerHTML = '<div style="text-align: center; padding: 40px;"><div class="spinner"></div><p>Loading report details...</p></div>';
+            modal.classList.add('show');
+
+            try {
+                // Use cached fridge data
+                const fridge = fridgesData.find(f => f.id === fridgeId);
+
+                if (!fridge) {
+                    modalBody.innerHTML = '<div style="text-align: center; padding: 40px; color: #e74c3c;">Fridge not found in cache</div>';
+                    return;
+                }
+
+                // Fetch report data from Firebase
+                const reportSnapshot = await db.ref(`statusReports/${reportId}`).once('value');
+                const report = reportSnapshot.val();
+
+                if (!report) {
+                    modalBody.innerHTML = '<div style="text-align: center; padding: 40px; color: #e74c3c;">Report not found</div>';
+                    return;
+                }
+
+                // Update modal with full report details
+                modalTitle.textContent = fridge.name;
+
+                const foodLevel = getFoodLevelLabel(report.foodPercentage);
+
+                let statusClass = 'status-good';
+                if (report.condition === 'out of order') statusClass = 'status-outoforder';
+                else if (report.condition === 'dirty') statusClass = 'status-dirty';
+                else if (report.condition === 'not at location') statusClass = 'status-notatlocation';
+
+                modalBody.innerHTML = `
+                    <div class="modal-info">
+                        <strong>Address:</strong>
+                        <span>${fridge.location.street}, ${fridge.location.city}, ${fridge.location.state}</span>
+                    </div>
+                    <div class="modal-info">
+                        <strong>Condition:</strong>
+                        <span class="${statusClass}">${report.condition}</span>
+                    </div>
+                    <div class="modal-info">
+                        <strong>Food Level:</strong>
+                        <span>${foodLevel} (${report.foodPercentage || 0}%)</span>
+                    </div>
+                    <div class="modal-info">
+                        <strong>Reported:</strong>
+                        <span>${report.reportDate ? new Date(report.reportDate).toLocaleString() : 'N/A'}</span>
+                    </div>
+                    ${report.notes ? `<div class="modal-info"><strong>Notes:</strong><p>${report.notes}</p></div>` : ''}
+                    ${report.photoUrl ? `<div class="modal-info"><img src="${report.photoUrl}" alt="Fridge photo" style="max-width: 100%; border-radius: 8px; margin-top: 10px;"></div>` : ''}
+                    ${fridge.note ? `<div class="modal-info"><strong>Fridge Description:</strong><p>${fridge.note}</p></div>` : ''}
+                    ${fridge.contact ? `<div class="modal-info"><strong>Contact:</strong><p>${fridge.contact}</p></div>` : ''}
+                `;
+            } catch (error) {
+                console.error('Error loading report details:', error);
+                modalBody.innerHTML = '<div style="text-align: center; padding: 40px; color: #e74c3c;">Error loading report details</div>';
+            }
+        }
+
         // Setup real-time listeners
         function setupRealTimeListeners() {
             let initialLoadComplete = false;
@@ -1810,12 +1902,23 @@
             `;
         }
 
+        // Convert food percentage to label (using app's thresholds: 33%, 66%)
+        function getFoodLevelLabel(percentage) {
+            if (percentage === null || percentage === undefined) return 'Unknown';
+            if (percentage === 0) return 'Empty';
+            if (percentage <= 33) return 'Few Items';
+            if (percentage <= 66) return 'Many Items';
+            return 'Full';
+        }
+
         function renderStatusReport(activity) {
             const conditionClass = activity.condition?.toLowerCase() || 'unknown';
             const conditionLabel = activity.condition || 'Unknown';
+            const foodLevel = getFoodLevelLabel(activity.foodPercentage);
+            const foodLevelClass = foodLevel.toLowerCase().replace(/ /g, '-');
 
             return `
-                <div class="timeline-item report">
+                <div class="timeline-item report" data-report-id="${activity.reportId}" data-fridge-id="${activity.fridgeId}" onclick="showStatusReportModal('${activity.reportId}', '${activity.fridgeId}')">
                     <div class="timeline-header">
                         <div class="timeline-title">Status Report</div>
                         <div class="timeline-time">${getTimeAgo(activity.timestamp)}</div>
@@ -1823,7 +1926,7 @@
                     <div class="timeline-details">
                         <strong>${activity.fridgeName || activity.fridgeId}</strong>
                         <br>Condition: <span class="timeline-badge ${conditionClass}">${conditionLabel}</span>
-                        <br>Food Level: ${activity.foodPercentage || 0}%
+                        <br>Food Level: <span class="timeline-badge ${foodLevelClass}">${foodLevel}</span>
                     </div>
                 </div>
             `;
