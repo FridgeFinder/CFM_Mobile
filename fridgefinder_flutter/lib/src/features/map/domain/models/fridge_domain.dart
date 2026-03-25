@@ -249,7 +249,7 @@ abstract class FridgeDomain with _$FridgeDomain {
       case FridgeCondition.good:
         return 'Good';
       case FridgeCondition.dirty:
-        return 'Dirty';
+        return 'Needs Cleaning';
       case FridgeCondition.outOfOrder:
         return 'Needs Repairs';
       case FridgeCondition

@@ -195,7 +195,7 @@ class _ListScreenState extends ConsumerState<ListScreen>
                       }).toList();
 
                 // Apply subscribed filter if active
-                if (filterState.subscribedOnly) {
+                if (filterState.followingOnly) {
                   filtered = filtered.where((fridgeWithDistance) {
                     return subscribedFridgeIds.contains(
                       fridgeWithDistance.fridge.id,

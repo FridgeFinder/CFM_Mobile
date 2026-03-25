@@ -26,7 +26,7 @@ void main() {
       });
 
       test('needsServicing has correct label', () {
-        expect(FilterCondition.needsServicing.label, equals('Needs Servicing'));
+        expect(FilterCondition.needsServicing.label, equals('Needs Repairs'));
       });
 
       test('notAtLocation has correct label', () {

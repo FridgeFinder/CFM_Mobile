@@ -16,13 +16,13 @@ abstract class MapFilterState with _$MapFilterState {
   const factory MapFilterState({
     required Set<FilterCondition> selectedConditions,
     @Default('') String searchQuery,
-    @Default(false) bool subscribedOnly,
+    @Default(false) bool followingOnly,
   }) = _MapFilterState;
 
   /// Check if filter state is at default (no conditions selected, no search, no subscribed filter)
   /// Default state shows everything
   bool get isDefault {
-    return selectedConditions.isEmpty && searchQuery.isEmpty && !subscribedOnly;
+    return selectedConditions.isEmpty && searchQuery.isEmpty && !followingOnly;
   }
 
   /// Get list of deselected filter conditions for display
@@ -39,9 +39,9 @@ class MapFilter extends _$MapFilter {
   static const String _boxName = 'map_filter_state';
   static const String _conditionsKey = 'selected_conditions';
   static const String _searchKey = 'search_query';
-  static const String _subscribedOnlyKey = 'subscribed_only';
+  static const String _followingOnlyKey = 'subscribed_only';
   static const String _versionKey = 'storage_version';
-  static const int _currentVersion = 3; // Increment when filter logic changes (v3: added subscribedOnly)
+  static const int _currentVersion = 3; // Increment when filter logic changes (v3: added followingOnly)
   static const Duration _searchDebounceDelay = Duration(milliseconds: 150);
 
   Timer? _searchDebounceTimer;
@@ -67,12 +67,12 @@ class MapFilter extends _$MapFilter {
         await box.put(_versionKey, _currentVersion);
         await box.delete(_conditionsKey);
         await box.delete(_searchKey);
-        await box.delete(_subscribedOnlyKey);
+        await box.delete(_followingOnlyKey);
 
         return const MapFilterState(
           selectedConditions: <FilterCondition>{}, // Default: none selected (shows everything)
           searchQuery: '',
-          subscribedOnly: false,
+          followingOnly: false,
         );
       }
 
@@ -95,19 +95,19 @@ class MapFilter extends _$MapFilter {
       final searchQuery = box.get(_searchKey, defaultValue: '') as String;
 
       // Load subscribed only filter
-      final subscribedOnly = box.get(_subscribedOnlyKey, defaultValue: false) as bool;
+      final followingOnly = box.get(_followingOnlyKey, defaultValue: false) as bool;
 
       return MapFilterState(
         selectedConditions: selectedConditions,
         searchQuery: searchQuery,
-        subscribedOnly: subscribedOnly,
+        followingOnly: followingOnly,
       );
     } catch (e) {
       // If loading fails, return default state (no conditions selected = show all)
       return const MapFilterState(
         selectedConditions: <FilterCondition>{},
         searchQuery: '',
-        subscribedOnly: false,
+        followingOnly: false,
       );
     }
   }
@@ -122,7 +122,7 @@ class MapFilter extends _$MapFilter {
         state.selectedConditions.map((c) => c.value).toList(),
       );
       await box.put(_searchKey, state.searchQuery);
-      await box.put(_subscribedOnlyKey, state.subscribedOnly);
+      await box.put(_followingOnlyKey, state.followingOnly);
     } catch (e) {
       // Silently fail - storage is not critical
     }
@@ -198,12 +198,12 @@ class MapFilter extends _$MapFilter {
   }
 
   /// Toggle subscribed only filter
-  Future<void> toggleSubscribedOnly() async {
+  Future<void> toggleFollowingOnly() async {
     final currentState = state.whenOrNull(data: (d) => d);
     if (currentState == null) return;
 
     final newState = currentState.copyWith(
-      subscribedOnly: !currentState.subscribedOnly,
+      followingOnly: !currentState.followingOnly,
     );
     state = AsyncValue.data(newState);
     await _saveToStorage(newState);

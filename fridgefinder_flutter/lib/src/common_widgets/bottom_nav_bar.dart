@@ -40,7 +40,7 @@ class AppBottomNavBar extends ConsumerWidget {
           icon: Icon(Icons.favorite_outline),
           selectedIcon: Icon(Icons.favorite),
           label: 'My Fridges',
-          tooltip: 'Your subscribed fridges',
+          tooltip: 'Your followed fridges',
         ),
         NavigationDestination(
           icon: Icon(Icons.person_outline),

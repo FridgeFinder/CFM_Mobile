@@ -214,7 +214,7 @@ class FridgeIconUtils {
       case FridgeCondition.ghost: // Ghost fridges are filtered from API response
         return Colors.purple; // Kept for exhaustive switch, but ghost fridges are filtered out
       case FridgeCondition.notAtLocation:
-        return Colors.black;
+        return Colors.grey;
     }
   }
 

@@ -74,7 +74,7 @@ class _MyFridgesScreenState extends ConsumerState<MyFridgesScreen>
                 ),
                 M3ESpacing.verticalXL,
                 Text(
-                  'Subscribe to specific fridges to receive updates on food availability or when fridges need re-stocking or cleaning.',
+                  'Follow specific fridges to receive updates on food availability or when fridges need re-stocking or cleaning.',
                   textAlign: TextAlign.center,
                   style: M3ETypography.bodyMedium,
                 ),
@@ -134,12 +134,12 @@ class _MyFridgesScreenState extends ConsumerState<MyFridgesScreen>
                     ),
                     M3ESpacing.verticalXL,
                     Text(
-                      'No Subscribed Fridges',
+                      'No Followed Fridges',
                       style: M3ETypography.headlineMedium,
                     ),
                     M3ESpacing.verticalMD,
                     Text(
-                      'Subscribe to fridges to receive notifications about food availability, cleaning needs, and more.',
+                      'Follow fridges to receive notifications about food availability, cleaning needs, and more.',
                       textAlign: TextAlign.center,
                       style: M3ETypography.bodyMedium,
                     ),
@@ -186,12 +186,12 @@ class _MyFridgesScreenState extends ConsumerState<MyFridgesScreen>
                         ),
                         M3ESpacing.verticalXL,
                         Text(
-                          'No Subscribed Fridges',
+                          'No Followed Fridges',
                           style: M3ETypography.headlineMedium,
                         ),
                         M3ESpacing.verticalMD,
                         Text(
-                          'Some of your subscribed fridges may no longer be available.',
+                          'Some of your followed fridges may no longer be available.',
                           textAlign: TextAlign.center,
                           style: M3ETypography.bodyMedium,
                         ),

@@ -224,8 +224,8 @@ class M3EColors {
   /// Get alert color constant - Vibrant coral/orange
   static const Color alert = Color(0xFFFF7043);
 
-  /// Get subscription color constant - Shimmering gold
-  static const Color subscription = Color(0xFFFFD700);
+  /// Get follow color constant - Shimmering gold
+  static const Color follow = Color(0xFFFFD700);
 
   /// Get error color constant
   static const Color error = Color(0xFFBA1A1A);

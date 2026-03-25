@@ -182,7 +182,7 @@ List<FridgeDomain> mapFilteredFridges(Ref ref) {
                         }).toList();
 
                   // Then apply subscribed filter if active
-                  if (filterState.subscribedOnly) {
+                  if (filterState.followingOnly) {
                     final subscribedFridgeIds = subscriptionsAsync.whenOrNull(
                       data: (subs) => subs.map((s) => s.fridgeId).toSet(),
                     ) ?? <String>{};

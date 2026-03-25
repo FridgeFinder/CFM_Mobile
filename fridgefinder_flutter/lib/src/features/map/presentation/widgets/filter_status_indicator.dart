@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:design_system/design_system.dart';
 import '../controllers/map_filter_controller.dart';
 
-/// Filter status indicator shown at bottom of map
-/// Displays info about active filters/search in a discreet way
-/// Only shows if filter state is not default
+/// Filter status indicator shown at bottom of map.
+/// Displays info about active filters/search in a readable chip.
+/// Only shows if filter state is not default.
 class FilterStatusIndicator extends ConsumerWidget {
   const FilterStatusIndicator({super.key});
 
@@ -14,62 +15,52 @@ class FilterStatusIndicator extends ConsumerWidget {
 
     return filterStateAsync.when(
       data: (filterState) {
-        // Don't show if at default state
         if (filterState.isDefault) {
           return const SizedBox.shrink();
         }
 
         final statusParts = <String>[];
 
-        // Add subscribed filter info
-        if (filterState.subscribedOnly) {
-          statusParts.add('showing only subscribed fridges');
+        if (filterState.followingOnly) {
+          statusParts.add('Following only');
         }
 
-        // Add deselected conditions info (only if some filters are actually selected)
-        // Don't show "not showing" if no filters are selected (which means showing everything)
+        // Show what's actively selected rather than what's hidden
         if (filterState.selectedConditions.isNotEmpty &&
             filterState.deselectedConditions.isNotEmpty) {
-          final deselectedLabels = filterState.deselectedConditions
-              .map((c) => c.label.toLowerCase())
+          final selectedLabels = filterState.selectedConditions
+              .map((c) => c.label)
               .join(', ');
-          statusParts.add('not showing: $deselectedLabels');
+          statusParts.add('Showing: $selectedLabels');
         }
 
-        // Add search query info
         if (filterState.searchQuery.isNotEmpty) {
-          statusParts.add('searching for: "${filterState.searchQuery}"');
+          statusParts.add('"${filterState.searchQuery}"');
         }
+
+        if (statusParts.isEmpty) return const SizedBox.shrink();
 
         return Positioned(
           bottom: 16,
           left: 16,
           right: 80, // Leave space for FAB
-          child: Text(
-            statusParts.join(' • '),
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-              shadows: [
-                Shadow(
-                  offset: const Offset(1, 1),
-                  blurRadius: 4,
-                  color: Colors.black.withValues(alpha: 1.0),
-                ),
-                Shadow(
-                  offset: const Offset(-1, -1),
-                  blurRadius: 4,
-                  color: Colors.black.withValues(alpha: 1.0),
-                ),
-                Shadow(
-                  offset: const Offset(0, 0),
-                  blurRadius: 6,
-                  color: Colors.black.withValues(alpha: 0.9),
-                ),
-              ],
+          child: Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: M3ESpacing.sm,
+              vertical: M3ESpacing.xs,
             ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.inverseSurface.withValues(alpha: 0.85),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              statusParts.join(' · '),
+              style: M3ETypography.labelSmall.copyWith(
+                color: Theme.of(context).colorScheme.onInverseSurface,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         );
       },

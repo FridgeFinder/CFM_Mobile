@@ -63,7 +63,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Text(
-                            'Sign in to subscribe to fridges and track your volunteer points',
+                            'Sign in to follow fridges and track your volunteer points',
                             style: M3ETypography.bodyMedium,
                           ),
                           M3ESpacing.verticalMD,
@@ -681,7 +681,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 children: [
                   Text('Push Notifications', style: M3ETypography.bodyLarge),
                   Text(
-                    'Receive notifications about your subscribed fridges',
+                    'Receive notifications about your followed fridges',
                     style: M3ETypography.bodyMedium,
                   ),
                 ],
@@ -735,7 +735,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                     M3ESpacing.verticalMD,
                                     Text(
                                       'Push notifications are disabled. '
-                                      'Please enable them in Settings to receive updates about your subscribed fridges.',
+                                      'Please enable them in Settings to receive updates about your followed fridges.',
                                       style: M3ETypography.bodyMedium,
                                     ),
                                     M3ESpacing.verticalXL,

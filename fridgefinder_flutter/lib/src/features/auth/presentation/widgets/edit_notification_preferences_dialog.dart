@@ -155,13 +155,13 @@ class _NotificationPreferencesDialogState
 
       // Subscribe to fridge
       final manager = ref.read(subscriptionManagerProvider.notifier);
-      await manager.subscribeToFridge(widget.fridgeId, _preferences);
+      await manager.followFridge(widget.fridgeId, _preferences);
 
       if (mounted) {
         setState(() => _isLoading = false);
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Subscribed to fridge')),
+          const SnackBar(content: Text('Now following fridge')),
         );
       }
     } catch (e) {
@@ -367,7 +367,7 @@ class _NotificationPreferencesDialogState
     // Determine dialog title based on mode
     final dialogTitle = widget.mode == NotificationPreferencesMode.edit
         ? 'Notification Preferences'
-        : 'Subscribe to Fridge';
+        : 'Follow Fridge';
 
     return AlertDialog(
       shape: M3EShapes.dialog,
@@ -482,7 +482,7 @@ class _NotificationPreferencesDialogState
                   height: 20,
                   child: CircularProgressIndicatorM3E.small(),
                 )
-              : Text(widget.mode == NotificationPreferencesMode.edit ? 'Save' : 'Subscribe'),
+              : Text(widget.mode == NotificationPreferencesMode.edit ? 'Save' : 'Follow'),
         ),
       ],
     );

@@ -28,7 +28,7 @@ class _TestNotificationScreenState
     extends ConsumerState<TestNotificationScreen> {
   String? _selectedFridgeId;
   String? _fcmToken;
-  List<String> _subscribedFridges = [];
+  List<String> _followedFridges = [];
   bool _isLoading = false;
   String? _statusMessage;
 
@@ -118,7 +118,7 @@ class _TestNotificationScreenState
 
       setState(() {
         _fcmToken = token;
-        _subscribedFridges = fridges;
+        _followedFridges = fridges;
         if (fridges.isNotEmpty && _selectedFridgeId == null) {
           _selectedFridgeId = fridges.first;
         }
@@ -211,14 +211,14 @@ class _TestNotificationScreenState
         fridgeName: 'Test Fridge',
         condition: 'good',
         foodPercentage:
-            0.0, // Empty - should trigger notification if user subscribed
+            0.0, // Empty - should trigger notification if user follows fridge
       );
 
       setState(() {
         _isLoading = false;
         _statusMessage =
             'Test status report created: $reportId\n'
-            'Cloud Function will trigger and send notifications to subscribed users.';
+            'Cloud Function will trigger and send notifications to followers.';
       });
     } catch (e) {
       logger.e('Error creating test status report: $e');
@@ -403,7 +403,7 @@ class _TestNotificationScreenState
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 const Text(
-                                  'No FCM token found. Subscribe to a fridge to generate one, or request permissions manually.',
+                                  'No FCM token found. Follow a fridge to generate one, or request permissions manually.',
                                   style: TextStyle(color: Colors.orange),
                                 ),
                                 const SizedBox(height: 8),
@@ -441,13 +441,13 @@ class _TestNotificationScreenState
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Subscribed Fridges',
+                            'Followed Fridges',
                             style: Theme.of(context).textTheme.titleMedium,
                           ),
                           const SizedBox(height: 8),
-                          if (_subscribedFridges.isEmpty)
+                          if (_followedFridges.isEmpty)
                             const Text(
-                              'No subscribed fridges. Subscribe to a fridge first.',
+                              'No followed fridges. Follow a fridge first.',
                               style: TextStyle(color: Colors.orange),
                             )
                           else
@@ -458,7 +458,7 @@ class _TestNotificationScreenState
                                 labelText: 'Select Fridge',
                                 border: OutlineInputBorder(),
                               ),
-                              items: _subscribedFridges.map((fridgeId) {
+                              items: _followedFridges.map((fridgeId) {
                                 return DropdownMenuItem(
                                   value: fridgeId,
                                   child: Text(
@@ -575,7 +575,7 @@ class _TestNotificationScreenState
                           ),
                           const SizedBox(height: 8),
                           const Text(
-                            '1. Subscribe to a fridge from the map or list\n'
+                            '1. Follow a fridge from the map or list\n'
                             '2. Copy your FCM token (shown above)\n'
                             '3. Use Firebase Console to send a test message:\n'
                             '   - Go to Firebase Console > Cloud Messaging\n'

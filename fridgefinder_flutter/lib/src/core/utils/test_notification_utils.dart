@@ -28,7 +28,7 @@ class TestNotificationUtils {
       
       final fcmToken = snapshot.snapshot.value as String?;
       if (fcmToken == null) {
-        logger.e('No FCM token found for user. Please subscribe to a fridge first.');
+        logger.e('No FCM token found for user. Please follow a fridge first.');
         return;
       }
 
@@ -93,7 +93,7 @@ class TestNotificationUtils {
       
       logger.i('Test status report created: $reportId');
       logger.i('This will trigger Cloud Function: onFridgeStatusUpdate');
-      logger.i('Users subscribed to fridge $fridgeId will receive notifications');
+      logger.i('Users following fridge $fridgeId will receive notifications');
 
       return reportId;
     } catch (e) {
@@ -217,12 +217,12 @@ class TestNotificationUtils {
     if (token != null) {
       logger.i('FCM Token: ${token.substring(0, 30)}...');
     } else {
-      logger.w('No FCM token found. Subscribe to a fridge to generate one.');
+      logger.w('No FCM token found. Follow a fridge to generate one.');
     }
 
-    final subscribedFridges = await getSubscribedFridges();
-    logger.i('Subscribed Fridges: ${subscribedFridges.length}');
-    for (final fridgeId in subscribedFridges) {
+    final followedFridges = await getSubscribedFridges();
+    logger.i('Followed Fridges: ${followedFridges.length}');
+    for (final fridgeId in followedFridges) {
       logger.i('  - $fridgeId');
     }
 

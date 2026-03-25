@@ -254,7 +254,7 @@ void main() {
       test('fridge food level text is accurate', () async {
         final fridge = FridgeFixtures.verifiedFridgeWithFood;
         final foodText = fridge.foodLevelText;
-        expect(foodText, contains('%'));
+        expect(foodText, equals('Full'));
       });
 
       test('fridge address formatting works correctly', () async {

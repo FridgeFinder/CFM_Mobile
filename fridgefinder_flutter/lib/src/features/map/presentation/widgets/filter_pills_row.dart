@@ -52,12 +52,12 @@ class FilterPillsRow extends ConsumerWidget {
                       padding: EdgeInsets.symmetric(horizontal: M3ESpacing.xxs),
                       child: _buildSubscribedPill(
                         context: context,
-                        isSelected: state.subscribedOnly,
+                        isSelected: state.followingOnly,
                         isDarkMode: isDarkMode,
                         onPressed: () {
                           ref
                               .read(mapFilterProvider.notifier)
-                              .toggleSubscribedOnly();
+                              .toggleFollowingOnly();
                         },
                       ),
                     ),
@@ -98,7 +98,7 @@ class FilterPillsRow extends ConsumerWidget {
     // Use the M3E FilterChipM3E component for consistency and vibrant styling
     // Green color matches subscribed markers and full status
     return FilterChipM3E(
-      label: 'Subscribed',
+      label: 'Following',
       selected: isSelected,
       icon: Icons.favorite,
       color: const Color(

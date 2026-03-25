@@ -84,8 +84,8 @@ class SubscriptionManager extends _$SubscriptionManager {
     // No initial state needed
   }
 
-  /// Subscribe to a fridge with notification preferences
-  Future<void> subscribeToFridge(
+  /// Follow a fridge with notification preferences
+  Future<void> followFridge(
     String fridgeId,
     NotificationPreferences preferences,
   ) async {
@@ -155,8 +155,8 @@ class SubscriptionManager extends _$SubscriptionManager {
     }
   }
 
-  /// Unsubscribe from a fridge
-  Future<void> unsubscribeFromFridge(String fridgeId) async {
+  /// Unfollow a fridge
+  Future<void> unfollowFridge(String fridgeId) async {
     try {
       final authUserAsync = ref.read(currentAuthUserProvider);
       final authUser = authUserAsync.when(

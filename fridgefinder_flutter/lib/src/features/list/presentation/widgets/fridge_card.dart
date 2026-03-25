@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:design_system/design_system.dart';
 import '../../../map/domain/models/fridge_domain.dart';
 import '../../../map/presentation/widgets/fridge_marker.dart';
+import '../../../../core/providers/neighborhood_provider.dart';
 import '../../../../core/utils/fridge_icon_utils.dart';
 
 /// Card widget for displaying a fridge in the list
 /// Uses the same icon system as the map for consistency
-class FridgeCard extends StatefulWidget {
+class FridgeCard extends ConsumerStatefulWidget {
   final FridgeDomain fridge;
   final VoidCallback onTap;
   final double? distanceKm;
@@ -22,10 +24,10 @@ class FridgeCard extends StatefulWidget {
   });
 
   @override
-  State<FridgeCard> createState() => _FridgeCardState();
+  ConsumerState<FridgeCard> createState() => _FridgeCardState();
 }
 
-class _FridgeCardState extends State<FridgeCard>
+class _FridgeCardState extends ConsumerState<FridgeCard>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
@@ -148,12 +150,20 @@ class _FridgeCardState extends State<FridgeCard>
                       overflow: TextOverflow.ellipsis,
                     ),
                     M3ESpacing.verticalXXS,
-                    Text(
-                      widget.fridge.location.shortAddress,
-                      style: M3ETypography.bodySmall,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                    Builder(builder: (context) {
+                      final neighborhoodAsync = ref.watch(
+                        fridgeNeighborhoodProvider(widget.fridge.id),
+                      );
+                      final subtitle =
+                          neighborhoodAsync.whenOrNull(data: (n) => n)
+                              ?? widget.fridge.location.shortAddress;
+                      return Text(
+                        subtitle,
+                        style: M3ETypography.bodySmall,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      );
+                    }),
                   ],
                 ),
               ),
