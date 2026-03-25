@@ -123,5 +123,8 @@ app.*.symbols
 .env.local
 secrets
 
+# IDE / AI tools
+.cursor/
+
 # macOS
-.DS_Storeß
+.DS_Store
