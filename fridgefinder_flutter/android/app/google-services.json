@@ -15,6 +15,30 @@
       },
       "oauth_client": [
         {
+          "client_id": "576156648133-7a5cca5ekg1cviptlr8d19a0mtfhcnp5.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.fridgefinder.fridgefinderapp",
+            "certificate_hash": "e66d05c9a2a26e40ffc8b25ec38f9491527f0173"
+          }
+        },
+        {
+          "client_id": "576156648133-97g7sbuvejec2pv635v6qabq6lrbira4.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.fridgefinder.fridgefinderapp",
+            "certificate_hash": "76b810f449692157a09c9920fc26b7e8a88a5fe5"
+          }
+        },
+        {
+          "client_id": "576156648133-scc6bim4n6rhtdoinmupdtgaakp8iquc.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.fridgefinder.fridgefinderapp",
+            "certificate_hash": "4840bfe71381e881ec90808203cdaf45d007962e"
+          }
+        },
+        {
           "client_id": "576156648133-hblomed2tqvj6rbjok4d0rpa6jfj9t9h.apps.googleusercontent.com",
           "client_type": 3
         }

@@ -35,14 +35,27 @@ platform :android do
     )
   end
 
+  desc "Upload existing AAB to Google Play closed testing"
+  lane :playstore_beta do
+    # Upload to Google Play Console - Internal Testing Track
+    upload_to_play_store(
+      aab: "../build/app/outputs/bundle/release/app-release.aab",
+      track: "internal",  # Use "internal" for closed testing, "beta" for open testing
+      json_key: "../secrets/fridgefinder-app-1-17dbe2831a13.json",
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
+  end
+
   desc "Build and upload to Google Play Console"
   lane :release do
     # Ensure we're on the correct branch/tag
     # ensure_git_status_clean
-    
+
     # Build the app bundle using Flutter
     sh("cd .. && flutter build appbundle --release")
-    
+
     # Upload to Google Play Console
     upload_to_play_store(
       aab: "../build/app/outputs/bundle/release/app-release.aab",

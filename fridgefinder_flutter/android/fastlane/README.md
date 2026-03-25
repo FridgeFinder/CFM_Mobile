@@ -31,6 +31,14 @@ Generate screenshots for Play Store
 
 Build and upload to Firebase App Distribution
 
+### android playstore_beta
+
+```sh
+[bundle exec] fastlane android playstore_beta
+```
+
+Upload existing AAB to Google Play closed testing
+
 ### android release
 
 ```sh

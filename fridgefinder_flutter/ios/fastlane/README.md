@@ -39,6 +39,14 @@ Upload existing IPA to Firebase App Distribution
 
 Build and upload to Firebase App Distribution
 
+### ios testflight
+
+```sh
+[bundle exec] fastlane ios testflight
+```
+
+Upload existing IPA to TestFlight
+
 ### ios upload_release
 
 ```sh
