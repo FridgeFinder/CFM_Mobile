@@ -1116,59 +1116,62 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   void _showSignOutDialog(BuildContext context, WidgetRef ref) {
     DialogM3E.showCustom(
       context: context,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Sign Out?', style: M3ETypography.headlineSmall),
-          M3ESpacing.verticalMD,
-          Text(
-            'Are you sure you want to sign out?',
-            style: M3ETypography.bodyMedium,
-          ),
-          M3ESpacing.verticalXL,
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
+      child: Builder(
+        builder: (dialogContext) => Padding(
+          padding: M3ESpacing.all(M3ESpacing.xl),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              TextButtonM3E(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Cancel'),
+              Text('Sign Out?', style: M3ETypography.headlineSmall),
+              M3ESpacing.verticalMD,
+              Text(
+                'Are you sure you want to sign out?',
+                style: M3ETypography.bodyMedium,
               ),
-              M3ESpacing.horizontalXS,
-              FilledButtonM3E(
-                onPressed: () async {
-                  Navigator.of(context).pop();
-                  try {
-                    final repository = ref.read(authRepositoryProvider);
-                    await repository.signOut();
-
-                    // Invalidate providers to update UI
-                    ref.invalidate(authUserProvider);
-                    ref.invalidate(userProfileProvider);
-                    ref.invalidate(isAuthenticatedProvider);
-
-                    if (context.mounted) {
-                      showSnackbarM3E(
-                        context: context,
-                        message: 'Signed out successfully',
-                      );
-                    }
-                  } catch (e) {
-                    if (context.mounted) {
-                      showSnackbarM3E(
-                        context: context,
-                        message: 'Error signing out: $e',
-                        backgroundColor: Theme.of(context).colorScheme.error,
-                        foregroundColor: Theme.of(context).colorScheme.onError,
-                      );
-                    }
-                  }
-                },
-                child: const Text('Sign Out'),
+              M3ESpacing.verticalXL,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButtonM3E(
+                    onPressed: () {
+                      try {
+                        Navigator.of(dialogContext, rootNavigator: true).pop();
+                      } catch (e) {
+                        debugPrint('Error closing dialog: $e');
+                      }
+                    },
+                    child: const Text('Cancel'),
+                  ),
+                  M3ESpacing.horizontalXS,
+                  FilledButtonM3E(
+                    onPressed: () async {
+                      try {
+                        Navigator.of(dialogContext, rootNavigator: true).pop();
+                      } catch (e) {
+                        debugPrint('Error closing dialog: $e');
+                      }
+                      try {
+                        final repository = ref.read(authRepositoryProvider);
+                        await repository.signOut();
+                      } catch (e) {
+                        if (context.mounted) {
+                          showSnackbarM3E(
+                            context: context,
+                            message: 'Error signing out: $e',
+                            backgroundColor: Theme.of(context).colorScheme.error,
+                            foregroundColor: Theme.of(context).colorScheme.onError,
+                          );
+                        }
+                      }
+                    },
+                    child: const Text('Sign Out'),
+                  ),
+                ],
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }

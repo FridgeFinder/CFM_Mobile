@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:design_system/design_system.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/utils/app_logger.dart';
+import '../../data/repositories/auth_repository.dart';
 import '../../../../core/utils/phone_number_helper.dart';
 import 'sign_up_form.dart';
 
@@ -107,11 +108,6 @@ class _SignInWidgetState extends ConsumerState<SignInWidget> {
 
       if (!mounted) return;
 
-      // Invalidate providers to refresh auth state
-      ref.invalidate(authUserProvider);
-      ref.invalidate(userProfileProvider);
-      ref.invalidate(isAuthenticatedProvider);
-
       // Check if user profile exists by phone number (not userId!)
       final existingProfile = await repository.findUserProfileByEmailOrPhone(
         phoneNumber: credential.user!.phoneNumber,
@@ -203,11 +199,6 @@ class _SignInWidgetState extends ConsumerState<SignInWidget> {
         return;
       }
 
-      // Invalidate providers to refresh auth state
-      ref.invalidate(authUserProvider);
-      ref.invalidate(userProfileProvider);
-      ref.invalidate(isAuthenticatedProvider);
-
       // Check if user profile exists by email (not userId!)
       final existingProfile = await repository.findUserProfileByEmailOrPhone(
         email: credential.user!.email,
@@ -276,6 +267,11 @@ class _SignInWidgetState extends ConsumerState<SignInWidget> {
             widget.onSignInSuccess?.call();
           }
         });
+      }
+    } on SignInCancelledException {
+      // User cancelled Google sign-in — silently reset loading state
+      if (mounted) {
+        setState(() => _isLoading = false);
       }
     } catch (e) {
       logger.e('Error signing in with Google: $e');

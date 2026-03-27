@@ -6,6 +6,11 @@ import '../../../../core/providers/database_provider.dart';
 import '../../../../core/utils/firebase_helpers.dart';
 import '../../domain/models/user_profile.dart';
 
+/// Thrown when the user cancels Google Sign-In (dismisses the picker).
+class SignInCancelledException implements Exception {
+  const SignInCancelledException();
+}
+
 /// Repository for authentication operations
 ///
 /// PRODUCTION ENVIRONMENT ONLY
@@ -161,6 +166,14 @@ class AuthRepository {
       
       logger.i('Google sign-in successful: ${userCredential.user?.email}');
       return userCredential;
+    } on GoogleSignInException catch (e) {
+      if (e.code == GoogleSignInExceptionCode.canceled ||
+          e.code == GoogleSignInExceptionCode.interrupted) {
+        logger.i('Google sign-in cancelled by user');
+        throw const SignInCancelledException();
+      }
+      logger.e('Google Sign-In error: ${e.code} - $e');
+      rethrow;
     } on firebase_auth.FirebaseAuthException catch (e) {
       logger.e('Firebase Auth error during Google sign-in: ${e.code} - ${e.message}');
       rethrow;

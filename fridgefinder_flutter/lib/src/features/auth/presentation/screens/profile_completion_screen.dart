@@ -36,18 +36,6 @@ class _ProfileCompletionScreenState
       return;
     }
 
-    // Validate zip code if volunteer
-    if (_isVolunteer) {
-      if (_zipCode.isEmpty) {
-        setState(() => _errorMessage = 'Zip code is required for volunteers');
-        return;
-      }
-      if (_zipCode.length < 5) {
-        setState(() => _errorMessage = 'Please enter a valid zip code');
-        return;
-      }
-    }
-
     setState(() {
       _isSubmitting = true;
       _errorMessage = null;
@@ -101,58 +89,6 @@ class _ProfileCompletionScreenState
     }
   }
 
-  Future<void> _updateZipCode() async {
-    // Validate zip code
-    if (_zipCode.isEmpty) {
-      setState(() => _errorMessage = 'Zip code is required for volunteers');
-      return;
-    }
-    if (_zipCode.length < 5) {
-      setState(() => _errorMessage = 'Please enter a valid zip code');
-      return;
-    }
-
-    setState(() {
-      _isSubmitting = true;
-      _errorMessage = null;
-    });
-
-    try {
-      final repository = ref.read(authRepositoryProvider);
-      final profileAsync = await ref.read(userProfileProvider.future);
-
-      if (profileAsync == null) {
-        throw Exception('Profile not found');
-      }
-
-      // Update profile with zipCode
-      final updatedProfile = profileAsync.copyWith(zipCode: _zipCode);
-
-      await repository.updateUserProfile(updatedProfile);
-
-      // Refresh providers
-      ref.invalidate(userProfileProvider);
-      ref.invalidate(isProfileCompleteProvider);
-
-      if (!mounted) return;
-
-      // Navigate to home
-      context.go('/');
-    } catch (e) {
-      logger.e('Error updating profile: $e');
-      if (!mounted) return;
-
-      setState(() => _isSubmitting = false);
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error updating profile: $e'),
-          backgroundColor: const Color(0xFFFF7043), // M3E Vibrant CORAL
-        ),
-      );
-    }
-  }
-
   Future<void> _generateUsername() async {
     // Start dice roll animation
     setState(() => _isRollingDice = true);
@@ -192,7 +128,30 @@ class _ProfileCompletionScreenState
       canPop: false, // Prevent back navigation
       child: Scaffold(
         appBar: AppBar(
-          automaticallyImplyLeading: false, // Remove back button
+          automaticallyImplyLeading: false,
+          leading: IconButton(
+            icon: const Icon(Icons.close),
+            onPressed: () async {
+              final confirmed = await DialogM3E.showConfirmation(
+                context: context,
+                title: 'Leave Profile Setup?',
+                message:
+                    'You will be signed out and need to sign in again to continue.',
+                confirmText: 'Sign Out',
+                isDestructive: true,
+              );
+              if (confirmed == true && context.mounted) {
+                try {
+                  final repository = ref.read(authRepositoryProvider);
+                  await repository.signOut();
+                } finally {
+                  if (context.mounted) {
+                    context.go('/');
+                  }
+                }
+              }
+            },
+          ),
           title: const Text('Complete Your Profile'),
         ),
         body: profileAsync.when(
@@ -339,7 +298,7 @@ class _ProfileCompletionScreenState
                     // Zip code field (if volunteer)
                     if (_isVolunteer) ...[
                       TextFieldM3E(
-                        labelText: 'Zip Code *',
+                        labelText: 'Zip Code',
                         hintText: '12345',
                         keyboardType: TextInputType.number,
                         onChanged: (value) {
@@ -416,88 +375,13 @@ class _ProfileCompletionScreenState
               );
             }
 
-            // Check if volunteer needs to provide zip code
-            final needsZipCode =
-                profile.isVolunteer &&
-                (profile.zipCode == null || profile.zipCode!.isEmpty);
-
-            if (!needsZipCode) {
-              // Profile is actually complete, redirect to home
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                if (mounted) {
-                  context.go('/');
-                }
-              });
-              return const Center(child: LoadingIndicatorM3E());
-            }
-
-            return SingleChildScrollView(
-              padding: EdgeInsets.all(M3ESpacing.xl),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const Icon(
-                    Icons.person_add,
-                    size: 64,
-                    color: Color(0xFF88B3FF),
-                  ),
-                  const SizedBox(height: 24),
-                  Text(
-                    'Welcome, ${profile.username}!',
-                    style: M3ETypography.headlineMedium,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'As a volunteer, we need your zip code to help coordinate community fridge efforts.',
-                    style: M3ETypography.bodyLarge,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 32),
-                  TextFieldM3E(
-                    labelText: 'Zip Code *',
-                    hintText: '12345',
-                    keyboardType: TextInputType.number,
-                    onChanged: (value) {
-                      setState(() {
-                        _zipCode = value;
-                        _errorMessage = null;
-                      });
-                    },
-                  ),
-                  if (_errorMessage != null) ...[
-                    const SizedBox(height: 8),
-                    Text(
-                      _errorMessage!,
-                      style: M3ETypography.bodySmall.copyWith(
-                        color: Theme.of(context).colorScheme.error,
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 16),
-                  Text(
-                    'We collect zip codes for non-profit funding purposes and do not share this information with any third parties.',
-                    style: M3ETypography.bodySmall.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                  FilledButtonM3E(
-                    onPressed: _isSubmitting ? null : _updateZipCode,
-                    child: _isSubmitting
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation(Colors.white),
-                            ),
-                          )
-                        : const Text('Complete Profile'),
-                  ),
-                ],
-              ),
-            );
+            // Profile exists and has username — already complete, redirect
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                context.go('/');
+              }
+            });
+            return const Center(child: LoadingIndicatorM3E());
           },
         ),
       ),

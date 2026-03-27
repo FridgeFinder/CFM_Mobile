@@ -108,12 +108,6 @@ Future<bool> isProfileComplete(Ref ref) async {
         return false;
       }
 
-      // Check if zipCode is set when user is a volunteer
-      if (profile.isVolunteer && (profile.zipCode == null || profile.zipCode!.isEmpty)) {
-        logger.d('[AuthProvider] Volunteer without zipCode, profile incomplete');
-        return false;
-      }
-
       logger.d('[AuthProvider] Profile is complete');
       return true;
     },

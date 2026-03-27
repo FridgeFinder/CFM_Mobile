@@ -95,12 +95,6 @@ final routerProvider = Provider<GoRouter>((ref) {
                 return '/complete-profile';
               }
 
-              // Check if zipCode is set when user is a volunteer
-              if (profile.isVolunteer &&
-                  (profile.zipCode == null || profile.zipCode!.isEmpty)) {
-                return '/complete-profile';
-              }
-
               // Profile is complete
               return null;
             },
