@@ -41,7 +41,7 @@ class DialogM3E {
         );
       },
       transitionBuilder: (context, animation, secondaryAnimation, child) {
-        return _DialogTransition(animation: animation, child: child);
+        return _DialogTransition(animation: animation, wrapInDialog: false, child: child);
       },
     );
   }
@@ -85,7 +85,7 @@ class DialogM3E {
         );
       },
       transitionBuilder: (context, animation, secondaryAnimation, child) {
-        return _DialogTransition(animation: animation, child: child);
+        return _DialogTransition(animation: animation, wrapInDialog: false, child: child);
       },
     );
   }
@@ -123,10 +123,12 @@ class DialogM3E {
 class _DialogTransition extends StatelessWidget {
   final Animation<double> animation;
   final Widget child;
+  final bool wrapInDialog;
 
   const _DialogTransition({
     required this.animation,
     required this.child,
+    this.wrapInDialog = true,
   });
 
   @override
@@ -146,17 +148,23 @@ class _DialogTransition extends StatelessWidget {
       curve: const Interval(0.3, 1.0, curve: Curves.easeIn),
     );
 
-    // Dialog with scale animation (scrim is handled by showGeneralDialog's barrier)
+    // showCustom passes raw content that needs a Dialog surface wrapper.
+    // showAlert/showConfirmation pass an AlertDialog which already is a
+    // Dialog, so wrapping again would cause a double surface.
+    final content = wrapInDialog
+        ? Dialog(
+            elevation: M3EElevation.dialog,
+            shape: M3EShapes.dialog,
+            child: child,
+          )
+        : child;
+
     return Center(
       child: FadeTransition(
         opacity: contentFadeAnimation,
         child: ScaleTransition(
           scale: scaleAnimation,
-          child: Dialog(
-            elevation: M3EElevation.dialog,
-            shape: M3EShapes.dialog,
-            child: child,
-          ),
+          child: content,
         ),
       ),
     );

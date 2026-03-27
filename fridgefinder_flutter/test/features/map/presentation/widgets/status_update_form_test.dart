@@ -1,251 +1,255 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fridgefinder_app/src/features/profile/presentation/widgets/status_update_form.dart';
 import 'package:fridgefinder_app/src/features/map/domain/models/fridge_domain.dart';
+import 'package:design_system/design_system.dart';
 import '../../../../fixtures/fridge_fixtures.dart';
 
+/// Helper to pump a StatusUpdateForm inside a minimal app shell.
+Widget _buildTestApp({
+  required FridgeDomain fridge,
+  ValueChanged<bool>? onDirtyChanged,
+  ScaffoldMessengerState? parentMessenger,
+}) {
+  return ProviderScope(
+    child: MaterialApp(
+      home: Scaffold(
+        body: StatusUpdateForm(
+          fridge: fridge,
+          onDirtyChanged: onDirtyChanged,
+          parentMessenger: parentMessenger,
+        ),
+      ),
+    ),
+  );
+}
+
 void main() {
-  group('StatusUpdateForm Widget Tests', () {
-    testWidgets('displays form title', (WidgetTester tester) async {
-      await tester.pumpWidget(
-        ProviderScope(
-          child: MaterialApp(
-            home: Scaffold(
-              body: StatusUpdateForm(
-                fridge: FridgeFixtures.verifiedFridgeWithFood,
-              ),
-            ),
-          ),
-        ),
-      );
+  // ---------------------------------------------------------------------------
+  // Cycle 1: Standardize Condition Labels
+  // ---------------------------------------------------------------------------
+  group('Condition labels', () {
+    testWidgets('displays "Good" not "Good - Operational"', (tester) async {
+      await tester.pumpWidget(_buildTestApp(
+        fridge: FridgeFixtures.verifiedFridgeWithFood,
+      ));
+      await tester.pumpAndSettle();
 
-      expect(find.text('Fridge Condition'), findsOneWidget);
+      expect(find.text('Good'), findsOneWidget);
+      expect(find.text('Good - Operational'), findsNothing);
     });
 
-    testWidgets('displays food level slider', (WidgetTester tester) async {
-      await tester.pumpWidget(
-        ProviderScope(
-          child: MaterialApp(
-            home: Scaffold(
-              body: StatusUpdateForm(
-                fridge: FridgeFixtures.verifiedFridgeWithFood,
-              ),
-            ),
-          ),
-        ),
-      );
+    testWidgets('displays "Needs Cleaning" not "Dirty - Needs Cleaning"',
+        (tester) async {
+      await tester.pumpWidget(_buildTestApp(
+        fridge: FridgeFixtures.verifiedFridgeWithFood,
+      ));
+      await tester.pumpAndSettle();
 
-      expect(find.byType(Slider), findsOneWidget);
+      expect(find.text('Needs Cleaning'), findsOneWidget);
+      expect(find.text('Dirty - Needs Cleaning'), findsNothing);
     });
 
-    testWidgets('displays food level label', (WidgetTester tester) async {
-      await tester.pumpWidget(
-        ProviderScope(
-          child: MaterialApp(
-            home: Scaffold(
-              body: StatusUpdateForm(
-                fridge: FridgeFixtures.verifiedFridgeWithFood,
-              ),
-            ),
-          ),
-        ),
-      );
+    testWidgets('displays "Needs Repairs"', (tester) async {
+      await tester.pumpWidget(_buildTestApp(
+        fridge: FridgeFixtures.verifiedFridgeWithFood,
+      ));
+      await tester.pumpAndSettle();
 
-      // Check for food level labels (Full, Many Items, Few Items, Empty)
-      expect(find.textContaining('Food Level:'), findsOneWidget);
+      expect(find.text('Needs Repairs'), findsOneWidget);
     });
 
-    testWidgets('displays notes field', (WidgetTester tester) async {
-      await tester.pumpWidget(
-        ProviderScope(
-          child: MaterialApp(
-            home: Scaffold(
-              body: StatusUpdateForm(
-                fridge: FridgeFixtures.verifiedFridgeWithFood,
-              ),
-            ),
-          ),
-        ),
-      );
+    testWidgets('displays "Not at Location"', (tester) async {
+      await tester.pumpWidget(_buildTestApp(
+        fridge: FridgeFixtures.verifiedFridgeWithFood,
+      ));
+      await tester.pumpAndSettle();
 
-      expect(find.text('Additional Notes (Optional)'), findsOneWidget);
-      expect(find.byType(TextField), findsOneWidget);
-    });
-
-    testWidgets('displays submit button', (WidgetTester tester) async {
-      await tester.pumpWidget(
-        ProviderScope(
-          child: MaterialApp(
-            home: Scaffold(
-              body: StatusUpdateForm(
-                fridge: FridgeFixtures.verifiedFridgeWithFood,
-              ),
-            ),
-          ),
-        ),
-      );
-
-      expect(find.text('Submit Update'), findsOneWidget);
-      expect(find.byType(ElevatedButton), findsOneWidget);
-    });
-
-    testWidgets('initializes with fridge latest condition', (
-      WidgetTester tester,
-    ) async {
-      final fridge = FridgeFixtures.verifiedFridgeWithFood;
-
-      await tester.pumpWidget(
-        ProviderScope(
-          child: MaterialApp(
-            home: Scaffold(body: StatusUpdateForm(fridge: fridge)),
-          ),
-        ),
-      );
-
-      // Verify the form is displayed with condition options
-      expect(find.text('Fridge Condition'), findsOneWidget);
-      // The condition label is "Good - Operational" not "Working - Fully Functional"
-      expect(find.text('Good - Operational'), findsOneWidget);
-    });
-
-    testWidgets('has radio buttons for condition selection', (
-      WidgetTester tester,
-    ) async {
-      await tester.pumpWidget(
-        ProviderScope(
-          child: MaterialApp(
-            home: Scaffold(
-              body: StatusUpdateForm(
-                fridge: FridgeFixtures.verifiedFridgeWithFood,
-              ),
-            ),
-          ),
-        ),
-      );
-
-      // Check for radio button widgets
-      expect(find.byType(RadioListTile<FridgeCondition>), findsWidgets);
-      // The condition label is "Good - Operational" not "Working - Fully Functional"
-      expect(find.text('Good - Operational'), findsOneWidget);
-    });
-
-    testWidgets('slider has correct min and max', (WidgetTester tester) async {
-      await tester.pumpWidget(
-        ProviderScope(
-          child: MaterialApp(
-            home: Scaffold(
-              body: StatusUpdateForm(
-                fridge: FridgeFixtures.verifiedFridgeWithFood,
-              ),
-            ),
-          ),
-        ),
-      );
-
-      final slider = find.byType(Slider);
-      final sliderWidget = slider.evaluate().single.widget as Slider;
-
-      expect(sliderWidget.min, 0);
-      expect(sliderWidget.max, 1);
-    });
-
-    testWidgets('slider has divisions', (WidgetTester tester) async {
-      await tester.pumpWidget(
-        ProviderScope(
-          child: MaterialApp(
-            home: Scaffold(
-              body: StatusUpdateForm(
-                fridge: FridgeFixtures.verifiedFridgeWithFood,
-              ),
-            ),
-          ),
-        ),
-      );
-
-      final slider = find.byType(Slider);
-      final sliderWidget = slider.evaluate().single.widget as Slider;
-
-      expect(sliderWidget.divisions, 3);
-    });
-
-    testWidgets('shows all condition options', (WidgetTester tester) async {
-      await tester.pumpWidget(
-        ProviderScope(
-          child: MaterialApp(
-            home: Scaffold(
-              body: StatusUpdateForm(
-                fridge: FridgeFixtures.verifiedFridgeWithFood,
-              ),
-            ),
-          ),
-        ),
-      );
-
-      // Check for actual condition labels used in the form (ghost option excluded)
-      expect(find.text('Good - Operational'), findsOneWidget);
-      expect(find.text('Dirty - Needs Cleaning'), findsOneWidget);
-      expect(find.text('Out of Order'), findsOneWidget);
       expect(find.text('Not at Location'), findsOneWidget);
     });
 
-    testWidgets('can interact with form elements', (WidgetTester tester) async {
-      await tester.pumpWidget(
-        ProviderScope(
-          child: MaterialApp(
-            home: Scaffold(
-              body: StatusUpdateForm(
-                fridge: FridgeFixtures.verifiedFridgeWithFood,
-              ),
-            ),
-          ),
-        ),
-      );
-
-      // Type in notes field
-      await tester.enterText(find.byType(TextField), 'Test notes');
+    testWidgets('does not display ghost condition option', (tester) async {
+      await tester.pumpWidget(_buildTestApp(
+        fridge: FridgeFixtures.verifiedFridgeWithFood,
+      ));
       await tester.pumpAndSettle();
 
-      expect(find.text('Test notes'), findsOneWidget);
+      expect(find.text('Ghost - No Longer There'), findsNothing);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Cycle 2: Make Condition Required
+  // ---------------------------------------------------------------------------
+  group('Condition required', () {
+    testWidgets('label says "Fridge Condition" without "(Optional)"',
+        (tester) async {
+      await tester.pumpWidget(_buildTestApp(
+        fridge: FridgeFixtures.verifiedFridgeWithFood,
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Fridge Condition'), findsOneWidget);
+      expect(find.text('Fridge Condition (Optional)'), findsNothing);
     });
 
-    testWidgets('displays form in scrollable view', (
-      WidgetTester tester,
-    ) async {
-      await tester.pumpWidget(
-        ProviderScope(
-          child: MaterialApp(
-            home: Scaffold(
-              body: StatusUpdateForm(
-                fridge: FridgeFixtures.verifiedFridgeWithFood,
-              ),
-            ),
-          ),
-        ),
-      );
+    testWidgets('Next button disabled when no condition selected (step 0)',
+        (tester) async {
+      await tester.pumpWidget(_buildTestApp(
+        fridge: FridgeFixtures.verifiedFridgeWithFood,
+      ));
+      await tester.pumpAndSettle();
 
-      expect(find.byType(SingleChildScrollView), findsOneWidget);
+      // Find the FilledButtonM3E containing 'Next'
+      final nextButton = find.widgetWithText(FilledButtonM3E, 'Next');
+      expect(nextButton, findsOneWidget);
+
+      final button = tester.widget<FilledButtonM3E>(nextButton);
+      expect(button.onPressed, isNull, reason: 'Next should be disabled');
     });
 
-    testWidgets('submit button is full width', (WidgetTester tester) async {
-      await tester.pumpWidget(
-        ProviderScope(
-          child: MaterialApp(
-            home: Scaffold(
-              body: StatusUpdateForm(
-                fridge: FridgeFixtures.verifiedFridgeWithFood,
-              ),
-            ),
-          ),
-        ),
-      );
+    testWidgets('Next button enabled after selecting a condition',
+        (tester) async {
+      await tester.pumpWidget(_buildTestApp(
+        fridge: FridgeFixtures.verifiedFridgeWithFood,
+      ));
+      await tester.pumpAndSettle();
 
-      final sizedBox = find.ancestor(
-        of: find.byType(ElevatedButton),
-        matching: find.byType(SizedBox),
-      );
+      // Tap the "Good" radio option (rendered as ListTile by RadioM3E)
+      await tester.tap(find.text('Good'));
+      await tester.pumpAndSettle();
 
-      expect(sizedBox, findsOneWidget);
+      final nextButton = find.widgetWithText(FilledButtonM3E, 'Next');
+      final button = tester.widget<FilledButtonM3E>(nextButton);
+      expect(button.onPressed, isNotNull, reason: 'Next should be enabled');
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Cycle 3: Food Level — No Pre-fill, Require Interaction
+  // ---------------------------------------------------------------------------
+  group('Food level step', () {
+    Future<void> navigateToFoodStep(WidgetTester tester) async {
+      await tester.pumpWidget(_buildTestApp(
+        fridge: FridgeFixtures.verifiedFridgeWithFood,
+      ));
+      await tester.pumpAndSettle();
+
+      // Select a condition to enable Next
+      await tester.tap(find.text('Good'));
+      await tester.pumpAndSettle();
+
+      // Tap Next to go to step 1 (Food Level)
+      await tester.tap(find.text('Next'));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('slider starts at 0.0, not pre-filled from fridge data',
+        (tester) async {
+      await navigateToFoodStep(tester);
+
+      // Find the SliderM3E and verify it wraps a Slider at 0.0
+      final slider = find.byType(Slider);
+      expect(slider, findsOneWidget);
+      final sliderWidget = tester.widget<Slider>(slider);
+      expect(sliderWidget.value, 0.0);
+    });
+
+    testWidgets('Next button disabled until slider is touched',
+        (tester) async {
+      await navigateToFoodStep(tester);
+
+      final nextButton = find.widgetWithText(FilledButtonM3E, 'Next');
+      final button = tester.widget<FilledButtonM3E>(nextButton);
+      expect(button.onPressed, isNull,
+          reason: 'Next should be disabled until slider touched');
+    });
+
+    testWidgets('Next button enabled after dragging slider', (tester) async {
+      await navigateToFoodStep(tester);
+
+      // Drag the slider to the right
+      final slider = find.byType(Slider);
+      // Drag enough to change value
+      await tester.drag(slider, const Offset(100, 0));
+      await tester.pumpAndSettle();
+
+      final nextButton = find.widgetWithText(FilledButtonM3E, 'Next');
+      final button = tester.widget<FilledButtonM3E>(nextButton);
+      expect(button.onPressed, isNotNull,
+          reason: 'Next should be enabled after slider touch');
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Cycle 5: Dirty state callback
+  // ---------------------------------------------------------------------------
+  group('Dirty state (onDirtyChanged)', () {
+    testWidgets('fires true after selecting a condition', (tester) async {
+      bool? lastDirty;
+      await tester.pumpWidget(_buildTestApp(
+        fridge: FridgeFixtures.verifiedFridgeWithFood,
+        onDirtyChanged: (v) => lastDirty = v,
+      ));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Good'));
+      await tester.pumpAndSettle();
+
+      expect(lastDirty, isTrue);
+    });
+
+    testWidgets('fires true after typing notes', (tester) async {
+      bool? lastDirty;
+      await tester.pumpWidget(_buildTestApp(
+        fridge: FridgeFixtures.verifiedFridgeWithFood,
+        onDirtyChanged: (v) => lastDirty = v,
+      ));
+      await tester.pumpAndSettle();
+
+      // Navigate to step 0 → select condition → step 1 → touch slider → step 2
+      await tester.tap(find.text('Good'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Next'));
+      await tester.pumpAndSettle();
+
+      // Drag slider
+      await tester.drag(find.byType(Slider), const Offset(100, 0));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Next'));
+      await tester.pumpAndSettle();
+
+      // Type notes
+      lastDirty = null;
+      await tester.enterText(
+          find.byType(TextField).first, 'Some notes');
+      await tester.pumpAndSettle();
+
+      expect(lastDirty, isTrue);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Cycle 6: No Hardcoded Colors
+  // ---------------------------------------------------------------------------
+  group('Hardcoded colors', () {
+    test('source file contains no hardcoded Color(0xFF... values', () {
+      final file = File(
+        'lib/src/features/profile/presentation/widgets/status_update_form.dart',
+      );
+      final contents = file.readAsStringSync();
+
+      // The only Color(0xFF...) allowed is 0xFFFFFFFF (white) used in _getFoodLevelColor
+      final matches = RegExp(r'Color\(0xFF(?!FFFFFF\b)[0-9A-Fa-f]{6}\)')
+          .allMatches(contents);
+      expect(
+        matches.length,
+        0,
+        reason:
+            'Found hardcoded Color values: ${matches.map((m) => m.group(0)).toList()}',
+      );
     });
   });
 }

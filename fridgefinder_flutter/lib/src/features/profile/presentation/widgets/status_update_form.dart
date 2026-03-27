@@ -12,8 +12,15 @@ import '../../../../core/providers/points_provider.dart';
 /// Form for reporting fridge status updates
 class StatusUpdateForm extends ConsumerStatefulWidget {
   final FridgeDomain fridge;
+  final ValueChanged<bool>? onDirtyChanged;
+  final ScaffoldMessengerState? parentMessenger;
 
-  const StatusUpdateForm({super.key, required this.fridge});
+  const StatusUpdateForm({
+    super.key,
+    required this.fridge,
+    this.onDirtyChanged,
+    this.parentMessenger,
+  });
 
   @override
   ConsumerState<StatusUpdateForm> createState() => _StatusUpdateFormState();
@@ -23,23 +30,38 @@ class _StatusUpdateFormState extends ConsumerState<StatusUpdateForm> {
   bool _isSubmitting = false;
   int _currentStep = 0;
   FridgeCondition? _selectedCondition;
-  late double _foodPercentage;
+  double _foodPercentage = 0.0;
+  bool _hasTouchedSlider = false;
   final _notesController = TextEditingController();
   final _imagePicker = ImagePicker();
   XFile? _selectedImage;
 
+  bool get _isDirty =>
+      _selectedCondition != null ||
+      _hasTouchedSlider ||
+      _selectedImage != null ||
+      _notesController.text.isNotEmpty;
+
   @override
   void initState() {
     super.initState();
-    // Condition is now optional - don't set a default
     _selectedCondition = null;
-    _foodPercentage = widget.fridge.latestFridgeReport?.foodPercentage ?? 0.5;
+    _notesController.addListener(_onFormChanged);
   }
 
   @override
   void dispose() {
+    _notesController.removeListener(_onFormChanged);
     _notesController.dispose();
     super.dispose();
+  }
+
+  void _onFormChanged() {
+    widget.onDirtyChanged?.call(_isDirty);
+  }
+
+  void _notifyDirty() {
+    widget.onDirtyChanged?.call(_isDirty);
   }
 
   Future<void> _pickImage(ImageSource source) async {
@@ -53,23 +75,33 @@ class _StatusUpdateFormState extends ConsumerState<StatusUpdateForm> {
 
       if (image != null) {
         setState(() => _selectedImage = image);
+        _notifyDirty();
       }
     } catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to pick image: ${e.toString()}'),
-          backgroundColor: const Color(
-            0xFFFFB300,
-          ), // M3E Vibrant AMBER for warning
-        ),
+      showSnackbarM3E(
+        context: context,
+        message: 'Failed to pick image: ${e.toString()}',
+        backgroundColor: M3EColors.warning,
       );
     }
   }
 
   void _removeImage() {
     setState(() => _selectedImage = null);
+    _notifyDirty();
+  }
+
+  bool _canContinueFromStep(int step) {
+    switch (step) {
+      case 0:
+        return _selectedCondition != null;
+      case 1:
+        return _hasTouchedSlider;
+      default:
+        return true;
+    }
   }
 
   Future<void> _submit() async {
@@ -86,12 +118,8 @@ class _StatusUpdateFormState extends ConsumerState<StatusUpdateForm> {
         photoBytes = await _selectedImage!.readAsBytes();
       }
 
-      // Use current condition as default if user didn't select one
-      // This keeps the field optional in UI but satisfies API requirements
-      final conditionToSubmit =
-          _selectedCondition ??
-          widget.fridge.latestFridgeReport?.condition ??
-          FridgeCondition.good;
+      // Condition is required — guaranteed non-null by step gating
+      final conditionToSubmit = _selectedCondition!;
 
       // Submit report with optional photo bytes (will be base64 encoded)
       await repository.submitFridgeReport(
@@ -127,34 +155,29 @@ class _StatusUpdateFormState extends ConsumerState<StatusUpdateForm> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Status update submitted for ${widget.fridge.name}'),
-          backgroundColor: const Color(
-            0xFF5FD65F,
-          ), // M3E Vibrant GREEN for success
-        ),
-      );
-
-      // Wait for next frame to ensure all provider rebuilds complete before navigation
-      if (!mounted) return;
+      // Pop first, then show SnackBar on parent scaffold so it persists
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           Navigator.pop(context);
         }
+        widget.parentMessenger?.showSnackBar(
+          SnackBar(
+            content: Text(
+              'Status update submitted for ${widget.fridge.name}',
+            ),
+            backgroundColor: M3EColors.tertiary,
+          ),
+        );
       });
     } catch (e) {
       if (!mounted) return;
 
       setState(() => _isSubmitting = false);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to submit update: ${e.toString()}'),
-          backgroundColor: const Color(
-            0xFFFF7043,
-          ), // M3E Vibrant CORAL for errors
-        ),
+      showSnackbarM3E(
+        context: context,
+        message: 'Failed to submit update: ${e.toString()}',
+        backgroundColor: M3EColors.alert,
       );
     }
   }
@@ -171,7 +194,8 @@ class _StatusUpdateFormState extends ConsumerState<StatusUpdateForm> {
     if (_currentStep > 0) {
       setState(() => _currentStep--);
     } else {
-      Navigator.pop(context);
+      // Use maybePop to trigger PopScope's unsaved-changes check
+      Navigator.maybePop(context);
     }
   }
 
@@ -193,6 +217,7 @@ class _StatusUpdateFormState extends ConsumerState<StatusUpdateForm> {
       onStepContinue: _nextStep,
       onStepCancel: _previousStep,
       controlsBuilder: (context, details) {
+        final canContinue = _canContinueFromStep(details.stepIndex);
         return Padding(
           padding: M3ESpacing.all(M3ESpacing.xl),
           child: Row(
@@ -206,7 +231,10 @@ class _StatusUpdateFormState extends ConsumerState<StatusUpdateForm> {
                 ),
               ),
               FilledButtonM3E(
-                onPressed: _isSubmitting ? null : details.onStepContinue,
+                onPressed:
+                    (_isSubmitting || !canContinue)
+                        ? null
+                        : details.onStepContinue,
                 child: _isSubmitting
                     ? const SizedBox(
                         height: 20,
@@ -232,7 +260,7 @@ class _StatusUpdateFormState extends ConsumerState<StatusUpdateForm> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Fridge Condition (Optional)', style: M3ETypography.labelLarge),
+          Text('Fridge Condition', style: M3ETypography.labelLarge),
           SizedBox(height: M3ESpacing.xs),
           ...FridgeCondition.values
               .where((condition) => condition != FridgeCondition.ghost)
@@ -242,6 +270,7 @@ class _StatusUpdateFormState extends ConsumerState<StatusUpdateForm> {
                   groupValue: _selectedCondition,
                   onChanged: (FridgeCondition? value) {
                     setState(() => _selectedCondition = value);
+                    _notifyDirty();
                   },
                   label: _conditionLabel(condition),
                 ),
@@ -262,7 +291,11 @@ class _StatusUpdateFormState extends ConsumerState<StatusUpdateForm> {
             child: SliderM3E(
               value: _foodPercentage,
               onChanged: (value) {
-                setState(() => _foodPercentage = value);
+                setState(() {
+                  _foodPercentage = value;
+                  _hasTouchedSlider = true;
+                });
+                _notifyDirty();
               },
               min: 0,
               max: 1,
@@ -356,11 +389,11 @@ class _StatusUpdateFormState extends ConsumerState<StatusUpdateForm> {
   /// Get the color for the slider based on food percentage
   /// Colors transition smoothly between food level colors matching the map markers
   Color _getFoodLevelColor(double percentage) {
-    // M3E vibrant semantic colors matching FridgeIconUtils
+    // M3E semantic colors matching FridgeIconUtils
     const emptyColor = Color(0xFFFFFFFF); // White - empty
-    const fewItemsColor = Color(0xFFFF6B9D); // Vibrant pink - few items
-    const manyItemsColor = Color(0xFFFFB300); // Vibrant amber - many items
-    const fullColor = Color(0xFF5FD65F); // Vibrant green - full
+    const fewItemsColor = M3EColors.secondary; // Vibrant pink - few items
+    const manyItemsColor = M3EColors.warning; // Vibrant amber - many items
+    const fullColor = M3EColors.tertiary; // Vibrant green - full
 
     // Smooth color interpolation between levels
     if (percentage >= 0.75) {
@@ -384,9 +417,9 @@ class _StatusUpdateFormState extends ConsumerState<StatusUpdateForm> {
   String _conditionLabel(FridgeCondition condition) {
     switch (condition) {
       case FridgeCondition.good:
-        return 'Good - Operational';
+        return 'Good';
       case FridgeCondition.dirty:
-        return 'Dirty - Needs Cleaning';
+        return 'Needs Cleaning';
       case FridgeCondition.outOfOrder:
         return 'Needs Repairs';
       case FridgeCondition

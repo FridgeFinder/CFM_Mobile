@@ -5,7 +5,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:design_system/design_system.dart';
 import '../../../map/domain/models/fridge_domain.dart';
 import '../../../map/presentation/controllers/fridge_list_controller.dart';
-import 'status_update_form.dart';
+import '../screens/status_update_screen.dart';
 
 /// Report Status Update + Share action buttons.
 class FridgeActionButtons extends ConsumerWidget {
@@ -20,7 +20,7 @@ class FridgeActionButtons extends ConsumerWidget {
         SizedBox(
           width: double.infinity,
           child: FilledTonalButtonM3E(
-            onPressed: () => _showStatusUpdateDialog(context, ref),
+            onPressed: () => _openStatusUpdatePage(context, ref),
             icon: Icons.edit,
             child: Text('Report Status Update', style: M3ETypography.labelLarge),
           ),
@@ -38,27 +38,21 @@ class FridgeActionButtons extends ConsumerWidget {
     );
   }
 
-  void _showStatusUpdateDialog(BuildContext context, WidgetRef ref) {
+  void _openStatusUpdatePage(BuildContext context, WidgetRef ref) {
     final fridgeAsync = ref.read(singleFridgeProvider(fridge.id));
     final liveFridge = fridgeAsync.whenOrNull(data: (f) => f) ?? fridge;
 
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        child: SizedBox(
-          width: MediaQuery.of(context).size.width * 0.9,
-          height: MediaQuery.of(context).size.height * 0.8,
-          child: Padding(
-            padding: EdgeInsets.all(M3ESpacing.lg),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Report Status Update', style: M3ETypography.headlineSmall),
-                SizedBox(height: M3ESpacing.md),
-                Expanded(child: StatusUpdateForm(fridge: liveFridge)),
-              ],
-            ),
-          ),
+    // Capture parent ScaffoldMessenger before navigating so the success
+    // SnackBar can be shown after the status update page pops.
+    final parentMessenger = ScaffoldMessenger.of(context);
+
+    // Use rootNavigator to avoid GoRouter route-change detection that
+    // auto-dismisses the fridge profile bottom sheet.
+    Navigator.of(context, rootNavigator: true).push(
+      MaterialPageRoute(
+        builder: (_) => StatusUpdateScreen(
+          fridge: liveFridge,
+          parentMessenger: parentMessenger,
         ),
       ),
     );
