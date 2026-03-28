@@ -29,7 +29,7 @@ Generate screenshots for Play Store
 [bundle exec] fastlane android beta
 ```
 
-Build and upload to Firebase App Distribution
+Upload existing APK to Firebase App Distribution
 
 ### android playstore_beta
 

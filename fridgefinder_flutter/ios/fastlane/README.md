@@ -23,22 +23,6 @@ For _fastlane_ installation instructions, see [Installing _fastlane_](https://do
 
 Generate screenshots for App Store
 
-### ios upload_beta
-
-```sh
-[bundle exec] fastlane ios upload_beta
-```
-
-Upload existing IPA to Firebase App Distribution
-
-### ios beta
-
-```sh
-[bundle exec] fastlane ios beta
-```
-
-Build and upload to Firebase App Distribution
-
 ### ios testflight
 
 ```sh

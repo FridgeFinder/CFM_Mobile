@@ -17,6 +17,21 @@ platform :android do
     sh("cd .. && flutter test integration_test/screenshot_test.dart || true")
   end
 
+  desc "Upload existing APK to Firebase App Distribution"
+  lane :beta do
+    # Build APK for direct distribution
+    sh("cd .. && flutter build apk --release")
+
+    # Upload to Firebase App Distribution
+    firebase_app_distribution(
+      app: ENV["FIREBASE_APP_ID_ANDROID"],
+      groups: ENV["FIREBASE_DISTRIBUTION_GROUPS"] || "dev-testers",
+      release_notes: ENV["RELEASE_NOTES"] || "Beta build v1.1.0 (19)",
+      firebase_cli_token: ENV["FIREBASE_CLI_TOKEN"],
+      android_artifact_path: "../build/app/outputs/flutter-apk/app-release.apk"
+    )
+  end
+
   desc "Upload existing AAB to Google Play closed testing"
   lane :playstore_beta do
     # Upload to Google Play Console - Internal Testing Track

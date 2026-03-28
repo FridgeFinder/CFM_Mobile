@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/widgets.dart';
-import 'package:flutter_app_badger/flutter_app_badger.dart';
 import '../utils/app_logger.dart';
 import '../../features/auth/data/repositories/auth_repository.dart';
 import '../providers/database_provider.dart';
@@ -525,11 +524,6 @@ class FCMService with WidgetsBindingObserver {
 
       // Delete FCM token from Firebase servers
       await _messaging.deleteToken();
-
-      // Clear badge
-      try {
-        FlutterAppBadger.removeBadge();
-      } catch (_) {}
 
       // Clear local state
       _currentToken = null;
