@@ -21,12 +21,19 @@ class TestNotificationUtils {
         return;
       }
 
-      // Get user's FCM token from database
+      // Get user's FCM token from database (prefer new multi-device path)
       final database = DatabaseProvider.databaseRef;
       final userRef = database.child('users').child(user.uid);
-      final snapshot = await userRef.child('fcmToken').once();
-      
-      final fcmToken = snapshot.snapshot.value as String?;
+      final tokensSnapshot = await userRef.child('fcmTokens').once();
+      final tokensMap = tokensSnapshot.snapshot.value as Map<dynamic, dynamic>?;
+      String? fcmToken;
+      if (tokensMap != null && tokensMap.isNotEmpty) {
+        fcmToken = tokensMap.values.first as String;
+      } else {
+        // Fallback to old single-token path
+        final snapshot = await userRef.child('fcmToken').once();
+        fcmToken = snapshot.snapshot.value as String?;
+      }
       if (fcmToken == null) {
         logger.e('No FCM token found for user. Please follow a fridge first.');
         return;

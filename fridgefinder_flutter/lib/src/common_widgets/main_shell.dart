@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import './bottom_nav_bar.dart';
 import '../common_widgets/index.dart' as common_widgets;
 import '../core/providers/auth_provider.dart';
+import '../core/providers/notification_providers.dart';
 import '../core/providers/drawer_provider.dart';
 import '../core/providers/subscriptions_provider.dart';
 import '../core/constants/app_constants.dart';
@@ -384,6 +385,10 @@ class _MainShellState extends ConsumerState<MainShell>
                                 OutlinedButtonM3E(
                                   onPressed: () async {
                                     try {
+                                      final fcmService = ref.read(
+                                        fcmServiceProvider,
+                                      );
+                                      await fcmService.deleteToken();
                                       final repository = ref.read(
                                         authRepositoryProvider,
                                       );

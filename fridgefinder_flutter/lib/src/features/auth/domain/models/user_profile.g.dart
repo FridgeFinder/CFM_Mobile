@@ -41,6 +41,9 @@ _UserProfile _$UserProfileFromJson(Map<String, dynamic> json) => _UserProfile(
   zipCode: json['zipCode'] as String?,
   points: (json['points'] as num?)?.toInt() ?? 0,
   fcmToken: json['fcmToken'] as String?,
+  fcmTokens: (json['fcmTokens'] as Map<String, dynamic>?)?.map(
+    (k, e) => MapEntry(k, e as String),
+  ),
   settings: json['settings'] == null
       ? const UserSettings()
       : UserSettings.fromJson(json['settings'] as Map<String, dynamic>),
@@ -60,6 +63,7 @@ Map<String, dynamic> _$UserProfileToJson(_UserProfile instance) =>
       'zipCode': instance.zipCode,
       'points': instance.points,
       'fcmToken': instance.fcmToken,
+      'fcmTokens': instance.fcmTokens,
       'settings': instance.settings.toJson(),
       'createdAt': instance.createdAt.toIso8601String(),
       'lastLoginAt': instance.lastLoginAt?.toIso8601String(),

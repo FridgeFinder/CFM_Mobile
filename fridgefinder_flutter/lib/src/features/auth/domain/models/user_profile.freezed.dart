@@ -284,7 +284,7 @@ as bool,
 /// @nodoc
 mixin _$UserProfile {
 
- String get userId; String? get email; String? get phoneNumber; String get username; bool get isVolunteer; String? get zipCode; int get points; String? get fcmToken; UserSettings get settings; DateTime get createdAt; DateTime? get lastLoginAt;
+ String get userId; String? get email; String? get phoneNumber; String get username; bool get isVolunteer; String? get zipCode; int get points; String? get fcmToken; Map<String, String>? get fcmTokens; UserSettings get settings; DateTime get createdAt; DateTime? get lastLoginAt;
 /// Create a copy of UserProfile
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -297,16 +297,16 @@ $UserProfileCopyWith<UserProfile> get copyWith => _$UserProfileCopyWithImpl<User
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is UserProfile&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.email, email) || other.email == email)&&(identical(other.phoneNumber, phoneNumber) || other.phoneNumber == phoneNumber)&&(identical(other.username, username) || other.username == username)&&(identical(other.isVolunteer, isVolunteer) || other.isVolunteer == isVolunteer)&&(identical(other.zipCode, zipCode) || other.zipCode == zipCode)&&(identical(other.points, points) || other.points == points)&&(identical(other.fcmToken, fcmToken) || other.fcmToken == fcmToken)&&(identical(other.settings, settings) || other.settings == settings)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.lastLoginAt, lastLoginAt) || other.lastLoginAt == lastLoginAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is UserProfile&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.email, email) || other.email == email)&&(identical(other.phoneNumber, phoneNumber) || other.phoneNumber == phoneNumber)&&(identical(other.username, username) || other.username == username)&&(identical(other.isVolunteer, isVolunteer) || other.isVolunteer == isVolunteer)&&(identical(other.zipCode, zipCode) || other.zipCode == zipCode)&&(identical(other.points, points) || other.points == points)&&(identical(other.fcmToken, fcmToken) || other.fcmToken == fcmToken)&&const DeepCollectionEquality().equals(other.fcmTokens, fcmTokens)&&(identical(other.settings, settings) || other.settings == settings)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.lastLoginAt, lastLoginAt) || other.lastLoginAt == lastLoginAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,userId,email,phoneNumber,username,isVolunteer,zipCode,points,fcmToken,settings,createdAt,lastLoginAt);
+int get hashCode => Object.hash(runtimeType,userId,email,phoneNumber,username,isVolunteer,zipCode,points,fcmToken,const DeepCollectionEquality().hash(fcmTokens),settings,createdAt,lastLoginAt);
 
 @override
 String toString() {
-  return 'UserProfile(userId: $userId, email: $email, phoneNumber: $phoneNumber, username: $username, isVolunteer: $isVolunteer, zipCode: $zipCode, points: $points, fcmToken: $fcmToken, settings: $settings, createdAt: $createdAt, lastLoginAt: $lastLoginAt)';
+  return 'UserProfile(userId: $userId, email: $email, phoneNumber: $phoneNumber, username: $username, isVolunteer: $isVolunteer, zipCode: $zipCode, points: $points, fcmToken: $fcmToken, fcmTokens: $fcmTokens, settings: $settings, createdAt: $createdAt, lastLoginAt: $lastLoginAt)';
 }
 
 
@@ -317,7 +317,7 @@ abstract mixin class $UserProfileCopyWith<$Res>  {
   factory $UserProfileCopyWith(UserProfile value, $Res Function(UserProfile) _then) = _$UserProfileCopyWithImpl;
 @useResult
 $Res call({
- String userId, String? email, String? phoneNumber, String username, bool isVolunteer, String? zipCode, int points, String? fcmToken, UserSettings settings, DateTime createdAt, DateTime? lastLoginAt
+ String userId, String? email, String? phoneNumber, String username, bool isVolunteer, String? zipCode, int points, String? fcmToken, Map<String, String>? fcmTokens, UserSettings settings, DateTime createdAt, DateTime? lastLoginAt
 });
 
 
@@ -334,7 +334,7 @@ class _$UserProfileCopyWithImpl<$Res>
 
 /// Create a copy of UserProfile
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? userId = null,Object? email = freezed,Object? phoneNumber = freezed,Object? username = null,Object? isVolunteer = null,Object? zipCode = freezed,Object? points = null,Object? fcmToken = freezed,Object? settings = null,Object? createdAt = null,Object? lastLoginAt = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? userId = null,Object? email = freezed,Object? phoneNumber = freezed,Object? username = null,Object? isVolunteer = null,Object? zipCode = freezed,Object? points = null,Object? fcmToken = freezed,Object? fcmTokens = freezed,Object? settings = null,Object? createdAt = null,Object? lastLoginAt = freezed,}) {
   return _then(_self.copyWith(
 userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
 as String,email: freezed == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
@@ -344,7 +344,8 @@ as String,isVolunteer: null == isVolunteer ? _self.isVolunteer : isVolunteer // 
 as bool,zipCode: freezed == zipCode ? _self.zipCode : zipCode // ignore: cast_nullable_to_non_nullable
 as String?,points: null == points ? _self.points : points // ignore: cast_nullable_to_non_nullable
 as int,fcmToken: freezed == fcmToken ? _self.fcmToken : fcmToken // ignore: cast_nullable_to_non_nullable
-as String?,settings: null == settings ? _self.settings : settings // ignore: cast_nullable_to_non_nullable
+as String?,fcmTokens: freezed == fcmTokens ? _self.fcmTokens : fcmTokens // ignore: cast_nullable_to_non_nullable
+as Map<String, String>?,settings: null == settings ? _self.settings : settings // ignore: cast_nullable_to_non_nullable
 as UserSettings,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,lastLoginAt: freezed == lastLoginAt ? _self.lastLoginAt : lastLoginAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,
@@ -441,10 +442,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String userId,  String? email,  String? phoneNumber,  String username,  bool isVolunteer,  String? zipCode,  int points,  String? fcmToken,  UserSettings settings,  DateTime createdAt,  DateTime? lastLoginAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String userId,  String? email,  String? phoneNumber,  String username,  bool isVolunteer,  String? zipCode,  int points,  String? fcmToken,  Map<String, String>? fcmTokens,  UserSettings settings,  DateTime createdAt,  DateTime? lastLoginAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _UserProfile() when $default != null:
-return $default(_that.userId,_that.email,_that.phoneNumber,_that.username,_that.isVolunteer,_that.zipCode,_that.points,_that.fcmToken,_that.settings,_that.createdAt,_that.lastLoginAt);case _:
+return $default(_that.userId,_that.email,_that.phoneNumber,_that.username,_that.isVolunteer,_that.zipCode,_that.points,_that.fcmToken,_that.fcmTokens,_that.settings,_that.createdAt,_that.lastLoginAt);case _:
   return orElse();
 
 }
@@ -462,10 +463,10 @@ return $default(_that.userId,_that.email,_that.phoneNumber,_that.username,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String userId,  String? email,  String? phoneNumber,  String username,  bool isVolunteer,  String? zipCode,  int points,  String? fcmToken,  UserSettings settings,  DateTime createdAt,  DateTime? lastLoginAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String userId,  String? email,  String? phoneNumber,  String username,  bool isVolunteer,  String? zipCode,  int points,  String? fcmToken,  Map<String, String>? fcmTokens,  UserSettings settings,  DateTime createdAt,  DateTime? lastLoginAt)  $default,) {final _that = this;
 switch (_that) {
 case _UserProfile():
-return $default(_that.userId,_that.email,_that.phoneNumber,_that.username,_that.isVolunteer,_that.zipCode,_that.points,_that.fcmToken,_that.settings,_that.createdAt,_that.lastLoginAt);case _:
+return $default(_that.userId,_that.email,_that.phoneNumber,_that.username,_that.isVolunteer,_that.zipCode,_that.points,_that.fcmToken,_that.fcmTokens,_that.settings,_that.createdAt,_that.lastLoginAt);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -482,10 +483,10 @@ return $default(_that.userId,_that.email,_that.phoneNumber,_that.username,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String userId,  String? email,  String? phoneNumber,  String username,  bool isVolunteer,  String? zipCode,  int points,  String? fcmToken,  UserSettings settings,  DateTime createdAt,  DateTime? lastLoginAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String userId,  String? email,  String? phoneNumber,  String username,  bool isVolunteer,  String? zipCode,  int points,  String? fcmToken,  Map<String, String>? fcmTokens,  UserSettings settings,  DateTime createdAt,  DateTime? lastLoginAt)?  $default,) {final _that = this;
 switch (_that) {
 case _UserProfile() when $default != null:
-return $default(_that.userId,_that.email,_that.phoneNumber,_that.username,_that.isVolunteer,_that.zipCode,_that.points,_that.fcmToken,_that.settings,_that.createdAt,_that.lastLoginAt);case _:
+return $default(_that.userId,_that.email,_that.phoneNumber,_that.username,_that.isVolunteer,_that.zipCode,_that.points,_that.fcmToken,_that.fcmTokens,_that.settings,_that.createdAt,_that.lastLoginAt);case _:
   return null;
 
 }
@@ -497,7 +498,7 @@ return $default(_that.userId,_that.email,_that.phoneNumber,_that.username,_that.
 @JsonSerializable()
 
 class _UserProfile extends UserProfile {
-  const _UserProfile({required this.userId, this.email, this.phoneNumber, required this.username, required this.isVolunteer, this.zipCode, this.points = 0, this.fcmToken, this.settings = const UserSettings(), required this.createdAt, this.lastLoginAt}): super._();
+  const _UserProfile({required this.userId, this.email, this.phoneNumber, required this.username, required this.isVolunteer, this.zipCode, this.points = 0, this.fcmToken, final  Map<String, String>? fcmTokens, this.settings = const UserSettings(), required this.createdAt, this.lastLoginAt}): _fcmTokens = fcmTokens,super._();
   factory _UserProfile.fromJson(Map<String, dynamic> json) => _$UserProfileFromJson(json);
 
 @override final  String userId;
@@ -508,6 +509,15 @@ class _UserProfile extends UserProfile {
 @override final  String? zipCode;
 @override@JsonKey() final  int points;
 @override final  String? fcmToken;
+ final  Map<String, String>? _fcmTokens;
+@override Map<String, String>? get fcmTokens {
+  final value = _fcmTokens;
+  if (value == null) return null;
+  if (_fcmTokens is EqualUnmodifiableMapView) return _fcmTokens;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableMapView(value);
+}
+
 @override@JsonKey() final  UserSettings settings;
 @override final  DateTime createdAt;
 @override final  DateTime? lastLoginAt;
@@ -525,16 +535,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _UserProfile&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.email, email) || other.email == email)&&(identical(other.phoneNumber, phoneNumber) || other.phoneNumber == phoneNumber)&&(identical(other.username, username) || other.username == username)&&(identical(other.isVolunteer, isVolunteer) || other.isVolunteer == isVolunteer)&&(identical(other.zipCode, zipCode) || other.zipCode == zipCode)&&(identical(other.points, points) || other.points == points)&&(identical(other.fcmToken, fcmToken) || other.fcmToken == fcmToken)&&(identical(other.settings, settings) || other.settings == settings)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.lastLoginAt, lastLoginAt) || other.lastLoginAt == lastLoginAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _UserProfile&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.email, email) || other.email == email)&&(identical(other.phoneNumber, phoneNumber) || other.phoneNumber == phoneNumber)&&(identical(other.username, username) || other.username == username)&&(identical(other.isVolunteer, isVolunteer) || other.isVolunteer == isVolunteer)&&(identical(other.zipCode, zipCode) || other.zipCode == zipCode)&&(identical(other.points, points) || other.points == points)&&(identical(other.fcmToken, fcmToken) || other.fcmToken == fcmToken)&&const DeepCollectionEquality().equals(other._fcmTokens, _fcmTokens)&&(identical(other.settings, settings) || other.settings == settings)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.lastLoginAt, lastLoginAt) || other.lastLoginAt == lastLoginAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,userId,email,phoneNumber,username,isVolunteer,zipCode,points,fcmToken,settings,createdAt,lastLoginAt);
+int get hashCode => Object.hash(runtimeType,userId,email,phoneNumber,username,isVolunteer,zipCode,points,fcmToken,const DeepCollectionEquality().hash(_fcmTokens),settings,createdAt,lastLoginAt);
 
 @override
 String toString() {
-  return 'UserProfile(userId: $userId, email: $email, phoneNumber: $phoneNumber, username: $username, isVolunteer: $isVolunteer, zipCode: $zipCode, points: $points, fcmToken: $fcmToken, settings: $settings, createdAt: $createdAt, lastLoginAt: $lastLoginAt)';
+  return 'UserProfile(userId: $userId, email: $email, phoneNumber: $phoneNumber, username: $username, isVolunteer: $isVolunteer, zipCode: $zipCode, points: $points, fcmToken: $fcmToken, fcmTokens: $fcmTokens, settings: $settings, createdAt: $createdAt, lastLoginAt: $lastLoginAt)';
 }
 
 
@@ -545,7 +555,7 @@ abstract mixin class _$UserProfileCopyWith<$Res> implements $UserProfileCopyWith
   factory _$UserProfileCopyWith(_UserProfile value, $Res Function(_UserProfile) _then) = __$UserProfileCopyWithImpl;
 @override @useResult
 $Res call({
- String userId, String? email, String? phoneNumber, String username, bool isVolunteer, String? zipCode, int points, String? fcmToken, UserSettings settings, DateTime createdAt, DateTime? lastLoginAt
+ String userId, String? email, String? phoneNumber, String username, bool isVolunteer, String? zipCode, int points, String? fcmToken, Map<String, String>? fcmTokens, UserSettings settings, DateTime createdAt, DateTime? lastLoginAt
 });
 
 
@@ -562,7 +572,7 @@ class __$UserProfileCopyWithImpl<$Res>
 
 /// Create a copy of UserProfile
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? userId = null,Object? email = freezed,Object? phoneNumber = freezed,Object? username = null,Object? isVolunteer = null,Object? zipCode = freezed,Object? points = null,Object? fcmToken = freezed,Object? settings = null,Object? createdAt = null,Object? lastLoginAt = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? userId = null,Object? email = freezed,Object? phoneNumber = freezed,Object? username = null,Object? isVolunteer = null,Object? zipCode = freezed,Object? points = null,Object? fcmToken = freezed,Object? fcmTokens = freezed,Object? settings = null,Object? createdAt = null,Object? lastLoginAt = freezed,}) {
   return _then(_UserProfile(
 userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
 as String,email: freezed == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
@@ -572,7 +582,8 @@ as String,isVolunteer: null == isVolunteer ? _self.isVolunteer : isVolunteer // 
 as bool,zipCode: freezed == zipCode ? _self.zipCode : zipCode // ignore: cast_nullable_to_non_nullable
 as String?,points: null == points ? _self.points : points // ignore: cast_nullable_to_non_nullable
 as int,fcmToken: freezed == fcmToken ? _self.fcmToken : fcmToken // ignore: cast_nullable_to_non_nullable
-as String?,settings: null == settings ? _self.settings : settings // ignore: cast_nullable_to_non_nullable
+as String?,fcmTokens: freezed == fcmTokens ? _self._fcmTokens : fcmTokens // ignore: cast_nullable_to_non_nullable
+as Map<String, String>?,settings: null == settings ? _self.settings : settings // ignore: cast_nullable_to_non_nullable
 as UserSettings,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,lastLoginAt: freezed == lastLoginAt ? _self.lastLoginAt : lastLoginAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,

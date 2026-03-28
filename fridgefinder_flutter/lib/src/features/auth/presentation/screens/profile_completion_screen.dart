@@ -5,6 +5,7 @@ import 'package:design_system/design_system.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/providers/auth_provider.dart';
+import '../../../../core/providers/notification_providers.dart';
 import '../../../../core/utils/app_logger.dart';
 import '../../domain/models/user_profile.dart';
 import '../widgets/username_generator.dart';
@@ -142,6 +143,8 @@ class _ProfileCompletionScreenState
               );
               if (confirmed == true && context.mounted) {
                 try {
+                  final fcmService = ref.read(fcmServiceProvider);
+                  await fcmService.deleteToken();
                   final repository = ref.read(authRepositoryProvider);
                   await repository.signOut();
                 } finally {

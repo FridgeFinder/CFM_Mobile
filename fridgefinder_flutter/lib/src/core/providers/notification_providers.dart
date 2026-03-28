@@ -1,7 +1,9 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../services/fcm_service.dart';
+import '../services/device_id_service.dart';
 import '../services/geofencing_service.dart';
 import 'auth_provider.dart';
+import 'database_provider.dart';
 import '../../features/map/data/repositories/fridge_repository.dart';
 
 part 'notification_providers.g.dart';
@@ -9,7 +11,15 @@ part 'notification_providers.g.dart';
 /// Provider for FCM Service
 @riverpod
 FCMService fcmService(Ref ref) {
-  final service = FCMService();
+  final service = FCMService(
+    deviceIdService: DeviceIdService(),
+    database: DatabaseProvider.databaseRef,
+  );
+
+  // Dispose FCM service when provider is disposed (fixes no-dispose bug)
+  ref.onDispose(() {
+    service.dispose();
+  });
 
   // Initialize when auth state changes
   ref.listen(authUserProvider, (previous, next) async {

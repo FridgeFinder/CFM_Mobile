@@ -1,10 +1,13 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_app_badger/flutter_app_badger.dart';
 import '../utils/app_logger.dart';
 import '../../features/auth/data/repositories/auth_repository.dart';
 import '../providers/database_provider.dart';
+import 'device_id_service.dart';
 import 'local_notification_service.dart';
 
 /// Top-level function for handling background messages (must be top-level)
@@ -15,10 +18,15 @@ import 'local_notification_service.dart';
 /// PRODUCTION ENVIRONMENT ONLY
 /// This always uses production FCM (FirebaseMessaging.instance).
 /// Not affected by fridge data API environment setting.
+///
+/// Multi-device support: tokens are stored at `users/{uid}/fcmTokens/{deviceId}`
+/// with dual-write to `users/{uid}/fcmToken` for backend compatibility.
 class FCMService with WidgetsBindingObserver {
   final FirebaseMessaging _messaging;
   final AuthRepository _authRepository;
   final LocalNotificationService _localNotifications;
+  final DeviceIdService _deviceIdService;
+  final DatabaseReference _database;
 
   StreamSubscription<String>? _tokenSubscription;
   StreamSubscription<RemoteMessage>? _messageSubscription;
@@ -28,13 +36,26 @@ class FCMService with WidgetsBindingObserver {
   DateTime? _lastTokenVerification;
   static const _tokenVerificationCooldown = Duration(minutes: 5);
 
+  // In-memory cache of current FCM token
+  String? _currentToken;
+
+  /// Current cached FCM token (null if not yet obtained or after sign-out)
+  String? get currentToken => _currentToken;
+
+  // Guard against redundant initialization
+  bool _isInitialized = false;
+
   FCMService({
     FirebaseMessaging? messaging,
     AuthRepository? authRepository,
     LocalNotificationService? localNotifications,
+    DeviceIdService? deviceIdService,
+    DatabaseReference? database,
   }) : _messaging = messaging ?? FirebaseMessaging.instance,
        _authRepository = authRepository ?? AuthRepository(),
-       _localNotifications = localNotifications ?? LocalNotificationService() {
+       _localNotifications = localNotifications ?? LocalNotificationService(),
+       _deviceIdService = deviceIdService ?? DeviceIdService(),
+       _database = database ?? DatabaseProvider.databaseRef {
     // Register lifecycle observer to handle app resume
     WidgetsBinding.instance.addObserver(this);
   }
@@ -79,6 +100,8 @@ class FCMService with WidgetsBindingObserver {
   /// Initialize FCM service (without requesting permissions)
   /// Permissions should be requested when user subscribes to first fridge
   Future<void> initialize() async {
+    if (_isInitialized) return;
+
     try {
       // Initialize local notifications first
       await _localNotifications.initialize();
@@ -110,6 +133,9 @@ class FCMService with WidgetsBindingObserver {
       final settings = await _messaging.getNotificationSettings();
       if (settings.authorizationStatus == AuthorizationStatus.authorized ||
           settings.authorizationStatus == AuthorizationStatus.provisional) {
+        // Migrate old fcmToken → fcmTokens/{deviceId} if needed
+        await _migrateOldToken();
+
         // Try to get token, but don't fail if APNS not ready (iOS)
         try {
           final token = await _messaging.getToken();
@@ -126,13 +152,37 @@ class FCMService with WidgetsBindingObserver {
           }
         }
 
-        // NEW: Verify token is saved in database, retry if missing
+        // Verify token is saved in database, retry if missing
         await _verifyTokenSaved();
       }
 
+      _isInitialized = true;
       logger.i('FCM service initialized');
     } catch (e) {
       logger.e('Error initializing FCM: $e');
+    }
+  }
+
+  /// Migrate old single `fcmToken` field to `fcmTokens/{deviceId}` map.
+  /// Called once during initialization. No-op if old field doesn't exist.
+  Future<void> _migrateOldToken() async {
+    try {
+      final currentUser = _authRepository.currentUser;
+      if (currentUser == null) return;
+      final userRef = _database.child('users').child(currentUser.uid);
+      final snapshot = await userRef.child('fcmToken').get();
+      if (snapshot.exists && snapshot.value != null) {
+        final oldToken = snapshot.value as String;
+        if (oldToken.isNotEmpty) {
+          final deviceId = await _deviceIdService.getDeviceId();
+          await userRef.child('fcmTokens').child(deviceId).set(oldToken);
+          await userRef.child('fcmToken').remove();
+          _currentToken = oldToken;
+          logger.i('Migrated old fcmToken to fcmTokens/$deviceId');
+        }
+      }
+    } catch (e) {
+      logger.e('Error migrating old FCM token: $e');
     }
   }
 
@@ -143,12 +193,13 @@ class FCMService with WidgetsBindingObserver {
       final currentUser = _authRepository.currentUser;
       if (currentUser == null) return;
 
-      // Check if token exists in database
-      final database = DatabaseProvider.databaseRef;
-      final tokenSnapshot = await database
+      // Check if token exists in database at new multi-device path
+      final deviceId = await _deviceIdService.getDeviceId();
+      final tokenSnapshot = await _database
           .child('users')
           .child(currentUser.uid)
-          .child('fcmToken')
+          .child('fcmTokens')
+          .child(deviceId)
           .get();
 
       if (!tokenSnapshot.exists || tokenSnapshot.value == null || (tokenSnapshot.value as String).isEmpty) {
@@ -209,13 +260,13 @@ class FCMService with WidgetsBindingObserver {
           settings.authorizationStatus == AuthorizationStatus.provisional) {
         // Try to get token - returns false if APNS not ready (iOS), but listener is set up
         final tokenObtained = await _requestTokenAndSave();
-        
+
         if (tokenObtained) {
           logger.i('FCM token obtained and saved successfully');
         } else if (Platform.isIOS) {
           logger.w('Permissions granted but APNS token not ready. Token will be saved automatically when available.');
         }
-        
+
         // Always return true if permissions were granted
         // Token will be saved automatically via listener when available
         return true;
@@ -302,7 +353,13 @@ class FCMService with WidgetsBindingObserver {
     }
   }
 
-  /// Save FCM token to user profile in Realtime Database
+  /// Save FCM token to database using targeted child writes.
+  ///
+  /// Writes to both:
+  /// - `users/{uid}/fcmTokens/{deviceId}` (new multi-device path)
+  /// - `users/{uid}/fcmToken` (old path, dual-write for backend compat)
+  ///
+  /// Does NOT use `updateUserProfile` to avoid shallow merge race conditions.
   Future<void> _saveFCMToken(String token) async {
     try {
       final currentUser = _authRepository.currentUser;
@@ -311,36 +368,16 @@ class FCMService with WidgetsBindingObserver {
         return;
       }
 
-      logger.d('Saving FCM token for user: ${currentUser.uid}');
+      final deviceId = await _deviceIdService.getDeviceId();
+      final userRef = _database.child('users').child(currentUser.uid);
 
-      // Try to get existing profile first
-      try {
-        final profile = await _authRepository.getUserProfile(currentUser.uid);
-        if (profile != null) {
-          // Update existing profile
-          final updatedProfile = profile.copyWith(fcmToken: token);
-          await _authRepository.updateUserProfile(updatedProfile);
-          logger.i('FCM token saved to user profile');
-          return;
-        }
-      } catch (e) {
-        logger.d('Could not get user profile (may not exist yet): $e');
-      }
+      // Write to new multi-device path
+      await userRef.child('fcmTokens').child(deviceId).set(token);
+      // Dual-write to old path for backend compat (remove after backend migration)
+      await userRef.child('fcmToken').set(token);
 
-      // Profile doesn't exist yet - save token directly to database
-      // This can happen if user signs in but profile creation is delayed
-      try {
-        final database = DatabaseProvider.databaseRef;
-        await database
-            .child('users')
-            .child(currentUser.uid)
-            .child('fcmToken')
-            .set(token);
-        logger.i('FCM token saved directly to database (profile not yet created)');
-      } catch (e) {
-        logger.e('Error saving FCM token directly to database: $e');
-        rethrow;
-      }
+      _currentToken = token;
+      logger.i('FCM token saved for device $deviceId');
     } catch (e) {
       logger.e('Error saving FCM token: $e');
       rethrow;
@@ -406,18 +443,19 @@ class FCMService with WidgetsBindingObserver {
     }
   }
 
-  /// Check if FCM token exists in database
+  /// Check if FCM token exists in database for this device
   /// Returns true if token exists and is not empty
   Future<bool> hasTokenInDatabase() async {
     try {
       final currentUser = _authRepository.currentUser;
       if (currentUser == null) return false;
 
-      final database = DatabaseProvider.databaseRef;
-      final tokenSnapshot = await database
+      final deviceId = await _deviceIdService.getDeviceId();
+      final tokenSnapshot = await _database
           .child('users')
           .child(currentUser.uid)
-          .child('fcmToken')
+          .child('fcmTokens')
+          .child(deviceId)
           .get();
 
       return tokenSnapshot.exists &&
@@ -465,11 +503,39 @@ class FCMService with WidgetsBindingObserver {
     }
   }
 
-  /// Delete FCM token (on sign out)
+  /// Delete FCM token for this device (call before sign out).
+  ///
+  /// Removes only this device's entry from `fcmTokens/{deviceId}`,
+  /// cancels token refresh subscription, deletes FCM token from
+  /// Firebase servers, clears badge, and resets local state.
   Future<void> deleteToken() async {
     try {
+      final currentUser = _authRepository.currentUser;
+      if (currentUser != null) {
+        final deviceId = await _deviceIdService.getDeviceId();
+        final userRef = _database.child('users').child(currentUser.uid);
+        // Remove this device's entry only
+        await userRef.child('fcmTokens').child(deviceId).remove();
+        // Note: leave fcmToken field for other-device backend compat
+      }
+
+      // Cancel token refresh subscription (fixes stale closure on re-login)
+      _tokenSubscription?.cancel();
+      _tokenSubscription = null;
+
+      // Delete FCM token from Firebase servers
       await _messaging.deleteToken();
-      logger.i('FCM token deleted');
+
+      // Clear badge
+      try {
+        FlutterAppBadger.removeBadge();
+      } catch (_) {}
+
+      // Clear local state
+      _currentToken = null;
+      _isInitialized = false;
+
+      logger.i('FCM token deleted and state cleared');
     } catch (e) {
       logger.e('Error deleting FCM token: $e');
     }

@@ -11,6 +11,7 @@ import '../../../core/providers/theme_provider.dart';
 import '../../../core/providers/environment_provider.dart';
 import '../../../core/providers/location_provider.dart';
 import '../../../core/providers/auth_provider.dart';
+import '../../../core/providers/notification_providers.dart';
 import '../../../core/providers/points_provider.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../features/auth/domain/models/user_profile.dart';
@@ -342,6 +343,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       OutlinedButtonM3E(
                         onPressed: () async {
                           try {
+                            final fcmService = ref.read(fcmServiceProvider);
+                            await fcmService.deleteToken();
                             final repository = ref.read(authRepositoryProvider);
                             await repository.signOut();
                             if (context.mounted) {
@@ -1152,6 +1155,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         debugPrint('Error closing dialog: $e');
                       }
                       try {
+                        final fcmService = ref.read(fcmServiceProvider);
+                        await fcmService.deleteToken();
                         final repository = ref.read(authRepositoryProvider);
                         await repository.signOut();
                       } catch (e) {

@@ -66,6 +66,7 @@ abstract class UserProfile with _$UserProfile {
     String? zipCode,
     @Default(0) int points,
     String? fcmToken,
+    Map<String, String>? fcmTokens,
     @Default(UserSettings()) UserSettings settings,
     required DateTime createdAt,
     DateTime? lastLoginAt,
