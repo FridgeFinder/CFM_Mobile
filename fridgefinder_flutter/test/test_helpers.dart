@@ -13,8 +13,13 @@ import 'fixtures/fridge_fixtures.dart';
 /// Mock repository that returns fixture data
 class MockFridgeRepository implements FridgeRepository {
   @override
-  Future<List<FridgeDomain>> getFridges() async {
-    return FridgeFixtures.allFridges;
+  Future<List<FridgeDomain>> getFridges({bool includeGhosts = false}) async {
+    if (includeGhosts) {
+      return FridgeFixtures.allFridges;
+    }
+    return FridgeFixtures.allFridges
+        .where((f) => f.latestFridgeReport?.condition != FridgeCondition.ghost)
+        .toList();
   }
 
   @override
@@ -73,6 +78,7 @@ List<dynamic> getBaseTestOverrides({FridgeRepository? fridgeRepository, Dio? dio
   final defaultFilterState = MapFilterState(
     selectedConditions: FilterCondition.values.toSet(),
     searchQuery: '',
+    includeGhosts: false,
   );
 
   return [
@@ -115,6 +121,13 @@ ProviderContainer createTestProviderContainer({
   final repository = fridgeRepository ?? MockFridgeRepository();
   final dioInstance = dio ?? createTestDio();
 
+  // Create a default filter state for testing
+  final defaultFilterState = MapFilterState(
+    selectedConditions: FilterCondition.values.toSet(),
+    searchQuery: '',
+    includeGhosts: false,
+  );
+
   final container = ProviderContainer(
     overrides: [
       // Override dio provider to avoid connectivity_plus platform channel calls
@@ -125,6 +138,10 @@ ProviderContainer createTestProviderContainer({
       apiBaseUrlProvider.overrideWith(
         (ref) => 'https://api-prod.communityfridgefinder.com/v1',
       ),
+      // Override mapFilterProvider to provide synchronous default state (avoids Hive async loading)
+      mapFilterProvider.overrideWith(() => _MockMapFilter(defaultFilterState)),
+      // Override userLocationProvider to return null (no location needed for unit tests)
+      userLocationProvider.overrideWith((ref) => Future.value(null)),
     ],
   );
 

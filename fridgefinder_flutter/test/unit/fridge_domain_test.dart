@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fridgefinder_app/src/features/map/domain/models/fridge_domain.dart';
 import '../fixtures/fridge_fixtures.dart';
@@ -36,6 +37,18 @@ void main() {
         location: FridgeLocationDomain(),
       );
       expect(fridge.statusText, 'No recent updates');
+    });
+  });
+
+  group('FridgeDomain markerColor', () {
+    test('notAtLocation statusColor is Colors.grey not Colors.black', () {
+      final fridge = FridgeFixtures.notAtLocationFridge;
+      expect(fridge.markerColor, Colors.grey);
+    });
+
+    test('good condition with high food returns green', () {
+      final fridge = FridgeFixtures.verifiedFridgeWithFood;
+      expect(fridge.markerColor, const Color(0xFF5FD65F));
     });
   });
 

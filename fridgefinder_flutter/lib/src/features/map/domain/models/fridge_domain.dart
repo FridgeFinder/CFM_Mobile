@@ -232,7 +232,7 @@ abstract class FridgeDomain with _$FridgeDomain {
           return Colors
               .red; // Kept for exhaustive switch, but ghost fridges are filtered out
         case FridgeCondition.notAtLocation:
-          return Colors.black;
+          return Colors.grey;
       }
     }
 

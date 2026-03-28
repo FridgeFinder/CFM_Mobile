@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$MapFilterState {
 
- Set<FilterCondition> get selectedConditions; String get searchQuery; bool get followingOnly;
+ Set<FilterCondition> get selectedConditions; String get searchQuery; bool get followingOnly; bool get includeGhosts;
 /// Create a copy of MapFilterState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +25,16 @@ $MapFilterStateCopyWith<MapFilterState> get copyWith => _$MapFilterStateCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is MapFilterState&&const DeepCollectionEquality().equals(other.selectedConditions, selectedConditions)&&(identical(other.searchQuery, searchQuery) || other.searchQuery == searchQuery)&&(identical(other.followingOnly, followingOnly) || other.followingOnly == followingOnly));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MapFilterState&&const DeepCollectionEquality().equals(other.selectedConditions, selectedConditions)&&(identical(other.searchQuery, searchQuery) || other.searchQuery == searchQuery)&&(identical(other.followingOnly, followingOnly) || other.followingOnly == followingOnly)&&(identical(other.includeGhosts, includeGhosts) || other.includeGhosts == includeGhosts));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(selectedConditions),searchQuery,followingOnly);
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(selectedConditions),searchQuery,followingOnly,includeGhosts);
 
 @override
 String toString() {
-  return 'MapFilterState(selectedConditions: $selectedConditions, searchQuery: $searchQuery, followingOnly: $followingOnly)';
+  return 'MapFilterState(selectedConditions: $selectedConditions, searchQuery: $searchQuery, followingOnly: $followingOnly, includeGhosts: $includeGhosts)';
 }
 
 
@@ -45,7 +45,7 @@ abstract mixin class $MapFilterStateCopyWith<$Res>  {
   factory $MapFilterStateCopyWith(MapFilterState value, $Res Function(MapFilterState) _then) = _$MapFilterStateCopyWithImpl;
 @useResult
 $Res call({
- Set<FilterCondition> selectedConditions, String searchQuery, bool followingOnly
+ Set<FilterCondition> selectedConditions, String searchQuery, bool followingOnly, bool includeGhosts
 });
 
 
@@ -62,11 +62,12 @@ class _$MapFilterStateCopyWithImpl<$Res>
 
 /// Create a copy of MapFilterState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? selectedConditions = null,Object? searchQuery = null,Object? followingOnly = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? selectedConditions = null,Object? searchQuery = null,Object? followingOnly = null,Object? includeGhosts = null,}) {
   return _then(_self.copyWith(
 selectedConditions: null == selectedConditions ? _self.selectedConditions : selectedConditions // ignore: cast_nullable_to_non_nullable
 as Set<FilterCondition>,searchQuery: null == searchQuery ? _self.searchQuery : searchQuery // ignore: cast_nullable_to_non_nullable
 as String,followingOnly: null == followingOnly ? _self.followingOnly : followingOnly // ignore: cast_nullable_to_non_nullable
+as bool,includeGhosts: null == includeGhosts ? _self.includeGhosts : includeGhosts // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
 }
@@ -152,10 +153,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( Set<FilterCondition> selectedConditions,  String searchQuery,  bool followingOnly)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( Set<FilterCondition> selectedConditions,  String searchQuery,  bool followingOnly,  bool includeGhosts)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _MapFilterState() when $default != null:
-return $default(_that.selectedConditions,_that.searchQuery,_that.followingOnly);case _:
+return $default(_that.selectedConditions,_that.searchQuery,_that.followingOnly,_that.includeGhosts);case _:
   return orElse();
 
 }
@@ -173,10 +174,10 @@ return $default(_that.selectedConditions,_that.searchQuery,_that.followingOnly);
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( Set<FilterCondition> selectedConditions,  String searchQuery,  bool followingOnly)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( Set<FilterCondition> selectedConditions,  String searchQuery,  bool followingOnly,  bool includeGhosts)  $default,) {final _that = this;
 switch (_that) {
 case _MapFilterState():
-return $default(_that.selectedConditions,_that.searchQuery,_that.followingOnly);case _:
+return $default(_that.selectedConditions,_that.searchQuery,_that.followingOnly,_that.includeGhosts);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -193,10 +194,10 @@ return $default(_that.selectedConditions,_that.searchQuery,_that.followingOnly);
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( Set<FilterCondition> selectedConditions,  String searchQuery,  bool followingOnly)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( Set<FilterCondition> selectedConditions,  String searchQuery,  bool followingOnly,  bool includeGhosts)?  $default,) {final _that = this;
 switch (_that) {
 case _MapFilterState() when $default != null:
-return $default(_that.selectedConditions,_that.searchQuery,_that.followingOnly);case _:
+return $default(_that.selectedConditions,_that.searchQuery,_that.followingOnly,_that.includeGhosts);case _:
   return null;
 
 }
@@ -208,7 +209,7 @@ return $default(_that.selectedConditions,_that.searchQuery,_that.followingOnly);
 
 
 class _MapFilterState extends MapFilterState {
-  const _MapFilterState({required final  Set<FilterCondition> selectedConditions, this.searchQuery = '', this.followingOnly = false}): _selectedConditions = selectedConditions,super._();
+  const _MapFilterState({required final  Set<FilterCondition> selectedConditions, this.searchQuery = '', this.followingOnly = false, this.includeGhosts = false}): _selectedConditions = selectedConditions,super._();
   
 
  final  Set<FilterCondition> _selectedConditions;
@@ -220,6 +221,7 @@ class _MapFilterState extends MapFilterState {
 
 @override@JsonKey() final  String searchQuery;
 @override@JsonKey() final  bool followingOnly;
+@override@JsonKey() final  bool includeGhosts;
 
 /// Create a copy of MapFilterState
 /// with the given fields replaced by the non-null parameter values.
@@ -231,16 +233,16 @@ _$MapFilterStateCopyWith<_MapFilterState> get copyWith => __$MapFilterStateCopyW
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _MapFilterState&&const DeepCollectionEquality().equals(other._selectedConditions, _selectedConditions)&&(identical(other.searchQuery, searchQuery) || other.searchQuery == searchQuery)&&(identical(other.followingOnly, followingOnly) || other.followingOnly == followingOnly));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _MapFilterState&&const DeepCollectionEquality().equals(other._selectedConditions, _selectedConditions)&&(identical(other.searchQuery, searchQuery) || other.searchQuery == searchQuery)&&(identical(other.followingOnly, followingOnly) || other.followingOnly == followingOnly)&&(identical(other.includeGhosts, includeGhosts) || other.includeGhosts == includeGhosts));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_selectedConditions),searchQuery,followingOnly);
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_selectedConditions),searchQuery,followingOnly,includeGhosts);
 
 @override
 String toString() {
-  return 'MapFilterState(selectedConditions: $selectedConditions, searchQuery: $searchQuery, followingOnly: $followingOnly)';
+  return 'MapFilterState(selectedConditions: $selectedConditions, searchQuery: $searchQuery, followingOnly: $followingOnly, includeGhosts: $includeGhosts)';
 }
 
 
@@ -251,7 +253,7 @@ abstract mixin class _$MapFilterStateCopyWith<$Res> implements $MapFilterStateCo
   factory _$MapFilterStateCopyWith(_MapFilterState value, $Res Function(_MapFilterState) _then) = __$MapFilterStateCopyWithImpl;
 @override @useResult
 $Res call({
- Set<FilterCondition> selectedConditions, String searchQuery, bool followingOnly
+ Set<FilterCondition> selectedConditions, String searchQuery, bool followingOnly, bool includeGhosts
 });
 
 
@@ -268,11 +270,12 @@ class __$MapFilterStateCopyWithImpl<$Res>
 
 /// Create a copy of MapFilterState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? selectedConditions = null,Object? searchQuery = null,Object? followingOnly = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? selectedConditions = null,Object? searchQuery = null,Object? followingOnly = null,Object? includeGhosts = null,}) {
   return _then(_MapFilterState(
 selectedConditions: null == selectedConditions ? _self._selectedConditions : selectedConditions // ignore: cast_nullable_to_non_nullable
 as Set<FilterCondition>,searchQuery: null == searchQuery ? _self.searchQuery : searchQuery // ignore: cast_nullable_to_non_nullable
 as String,followingOnly: null == followingOnly ? _self.followingOnly : followingOnly // ignore: cast_nullable_to_non_nullable
+as bool,includeGhosts: null == includeGhosts ? _self.includeGhosts : includeGhosts // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
 }

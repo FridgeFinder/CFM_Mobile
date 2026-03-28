@@ -55,7 +55,7 @@ final class FridgeListProvider
   }
 }
 
-String _$fridgeListHash() => r'e6d119460ce1c8543ecc9d96dede179778e2948d';
+String _$fridgeListHash() => r'0098bff8b97de9c1d33798fac93ac1aa5d118b46';
 
 /// Notifier for managing a single selected fridge ID
 
@@ -270,7 +270,7 @@ final class FilteredFridgesProvider
   }
 }
 
-String _$filteredFridgesHash() => r'd0458cef32e9fb43e2ba42d8cdf9fc7281ddee46';
+String _$filteredFridgesHash() => r'6a3cb1900b0c759e64766622531bbb104a526662';
 
 /// Provider for getting a specific fridge
 /// Uses real FridgeFinder API to fetch specific fridge data
@@ -477,4 +477,4 @@ final class MapFilteredFridgesProvider
 }
 
 String _$mapFilteredFridgesHash() =>
-    r'db6124eb7b78d8ca2a0c36041b3b16df21cb4ada';
+    r'c7d3f4a132f6f5be1b01a1c16567c6ca31973837';

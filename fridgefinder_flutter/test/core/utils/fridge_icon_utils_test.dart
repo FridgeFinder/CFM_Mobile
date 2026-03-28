@@ -282,11 +282,11 @@ void main() {
         expect(color, Colors.purple);
       });
 
-      test('not at location condition returns black color', () {
+      test('not at location condition returns grey color', () {
         final color = FridgeIconUtils.getStatusColor(
           FridgeCondition.notAtLocation,
         );
-        expect(color, Colors.black);
+        expect(color, Colors.grey);
       });
     });
 

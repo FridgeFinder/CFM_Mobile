@@ -251,7 +251,7 @@ final class SubscriptionManagerProvider
 }
 
 String _$subscriptionManagerHash() =>
-    r'e6da1554bc9cd1c5219c8268a68149e8fc0461d6';
+    r'7ea9e3f970a1b81864fc31d7d42e0d3b54ab513d';
 
 /// Notifier for managing subscriptions
 

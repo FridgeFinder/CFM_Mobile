@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fridgefinder_app/src/features/map/presentation/controllers/fridge_list_controller.dart';
+import 'package:fridgefinder_app/src/features/map/presentation/controllers/map_filter_controller.dart';
 import 'package:fridgefinder_app/src/core/providers/location_provider.dart';
 import '../../../../helpers/test_helpers.dart';
 import '../../../../test_helpers.dart';
@@ -18,8 +19,10 @@ void main() {
   group('fridgesSortedByDistanceProvider Tests', () {
     late ProviderContainer container;
 
-    setUp(() {
+    setUp(() async {
       container = createTestProviderContainer();
+      // Ensure mapFilterProvider resolves before tests that depend on fridgeListProvider
+      await container.read(mapFilterProvider.future);
     });
 
     tearDown(() {

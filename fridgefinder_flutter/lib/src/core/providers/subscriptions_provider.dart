@@ -1,5 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../features/auth/domain/models/subscription_preferences.dart';
+import '../../features/map/domain/models/fridge_domain.dart';
 import 'auth_provider.dart';
 import 'database_provider.dart';
 import '../utils/app_logger.dart';
@@ -85,10 +86,19 @@ class SubscriptionManager extends _$SubscriptionManager {
   }
 
   /// Follow a fridge with notification preferences
+  /// Throws if the fridge condition is notAtLocation or ghost.
   Future<void> followFridge(
     String fridgeId,
-    NotificationPreferences preferences,
-  ) async {
+    NotificationPreferences preferences, {
+    FridgeCondition? fridgeCondition,
+  }) async {
+    if (fridgeCondition == FridgeCondition.notAtLocation) {
+      throw Exception('Cannot follow a fridge that is not at its location');
+    }
+    if (fridgeCondition == FridgeCondition.ghost) {
+      throw Exception('Cannot follow a ghost fridge');
+    }
+
     try {
       final authUserAsync = ref.read(currentAuthUserProvider);
       final authUser = authUserAsync.when(

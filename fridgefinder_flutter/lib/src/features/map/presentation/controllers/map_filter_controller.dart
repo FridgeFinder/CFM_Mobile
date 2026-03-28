@@ -17,12 +17,13 @@ abstract class MapFilterState with _$MapFilterState {
     required Set<FilterCondition> selectedConditions,
     @Default('') String searchQuery,
     @Default(false) bool followingOnly,
+    @Default(false) bool includeGhosts,
   }) = _MapFilterState;
 
   /// Check if filter state is at default (no conditions selected, no search, no subscribed filter)
   /// Default state shows everything
   bool get isDefault {
-    return selectedConditions.isEmpty && searchQuery.isEmpty && !followingOnly;
+    return selectedConditions.isEmpty && searchQuery.isEmpty && !followingOnly && !includeGhosts;
   }
 
   /// Get list of deselected filter conditions for display
@@ -40,8 +41,9 @@ class MapFilter extends _$MapFilter {
   static const String _conditionsKey = 'selected_conditions';
   static const String _searchKey = 'search_query';
   static const String _followingOnlyKey = 'subscribed_only';
+  static const String _includeGhostsKey = 'include_ghosts';
   static const String _versionKey = 'storage_version';
-  static const int _currentVersion = 3; // Increment when filter logic changes (v3: added followingOnly)
+  static const int _currentVersion = 4; // v4: added includeGhosts, stopped persisting searchQuery
   static const Duration _searchDebounceDelay = Duration(milliseconds: 150);
 
   Timer? _searchDebounceTimer;
@@ -68,11 +70,13 @@ class MapFilter extends _$MapFilter {
         await box.delete(_conditionsKey);
         await box.delete(_searchKey);
         await box.delete(_followingOnlyKey);
+        await box.delete(_includeGhostsKey);
 
         return const MapFilterState(
           selectedConditions: <FilterCondition>{}, // Default: none selected (shows everything)
           searchQuery: '',
           followingOnly: false,
+          includeGhosts: false,
         );
       }
 
@@ -91,16 +95,21 @@ class MapFilter extends _$MapFilter {
                 )
                 .toSet();
 
-      // Load search query
-      final searchQuery = box.get(_searchKey, defaultValue: '') as String;
+      // searchQuery is NOT persisted — always start fresh
+      // Clean up any stale searchQuery from prior versions
+      await box.delete(_searchKey);
 
       // Load subscribed only filter
       final followingOnly = box.get(_followingOnlyKey, defaultValue: false) as bool;
 
+      // Load include ghosts filter
+      final includeGhosts = box.get(_includeGhostsKey, defaultValue: false) as bool;
+
       return MapFilterState(
         selectedConditions: selectedConditions,
-        searchQuery: searchQuery,
+        searchQuery: '',
         followingOnly: followingOnly,
+        includeGhosts: includeGhosts,
       );
     } catch (e) {
       // If loading fails, return default state (no conditions selected = show all)
@@ -121,8 +130,10 @@ class MapFilter extends _$MapFilter {
         _conditionsKey,
         state.selectedConditions.map((c) => c.value).toList(),
       );
-      await box.put(_searchKey, state.searchQuery);
+      // searchQuery is NOT persisted — clean up stale values
+      await box.delete(_searchKey);
       await box.put(_followingOnlyKey, state.followingOnly);
+      await box.put(_includeGhostsKey, state.includeGhosts);
     } catch (e) {
       // Silently fail - storage is not critical
     }
@@ -192,6 +203,18 @@ class MapFilter extends _$MapFilter {
 
     final newState = currentState.copyWith(
       selectedConditions: <FilterCondition>{},
+    );
+    state = AsyncValue.data(newState);
+    await _saveToStorage(newState);
+  }
+
+  /// Toggle include ghosts filter
+  Future<void> toggleIncludeGhosts() async {
+    final currentState = state.whenOrNull(data: (d) => d);
+    if (currentState == null) return;
+
+    final newState = currentState.copyWith(
+      includeGhosts: !currentState.includeGhosts,
     );
     state = AsyncValue.data(newState);
     await _saveToStorage(newState);

@@ -24,7 +24,7 @@ class FridgeRepository implements IFridgeRepository {
   /// Based on real API: GET /v1/fridges
   /// Filters out ghost fridges from the response
   @override
-  Future<List<FridgeDomain>> getFridges() async {
+  Future<List<FridgeDomain>> getFridges({bool includeGhosts = false}) async {
     try {
       final response = await _dio.get('/fridges');
 
@@ -38,14 +38,18 @@ class FridgeRepository implements IFridgeRepository {
       // Real API returns array directly, not wrapped in object
       final List<dynamic> data = response.data is List ? response.data : [];
 
-      return data
-          .map((json) => FridgeDomain.fromJson(json as Map<String, dynamic>))
-          // Filter out ghost fridges from the initial response
-          .where(
-            (fridge) =>
-                fridge.latestFridgeReport?.condition != FridgeCondition.ghost,
-          )
-          .toList();
+      var fridges = data
+          .map((json) => FridgeDomain.fromJson(json as Map<String, dynamic>));
+
+      // Filter out ghost fridges unless explicitly included
+      if (!includeGhosts) {
+        fridges = fridges.where(
+          (fridge) =>
+              fridge.latestFridgeReport?.condition != FridgeCondition.ghost,
+        );
+      }
+
+      return fridges.toList();
     } on DioException catch (e) {
       throw _handleDioError(e);
     } catch (e) {

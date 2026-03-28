@@ -314,7 +314,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 200));
 
       // Expected: All 3 show green glow, all in My Fridges list
-      expect(find.text('Subscribed'), findsOneWidget);
+      expect(find.text('Following'), findsOneWidget);
     });
 
     testWidgets('SUB-008: Subscribe to Maximum Fridges (if limit)',
@@ -361,7 +361,7 @@ void main() {
 
       // Subscribe then immediately unsubscribe
       // Expected: Green glow disappears, removed from My Fridges
-      expect(find.text('Subscribed'), findsOneWidget);
+      expect(find.text('Following'), findsOneWidget);
     });
 
     testWidgets('SUB-010: Subscribe → Edit → Unsubscribe',
@@ -383,7 +383,7 @@ void main() {
 
       // Subscribe, edit preferences, then unsubscribe
       // Expected: All data removed cleanly
-      expect(find.text('Subscribed'), findsOneWidget);
+      expect(find.text('Following'), findsOneWidget);
     });
   });
 
@@ -413,7 +413,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 200));
 
       // Expected: Receives all update types
-      expect(find.text('Subscribed'), findsOneWidget);
+      expect(find.text('Following'), findsOneWidget);
     });
 
     testWidgets('SUB-012: Subscribe - All Notifications Disabled',
@@ -441,7 +441,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 200));
 
       // Expected: Still subscribed, but receives no notifications
-      expect(find.text('Subscribed'), findsOneWidget);
+      expect(find.text('Following'), findsOneWidget);
     });
 
     testWidgets('SUB-013: Subscribe - Only "Running Low" Selected',
@@ -464,7 +464,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 200));
 
       // Expected: Only receives notifications when fridge runs low
-      expect(find.text('Subscribed'), findsOneWidget);
+      expect(find.text('Following'), findsOneWidget);
     });
 
     testWidgets('SUB-014: Edit Preferences - Toggle All On/Off',
@@ -487,7 +487,7 @@ void main() {
       // Edit dialog, toggle all on, save
       // Edit again, toggle all off, save
       // Expected: Changes persist correctly
-      expect(find.text('Subscribed'), findsOneWidget);
+      expect(find.text('Following'), findsOneWidget);
     });
 
     testWidgets('SUB-015: Edit Preferences - Save Without Changes',
@@ -509,7 +509,7 @@ void main() {
 
       // Open Edit dialog, don't change anything, tap Save
       // Expected: No unnecessary database writes, success message
-      expect(find.text('Subscribed'), findsOneWidget);
+      expect(find.text('Following'), findsOneWidget);
     });
 
     testWidgets('SUB-016: Edit Preferences - Cancel Mid-Edit',
@@ -531,7 +531,7 @@ void main() {
 
       // Open Edit dialog, change preferences, tap Cancel
       // Expected: Changes discarded, original preferences remain
-      expect(find.text('Subscribed'), findsOneWidget);
+      expect(find.text('Following'), findsOneWidget);
     });
 
     testWidgets('SUB-017: Edit Preferences - Network Error',
@@ -554,7 +554,7 @@ void main() {
       // Open Edit dialog, change preferences
       // Disconnect network, tap Save
       // Expected: Network error, can retry
-      expect(find.text('Subscribed'), findsOneWidget);
+      expect(find.text('Following'), findsOneWidget);
     });
   });
 
@@ -610,7 +610,7 @@ void main() {
 
       // Tap Unsubscribe
       // Expected: Confirmation dialog appears, can cancel or confirm
-      expect(find.text('Subscribed'), findsOneWidget);
+      expect(find.text('Following'), findsOneWidget);
     });
 
     testWidgets('SUB-021: Unsubscribe - Network Error',
@@ -633,7 +633,7 @@ void main() {
       // Tap Unsubscribe, confirm
       // Disconnect network mid-request
       // Expected: Error message, subscription persists
-      expect(find.text('Subscribed'), findsOneWidget);
+      expect(find.text('Following'), findsOneWidget);
     });
 
     testWidgets('SUB-022: Unsubscribe All Fridges',
@@ -675,7 +675,7 @@ void main() {
 
       // Unsubscribe from all 5 fridges
       // Expected: My Fridges screen shows empty state
-      expect(find.text('Subscribed'), findsOneWidget);
+      expect(find.text('Following'), findsOneWidget);
     });
 
     testWidgets('SUB-023: Subscribe with Geofencing Enabled',

@@ -101,7 +101,7 @@ void main() {
         await tester.pump(const Duration(milliseconds: 200));
 
         // Verify: Subscribed pill is NOT visible
-        expect(find.text('Subscribed'), findsNothing);
+        expect(find.text('Following'), findsNothing);
 
         // Verify: Status filters are shown
         expect(find.text('Full'), findsOneWidget);
@@ -123,7 +123,7 @@ void main() {
         await tester.pump(const Duration(milliseconds: 200));
 
         // Verify: Subscribed pill is NOT visible (no subscriptions)
-        expect(find.text('Subscribed'), findsNothing);
+        expect(find.text('Following'), findsNothing);
       },
     );
 
@@ -154,7 +154,7 @@ void main() {
         await tester.pump(const Duration(milliseconds: 200));
 
         // Verify: Subscribed pill filter is visible
-        expect(find.text('Subscribed'), findsOneWidget);
+        expect(find.text('Following'), findsOneWidget);
       },
     );
 
@@ -180,7 +180,7 @@ void main() {
         await tester.pump(const Duration(milliseconds: 200));
 
         // Find subscribed pill
-        final subscribedPill = find.text('Subscribed');
+        final subscribedPill = find.text('Following');
         expect(subscribedPill, findsOneWidget);
 
         // Tap subscribed pill to activate filter

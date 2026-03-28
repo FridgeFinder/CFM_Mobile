@@ -5,7 +5,7 @@ import '../models/fridge_domain.dart';
 abstract class IFridgeRepository {
   /// Fetch all fridges from the data source
   /// Throws exceptions on errors
-  Future<List<FridgeDomain>> getFridges();
+  Future<List<FridgeDomain>> getFridges({bool includeGhosts = false});
 
   /// Fetch a single fridge by ID
   /// Throws [NotFoundException] if fridge not found

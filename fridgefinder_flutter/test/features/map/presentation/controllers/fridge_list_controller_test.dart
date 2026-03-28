@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fridgefinder_app/src/features/map/presentation/controllers/fridge_list_controller.dart';
+import 'package:fridgefinder_app/src/features/map/presentation/controllers/map_filter_controller.dart';
 import '../../../../fixtures/fridge_fixtures.dart';
 import '../../../../test_helpers.dart';
 
@@ -8,8 +9,10 @@ void main() {
   group('Fridge List Controller Tests', () {
     late ProviderContainer container;
 
-    setUp(() {
+    setUp(() async {
       container = createTestProviderContainer();
+      // Ensure mapFilterProvider resolves before tests that depend on fridgeListProvider
+      await container.read(mapFilterProvider.future);
     });
 
     tearDown(() {
@@ -18,11 +21,13 @@ void main() {
 
     group('fridgeListProvider', () {
       test('fetches all fridges successfully from mock repository', () async {
+        // Ensure filter state resolves before reading fridge list
+        await container.read(mapFilterProvider.future);
         final fridgesFuture = container.read(fridgeListProvider.future);
         final fridges = await fridgesFuture;
 
         expect(fridges, isNotEmpty);
-        expect(fridges.length, equals(5)); // 5 sample fridges in fixtures
+        expect(fridges.length, equals(5)); // All fridges including ghosts (filtering is downstream)
         expect(fridges[0].name, equals('Living Gallery'));
       });
 
@@ -140,7 +145,7 @@ void main() {
         await container.read(fridgeListProvider.future);
 
         final filtered = container.read(filteredFridgesProvider);
-        expect(filtered.length, equals(5));
+        expect(filtered.length, equals(4)); // ghost excluded by default
       });
 
       test('filters fridges by name', () async {
@@ -264,6 +269,34 @@ void main() {
           fridge.location.shortAddress,
           equals('${fridge.location.city}, ${fridge.location.state}'),
         );
+      });
+    });
+
+    group('filteredFridgesProvider address/zip search', () {
+      test('matches by street address', () async {
+        await container.read(fridgeListProvider.future);
+
+        final notifier = container.read(searchQueryProvider.notifier);
+        notifier.setSearchQuery('1094 Broadway');
+
+        await container.read(fridgeListProvider.future);
+
+        final filtered = container.read(filteredFridgesProvider);
+        expect(filtered, isNotEmpty);
+        expect(filtered.any((f) => f.id == 'livinggallery'), isTrue);
+      });
+
+      test('matches by zip code', () async {
+        await container.read(fridgeListProvider.future);
+
+        final notifier = container.read(searchQueryProvider.notifier);
+        notifier.setSearchQuery('11221');
+
+        await container.read(fridgeListProvider.future);
+
+        final filtered = container.read(filteredFridgesProvider);
+        expect(filtered, isNotEmpty);
+        expect(filtered.any((f) => f.id == 'livinggallery'), isTrue);
       });
     });
   });

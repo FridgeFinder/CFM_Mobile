@@ -110,7 +110,7 @@ void main() {
         await tester.pump(const Duration(milliseconds: 200));
 
         // Activate subscribed filter
-        final subscribedPill = find.text('Subscribed');
+        final subscribedPill = find.text('Following');
         if (subscribedPill.evaluate().isNotEmpty) {
           await tester.tap(subscribedPill);
           await tester.pump();
@@ -124,7 +124,7 @@ void main() {
         }
 
         // Both filters should be active
-        expect(find.text('Subscribed'), findsOneWidget);
+        expect(find.text('Following'), findsOneWidget);
         expect(find.text('Full'), findsOneWidget);
       },
     );
@@ -171,7 +171,7 @@ void main() {
         }
 
         // Activate Needs Servicing filter
-        final needsServicingFilter = find.text('Needs Servicing');
+        final needsServicingFilter = find.text('Needs Repairs');
         if (needsServicingFilter.evaluate().isNotEmpty) {
           await tester.tap(needsServicingFilter);
           await tester.pump();
@@ -179,7 +179,7 @@ void main() {
 
         // Both should be active
         expect(find.text('Needs Cleaning'), findsOneWidget);
-        expect(find.text('Needs Servicing'), findsOneWidget);
+        expect(find.text('Needs Repairs'), findsOneWidget);
       },
     );
 
@@ -270,7 +270,7 @@ void main() {
         await tester.pump(const Duration(milliseconds: 200));
 
         // Activate subscribed filter
-        final subscribedPill = find.text('Subscribed');
+        final subscribedPill = find.text('Following');
         expect(subscribedPill, findsOneWidget);
         await tester.tap(subscribedPill);
         await tester.pump();
@@ -283,7 +283,7 @@ void main() {
         }
 
         // Both filters should be active (AND logic)
-        expect(find.text('Subscribed'), findsOneWidget);
+        expect(find.text('Following'), findsOneWidget);
         expect(find.text('Full'), findsOneWidget);
       },
     );
@@ -301,7 +301,7 @@ void main() {
         await tester.pump(const Duration(milliseconds: 200));
 
         // Subscribed pill should NOT appear
-        expect(find.text('Subscribed'), findsNothing);
+        expect(find.text('Following'), findsNothing);
 
         // But other filters should be visible
         expect(find.text('Full'), findsOneWidget);
@@ -364,7 +364,7 @@ void main() {
         await tester.pump(const Duration(milliseconds: 200));
 
         // Sequence: Activate subscribed, activate full, deactivate subscribed
-        final subscribedPill = find.text('Subscribed');
+        final subscribedPill = find.text('Following');
         await tester.tap(subscribedPill);
         await tester.pump();
 
@@ -378,7 +378,7 @@ void main() {
 
         // Full should still be active
         expect(find.text('Full'), findsOneWidget);
-        expect(find.text('Subscribed'), findsOneWidget);
+        expect(find.text('Following'), findsOneWidget);
       },
     );
   });
@@ -395,7 +395,7 @@ void main() {
         expect(find.text('Full'), findsOneWidget);
         expect(find.text('Many Items'), findsOneWidget);
         expect(find.text('Needs Cleaning'), findsOneWidget);
-        expect(find.text('Needs Servicing'), findsOneWidget);
+        expect(find.text('Needs Repairs'), findsOneWidget);
       },
     );
 
@@ -419,7 +419,7 @@ void main() {
         await tester.pump(const Duration(milliseconds: 200));
 
         // Subscribed pill should be visible
-        expect(find.text('Subscribed'), findsOneWidget);
+        expect(find.text('Following'), findsOneWidget);
 
         // Other filters also visible
         expect(find.text('Full'), findsOneWidget);

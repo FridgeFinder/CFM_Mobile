@@ -25,6 +25,10 @@ class FilterStatusIndicator extends ConsumerWidget {
           statusParts.add('Following only');
         }
 
+        if (filterState.includeGhosts) {
+          statusParts.add('Including ghosts');
+        }
+
         // Show what's actively selected rather than what's hidden
         if (filterState.selectedConditions.isNotEmpty &&
             filterState.deselectedConditions.isNotEmpty) {
@@ -44,7 +48,10 @@ class FilterStatusIndicator extends ConsumerWidget {
           bottom: 16,
           left: 16,
           right: 80, // Leave space for FAB
-          child: Container(
+          child: Semantics(
+            liveRegion: true,
+            label: 'Active filter: ${statusParts.join(', ')}',
+            child: Container(
             padding: EdgeInsets.symmetric(
               horizontal: M3ESpacing.sm,
               vertical: M3ESpacing.xs,
@@ -61,6 +68,7 @@ class FilterStatusIndicator extends ConsumerWidget {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
+          ),
           ),
         );
       },

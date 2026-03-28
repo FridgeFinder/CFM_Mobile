@@ -17,6 +17,33 @@ class FridgeProfileButtonRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final condition = fridge.latestFridgeReport?.condition;
+
+    // Ghost fridges: hide follow button entirely
+    if (condition == FridgeCondition.ghost) {
+      return _buildButtonRow(
+        context: context,
+        followButton: const SizedBox.shrink(),
+        directionsButton: _buildDirectionsButton(context),
+      );
+    }
+
+    // Not-at-location fridges: show disabled follow button
+    if (condition == FridgeCondition.notAtLocation) {
+      return _buildButtonRow(
+        context: context,
+        followButton: Semantics(
+          label: 'Follow disabled, fridge not at location',
+          child: _buildFollowButton(
+            context: context,
+            onPressed: null,
+            label: 'Not at Location',
+          ),
+        ),
+        directionsButton: _buildDirectionsButton(context),
+      );
+    }
+
     final isAuthenticated = ref.watch(isAuthenticatedProvider);
     final isSubscribedAsync = ref.watch(isFridgeSubscribedProvider(fridge.id));
 
@@ -77,7 +104,8 @@ class FridgeProfileButtonRow extends ConsumerWidget {
 
   Widget _buildFollowButton({
     required BuildContext context,
-    required VoidCallback onPressed,
+    VoidCallback? onPressed,
+    String label = 'Follow',
   }) {
     return SizedBox(
       height: 40,
@@ -90,7 +118,7 @@ class FridgeProfileButtonRow extends ConsumerWidget {
         icon: const Icon(Icons.favorite_border, size: 20),
         label: FittedBox(
           fit: BoxFit.scaleDown,
-          child: Text('Follow', style: M3ETypography.labelLarge.copyWith(color: Colors.black87)),
+          child: Text(label, style: M3ETypography.labelLarge.copyWith(color: Colors.black87)),
         ),
       ),
     );

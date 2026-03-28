@@ -191,7 +191,7 @@ void main() {
         await tester.pump(const Duration(milliseconds: 200));
 
         // Subscribed pill should be visible
-        expect(find.text('Subscribed'), findsOneWidget);
+        expect(find.text('Following'), findsOneWidget);
       },
     );
 
@@ -214,7 +214,7 @@ void main() {
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 200));
 
-        final subscribedPill = find.text('Subscribed');
+        final subscribedPill = find.text('Following');
         expect(subscribedPill, findsOneWidget);
 
         // Tap to activate
@@ -248,7 +248,7 @@ void main() {
         expect(find.text('Fridge Map'), findsWidgets);
 
         // Subscribed pill should NOT be visible
-        expect(find.text('Subscribed'), findsNothing);
+        expect(find.text('Following'), findsNothing);
       },
     );
 
@@ -266,7 +266,7 @@ void main() {
         expect(find.text('Fridge Map'), findsWidgets);
 
         // Subscribed pill should NOT be visible
-        expect(find.text('Subscribed'), findsNothing);
+        expect(find.text('Following'), findsNothing);
       },
     );
   });

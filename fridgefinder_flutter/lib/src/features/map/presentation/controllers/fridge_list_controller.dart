@@ -15,7 +15,10 @@ part 'fridge_list_controller.g.dart';
 @riverpod
 Future<List<FridgeDomain>> fridgeList(Ref ref) async {
   final repository = ref.watch(fridgeRepositoryProvider);
-  return repository.getFridges();
+  // Always fetch all fridges including ghosts — ghost filtering is done
+  // downstream in filteredFridgesProvider/mapFilteredFridgesProvider to
+  // avoid refetching from the API on every filter change.
+  return repository.getFridges(includeGhosts: true);
 }
 
 /// Notifier for managing a single selected fridge ID
@@ -71,18 +74,27 @@ class SearchQuery extends _$SearchQuery {
 List<FridgeDomain> filteredFridges(Ref ref) {
   final fridgesAsync = ref.watch(fridgeListProvider);
   final query = ref.watch(searchQueryProvider);
+  final filterStateAsync = ref.watch(mapFilterProvider);
+  final includeGhosts = filterStateAsync.whenOrNull(data: (d) => d.includeGhosts) ?? false;
 
   return fridgesAsync.whenOrNull(
         data: (fridges) {
-          if (query.isEmpty) return fridges;
+          // Filter out ghosts unless explicitly included
+          var result = includeGhosts
+              ? fridges
+              : fridges.where((f) => f.latestFridgeReport?.condition != FridgeCondition.ghost).toList();
+
+          if (query.isEmpty) return result;
 
           final lowerQuery = query.toLowerCase();
-          return fridges
+          return result
               .where(
                 (f) =>
                     f.name.toLowerCase().contains(lowerQuery) ||
+                    f.location.street.toLowerCase().contains(lowerQuery) ||
                     f.location.city.toLowerCase().contains(lowerQuery) ||
-                    f.location.state.toLowerCase().contains(lowerQuery),
+                    f.location.state.toLowerCase().contains(lowerQuery) ||
+                    f.location.zip.toLowerCase().contains(lowerQuery),
               )
               .toList();
         },
@@ -168,11 +180,16 @@ List<FridgeDomain> mapFilteredFridges(Ref ref) {
         data: (filterState) {
           return fridgesAsync.whenOrNull(
                 data: (fridges) {
+                  // Filter out ghosts unless explicitly included
+                  final baseList = filterState.includeGhosts
+                      ? fridges
+                      : fridges.where((f) => f.latestFridgeReport?.condition != FridgeCondition.ghost).toList();
+
                   // First, filter by selected conditions (pill filters)
                   // If no conditions selected, show all fridges
                   var filtered = filterState.selectedConditions.isEmpty
-                      ? fridges
-                      : fridges.where((fridge) {
+                      ? baseList
+                      : baseList.where((fridge) {
                           // Check if any of the selected filter conditions match this fridge
                           return filterState.selectedConditions.any((
                             filterCondition,
@@ -202,11 +219,19 @@ List<FridgeDomain> mapFilteredFridges(Ref ref) {
                     return FuzzySearch.isFuzzyMatch(searchQuery, fridge.name) ||
                         FuzzySearch.isFuzzyMatch(
                           searchQuery,
+                          fridge.location.street,
+                        ) ||
+                        FuzzySearch.isFuzzyMatch(
+                          searchQuery,
                           fridge.location.city,
                         ) ||
                         FuzzySearch.isFuzzyMatch(
                           searchQuery,
                           fridge.location.state,
+                        ) ||
+                        FuzzySearch.isFuzzyMatch(
+                          searchQuery,
+                          fridge.location.zip,
                         );
                   }).toList();
                 },

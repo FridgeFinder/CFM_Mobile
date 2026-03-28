@@ -6,7 +6,6 @@ import '../controllers/map_filter_controller.dart';
 import 'filter_pill_button.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/providers/subscriptions_provider.dart';
-import '../../../../core/providers/theme_provider.dart';
 
 /// Reusable horizontal scrollable row of filter pills
 /// Used in both map view and list view
@@ -18,13 +17,6 @@ class FilterPillsRow extends ConsumerWidget {
     final filterStateAsync = ref.watch(mapFilterProvider);
     final isAuthenticated = ref.watch(isAuthenticatedProvider);
     final subscriptionsAsync = ref.watch(subscribedFridgesProvider);
-    final themeMode = ref.watch(appThemeModeProvider);
-
-    // Determine if dark mode
-    final isDarkMode =
-        themeMode == AppThemeMode.dark ||
-        (themeMode == AppThemeMode.system &&
-            MediaQuery.of(context).platformBrightness == Brightness.dark);
 
     return filterStateAsync.when(
       data: (state) {
@@ -53,7 +45,6 @@ class FilterPillsRow extends ConsumerWidget {
                       child: _buildSubscribedPill(
                         context: context,
                         isSelected: state.followingOnly,
-                        isDarkMode: isDarkMode,
                         onPressed: () {
                           ref
                               .read(mapFilterProvider.notifier)
@@ -78,6 +69,21 @@ class FilterPillsRow extends ConsumerWidget {
                       ),
                     ),
                   ),
+                  // Ghost Fridges pill - after condition pills
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: M3ESpacing.xxs),
+                    child: FilterChipM3E(
+                      label: 'Ghost Fridges',
+                      selected: state.includeGhosts,
+                      icon: Icons.visibility_off,
+                      color: Colors.grey,
+                      onSelected: (_) {
+                        ref
+                            .read(mapFilterProvider.notifier)
+                            .toggleIncludeGhosts();
+                      },
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -92,7 +98,6 @@ class FilterPillsRow extends ConsumerWidget {
   Widget _buildSubscribedPill({
     required BuildContext context,
     required bool isSelected,
-    required bool isDarkMode,
     required VoidCallback onPressed,
   }) {
     // Use the M3E FilterChipM3E component for consistency and vibrant styling

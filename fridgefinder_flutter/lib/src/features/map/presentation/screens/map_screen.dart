@@ -5,7 +5,6 @@ import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:geocoding/geocoding.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:design_system/design_system.dart';
 import '../../../../core/providers/subscriptions_provider.dart';
@@ -334,55 +333,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
     });
   }
 
-  Future<void> _searchLocation(String query) async {
-    if (query.trim().isEmpty) return;
-
-    try {
-      // Geocode the location query
-      final locations = await locationFromAddress(query);
-
-      if (locations.isEmpty) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Location not found: $query'),
-            backgroundColor: const Color(
-              0xFFFFB300,
-            ), // M3E Vibrant AMBER for warning
-          ),
-        );
-        return;
-      }
-
-      // Move map to first result
-      final location = locations.first;
-      _mapController.move(LatLng(location.latitude, location.longitude), 14.0);
-
-      // Clear the search bar after successfully moving to location
-      // This prevents the location query from filtering fridge names
-      _searchController.clear();
-      ref.read(mapFilterProvider.notifier).clearSearch();
-
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Moved to: $query'),
-          duration: const Duration(seconds: 2),
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to search location: ${e.toString()}'),
-          backgroundColor: const Color(
-            0xFFFF7043,
-          ), // M3E Vibrant CORAL for error
-        ),
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     super.build(context); // Required for AutomaticKeepAliveClientMixin
@@ -407,6 +357,22 @@ class _MapScreenState extends ConsumerState<MapScreen>
 
     final filteredFridges = ref.watch(mapFilteredFridgesProvider);
     _log('🔍 build: filteredFridges count = ${filteredFridges.length}');
+
+    // Auto-expand search bar when filter has a non-empty searchQuery (e.g. synced from list view)
+    final filterStateAsync = ref.watch(mapFilterProvider);
+    final currentSearchQuery = filterStateAsync.whenOrNull(data: (s) => s.searchQuery) ?? '';
+    if (currentSearchQuery.isNotEmpty && !_isSearchVisible) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() => _isSearchVisible = true);
+      });
+    }
+    // Sync search controller text with shared filter state
+    if (_searchController.text != currentSearchQuery) {
+      _searchController.value = TextEditingValue(
+        text: currentSearchQuery,
+        selection: TextSelection.collapsed(offset: currentSearchQuery.length),
+      );
+    }
 
     final subscriptionsAsync = ref.watch(subscribedFridgesProvider);
     _log(
@@ -756,7 +722,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                             ),
                             child: SearchBarM3E(
                               controller: _searchController,
-                              hintText: 'Search by name or location...',
+                              hintText: 'Search by name, address, or zip...',
                               leadingIcon: Icons.search,
                               expandedByDefault: false,
                               backgroundColor:
@@ -766,7 +732,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                                     .read(mapFilterProvider.notifier)
                                     .setSearchQuery(query);
                               },
-                              onSubmitted: _searchLocation,
+                              onSubmitted: (_) => FocusScope.of(context).unfocus(),
                             ),
                           )
                         : const SizedBox.shrink(), // Hidden state
