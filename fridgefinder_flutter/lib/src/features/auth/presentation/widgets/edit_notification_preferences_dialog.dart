@@ -110,6 +110,52 @@ class _NotificationPreferencesDialogState
     }
   }
 
+  Future<void> _handleUnfollow(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: M3EShapes.dialog,
+        title: Text('Unfollow?', style: M3ETypography.headlineSmall),
+        content: const Text('You will no longer receive notifications about this fridge.'),
+        actions: [
+          TextButtonM3E(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFFFF7043),
+            ),
+            child: const Text('Unfollow'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _isLoading = true);
+    try {
+      final manager = ref.read(subscriptionManagerProvider.notifier);
+      await manager.unfollowFridge(widget.fridgeId);
+      if (mounted) {
+        setState(() => _isLoading = false);
+        Navigator.of(this.context).pop();
+        ScaffoldMessenger.of(this.context).showSnackBar(
+          const SnackBar(content: Text('Unfollowed fridge')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(this.context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
+    }
+  }
+
   Future<void> _handleEditMode() async {
     try {
       await ref.read(subscriptionManagerProvider.notifier).updateNotificationPreferences(
@@ -470,6 +516,16 @@ class _NotificationPreferencesDialogState
         ),
       ),
       actions: [
+        if (widget.mode == NotificationPreferencesMode.edit) ...[
+          TextButton(
+            onPressed: _isLoading ? null : () => _handleUnfollow(context),
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFFFF7043), // M3E alert/destructive
+            ),
+            child: const Text('Unfollow'),
+          ),
+          const Spacer(),
+        ],
         TextButtonM3E(
           onPressed: _isLoading ? null : () => Navigator.of(context).pop(false),
           child: const Text('Cancel'),

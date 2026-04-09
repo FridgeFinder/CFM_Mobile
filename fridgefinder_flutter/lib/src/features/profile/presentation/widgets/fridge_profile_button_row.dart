@@ -68,9 +68,9 @@ class FridgeProfileButtonRow extends ConsumerWidget {
         if (isSubscribed) {
           return _buildButtonRow(
             context: context,
-            followButton: _buildUnfollowButton(
+            followButton: _buildEditAlertsButton(
               context: context,
-              onPressed: () => _showUnfollowDialog(context, ref),
+              onPressed: () => _showEditAlertsDialog(context, ref),
             ),
             directionsButton: _buildDirectionsButton(context),
           );
@@ -116,31 +116,25 @@ class FridgeProfileButtonRow extends ConsumerWidget {
           foregroundColor: Colors.black87,
         ),
         icon: const Icon(Icons.favorite_border, size: 20),
-        label: FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Text(label, style: M3ETypography.labelLarge.copyWith(color: Colors.black87)),
-        ),
+        label: Text(label, style: M3ETypography.labelLarge.copyWith(color: Colors.black87), overflow: TextOverflow.ellipsis),
       ),
     );
   }
 
-  Widget _buildUnfollowButton({
+  Widget _buildEditAlertsButton({
     required BuildContext context,
     required VoidCallback onPressed,
   }) {
     return SizedBox(
       height: 40,
-      child: OutlinedButton.icon(
+      child: FilledButton.icon(
         onPressed: onPressed,
-        style: OutlinedButton.styleFrom(
-          foregroundColor: M3EColors.secondary,
-          side: const BorderSide(color: M3EColors.secondary),
+        style: FilledButton.styleFrom(
+          backgroundColor: M3EColors.follow,
+          foregroundColor: Colors.black87,
         ),
-        icon: const Icon(Icons.favorite, size: 20),
-        label: FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Text('Unfollow', style: M3ETypography.labelLarge.copyWith(color: M3EColors.secondary)),
-        ),
+        icon: const Icon(Icons.notifications, size: 20),
+        label: Text('Edit Alerts', style: M3ETypography.labelLarge.copyWith(color: Colors.black87), overflow: TextOverflow.ellipsis),
       ),
     );
   }
@@ -149,10 +143,7 @@ class FridgeProfileButtonRow extends ConsumerWidget {
     return OutlinedButtonM3E(
       onPressed: () => _openDirections(context),
       icon: Icons.directions,
-      child: FittedBox(
-        fit: BoxFit.scaleDown,
-        child: Text('Directions', style: M3ETypography.labelLarge),
-      ),
+      child: Text('Directions', style: M3ETypography.labelLarge, overflow: TextOverflow.ellipsis),
     );
   }
 
@@ -242,25 +233,22 @@ class FridgeProfileButtonRow extends ConsumerWidget {
     );
   }
 
-  void _showUnfollowDialog(BuildContext context, WidgetRef ref) async {
-    final confirmed = await DialogM3E.showConfirmation(
-      context: context,
-      title: 'Unfollow?',
-      message: 'Are you sure you want to unfollow this fridge? You will no longer receive notifications about it.',
-      confirmText: 'Unfollow',
-      isDestructive: true,
-    );
-
-    if (confirmed != true || !context.mounted) return;
-
+  Future<void> _showEditAlertsDialog(BuildContext context, WidgetRef ref) async {
     try {
-      final manager = ref.read(subscriptionManagerProvider.notifier);
-      await manager.unfollowFridge(fridge.id);
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Unfollowed fridge')),
-        );
-      }
+      final subscriptionAsync = await ref.read(
+        fridgeSubscriptionPreferencesProvider(fridge.id).future,
+      );
+
+      if (!context.mounted || subscriptionAsync == null) return;
+
+      await showDialog(
+        context: context,
+        builder: (dialogContext) => NotificationPreferencesDialog.edit(
+          fridgeId: fridge.id,
+          fridgeName: fridge.name,
+          initialPreferences: subscriptionAsync.notificationPreferences,
+        ),
+      );
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

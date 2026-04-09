@@ -21,7 +21,6 @@ import '../../../../common_widgets/index.dart' as common_widgets;
 import '../../../../core/providers/location_provider.dart';
 import '../../../../core/providers/map_cache_provider.dart';
 import '../../../../core/providers/notification_navigation_provider.dart';
-import '../../../../core/providers/drawer_provider.dart';
 import '../../../../core/providers/theme_provider.dart';
 import '../../../../core/utils/app_logger.dart';
 import '../../../../core/constants/map_constants.dart';
@@ -41,7 +40,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
   late FocusNode _searchFocusNode;
   bool _isSearchVisible =
       false; // Controls search bar visibility with animation
-  String? _currentRoute;
   String?
   _handlingNotificationId; // Track which notification we're currently handling
   // ignore: unused_field
@@ -397,23 +395,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
     final currentRoute = router.routerDelegate.currentConfiguration.uri
         .toString();
     _log('🛣️ build: currentRoute = $currentRoute');
-
-    // Listen for route changes and trigger bottom sheet close
-    if (_currentRoute != null && _currentRoute != currentRoute) {
-      _currentRoute = currentRoute;
-      // Trigger bottom sheet to close itself
-      ref.read(bottomSheetCloseTriggerProvider.notifier).triggerClose();
-    } else {
-      _currentRoute ??= currentRoute;
-    }
-
-    // Listen for drawer open and trigger bottom sheet close
-    ref.listen(drawerStateProvider, (previous, next) {
-      if (next && previous != next && mounted) {
-        // Trigger bottom sheet to close itself
-        ref.read(bottomSheetCloseTriggerProvider.notifier).triggerClose();
-      }
-    });
 
     // Listen for notification navigation (must be in build method)
     // Note: Navigation to map is handled globally in app.dart

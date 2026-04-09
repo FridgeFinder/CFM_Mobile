@@ -158,10 +158,10 @@ class _SignUpFormState extends ConsumerState<SignUpForm>
 
       await repository.createUserProfile(profile);
 
-      // Invalidate providers to refresh UI
-      ref.invalidate(authUserProvider);
+      // Profile was just created — invalidate so the FutureProvider
+      // re-fetches it. Auth state didn't change, so no need to
+      // invalidate authUserProvider or isAuthenticatedProvider.
       ref.invalidate(userProfileProvider);
-      ref.invalidate(isAuthenticatedProvider);
 
       if (mounted) {
         Navigator.of(context).pop(true);

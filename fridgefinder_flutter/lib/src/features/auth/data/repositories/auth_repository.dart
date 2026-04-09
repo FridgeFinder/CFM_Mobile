@@ -362,6 +362,16 @@ class AuthRepository {
         throw Exception('No authenticated user found');
       }
 
+      // Revoke Google access and clear cached account so the next sign-in
+      // shows the account picker instead of silently reusing the credential.
+      try {
+        await _googleSignIn.disconnect();
+        logger.i('Google account disconnected');
+      } catch (e) {
+        // Non-fatal: user may not have signed in with Google
+        logger.w('Google disconnect skipped (not a Google user): $e');
+      }
+
       logger.i('Current user ID: ${currentUser.uid}');
       await currentUser.delete();
       logger.i('User deleted from Firebase Auth');

@@ -68,6 +68,8 @@ class _MainShellState extends ConsumerState<MainShell>
     if (oldWidget.currentRoute != widget.currentRoute) {
       // Trigger fade through animation for same-level navigation (bottom nav)
       _animationController.forward(from: 0.0);
+      // Dismiss any open fridge profile sheet on tab switch
+      ref.read(bottomSheetCloseTriggerProvider.notifier).triggerClose();
     }
   }
 
@@ -100,6 +102,8 @@ class _MainShellState extends ConsumerState<MainShell>
     // Update drawer state provider immediately
     ref.read(drawerStateProvider.notifier).setOpen(_isDrawerOpen);
     if (_isDrawerOpen) {
+      // Dismiss any open fridge profile sheet before opening drawer
+      ref.read(bottomSheetCloseTriggerProvider.notifier).triggerClose();
       _drawerAnimationController.forward();
     } else {
       _drawerAnimationController.reverse();
@@ -394,10 +398,11 @@ class _MainShellState extends ConsumerState<MainShell>
                                       );
                                       await repository.signOut();
 
-                                      // Invalidate providers to update UI
-                                      ref.invalidate(authUserProvider);
+                                      // signOut() triggers authStateChanges() which
+                                      // authUserProvider (StreamProvider) picks up
+                                      // automatically — no need to invalidate it.
+                                      // Only invalidate cached data providers.
                                       ref.invalidate(userProfileProvider);
-                                      ref.invalidate(isAuthenticatedProvider);
                                       ref.invalidate(subscribedFridgesProvider);
 
                                       _toggleDrawer();

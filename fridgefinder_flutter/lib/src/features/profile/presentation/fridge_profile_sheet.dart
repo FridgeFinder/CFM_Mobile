@@ -31,14 +31,7 @@ class _FridgeProfileSheetState extends ConsumerState<FridgeProfileSheet> {
 
   @override
   Widget build(BuildContext context) {
-    // Side-effect only: close sheet when drawer opens
-    ref.listen<bool>(drawerStateProvider, (prev, next) {
-      if (next && mounted) {
-        Navigator.of(context).pop();
-      }
-    });
-
-    // Side-effect only: close sheet on external trigger
+    // Side-effect only: close sheet on external trigger (tab switch, drawer open, etc.)
     ref.listen<int>(bottomSheetCloseTriggerProvider, (prev, next) {
       if (next > _lastCloseTrigger && mounted) {
         _lastCloseTrigger = next;
