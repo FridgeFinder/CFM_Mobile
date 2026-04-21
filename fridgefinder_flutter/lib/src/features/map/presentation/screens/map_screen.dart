@@ -22,8 +22,10 @@ import '../../../../core/providers/location_provider.dart';
 import '../../../../core/providers/map_cache_provider.dart';
 import '../../../../core/providers/notification_navigation_provider.dart';
 import '../../../../core/providers/theme_provider.dart';
+import '../../../../core/providers/vector_tile_style_provider.dart';
 import '../../../../core/utils/app_logger.dart';
-import '../../../../core/constants/map_constants.dart';
+import '../../../../core/constants/map_tile_config.dart';
+import 'package:vector_map_tiles/vector_map_tiles.dart';
 
 /// Map screen showing all community fridges on a map
 class MapScreen extends ConsumerStatefulWidget {
@@ -187,8 +189,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
             );
             _mapController.move(
               fridgeLocation,
-              16.0,
-            ); // Zoom level 16 for close-up view
+              15.0,
+            ); // Zoom to max tile level
 
             // Show fridge profile sheet after a short delay to ensure map has moved
             await Future.delayed(const Duration(milliseconds: 1000));
@@ -225,7 +227,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
               logger.i(
                 '🔔🔔🔔 NOTIFICATION NAV: Moving map to fetched fridge location... 🔔🔔🔔',
               );
-              _mapController.move(fridgeLocation, 16.0);
+              _mapController.move(fridgeLocation, 15.0);
 
               await Future.delayed(const Duration(milliseconds: 1000));
               if (!mounted) return;
@@ -265,7 +267,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   fridge.location.geoLat,
                   fridge.location.geoLng,
                 );
-                _mapController.move(fridgeLocation, 16.0);
+                _mapController.move(fridgeLocation, 15.0);
                 await Future.delayed(const Duration(milliseconds: 1000));
                 if (!mounted) return;
                 _showFridgeProfile(fridge);
@@ -299,7 +301,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 fridgeAsync.location.geoLat,
                 fridgeAsync.location.geoLng,
               );
-              _mapController.move(fridgeLocation, 16.0);
+              _mapController.move(fridgeLocation, 15.0);
               await Future.delayed(const Duration(milliseconds: 1000));
               if (!mounted) return;
               _showFridgeProfile(fridgeAsync);
@@ -318,6 +320,36 @@ class _MapScreenState extends ConsumerState<MapScreen>
       // Always clear the handling flag when done
       _handlingNotificationId = null;
     }
+  }
+
+  /// Builds a raster tile layer using MapTiler Streets (preferred) or OSM fallback.
+  /// Used when vector tiles are loading or unavailable.
+  Widget _buildRasterFallbackLayer(WidgetRef ref) {
+    final tileUrl =
+        MapTileConfig.getMapTilerStreetsUrl() ?? MapTileConfig.openStreetMapUrl;
+    final isMapTiler = tileUrl.contains('maptiler');
+    _log(
+      '🗺️ Raster fallback: ${isMapTiler ? 'MapTiler Streets' : 'OpenStreetMap'}',
+    );
+    final tileProviderAsync = ref.watch(cachedTileProviderProvider);
+    return tileProviderAsync.when(
+      data: (tileProvider) => TileLayer(
+        urlTemplate: tileUrl,
+        userAgentPackageName: 'com.example.fridgefinder',
+        tileProvider: tileProvider,
+      ),
+      loading: () => TileLayer(
+        urlTemplate: tileUrl,
+        userAgentPackageName: 'com.example.fridgefinder',
+      ),
+      error: (error, stack) {
+        _log('❌ Error loading tile cache: $error');
+        return TileLayer(
+          urlTemplate: tileUrl,
+          userAgentPackageName: 'com.example.fridgefinder',
+        );
+      },
+    );
   }
 
   void _toggleSearchBar() {
@@ -502,7 +534,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   options: MapOptions(
                     initialCenter: initialCenter,
                     initialZoom: 13.0,
-                    maxZoom: 18.0,
+                    maxZoom: 15.0, // Protomaps free-tier tiles max at zoom 15
                     minZoom: 3.0,
                     interactionOptions: const InteractionOptions(
                       rotationThreshold: 40.0, // Increase from default (20) to reduce rotation sensitivity
@@ -516,42 +548,49 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     },
                   ),
                   children: [
-                    // Tile layer with caching
+                    // Tile layer: vector tiles (Protomaps) with raster fallback (MapTiler/OSM)
                     Consumer(
                       builder: (context, ref, child) {
-                        _log('🧱 Building TileLayer');
-                        // Use MapTiler Streets if API key is available, otherwise fallback to OpenStreetMap
-                        final tileUrl =
-                            MapConstants.getMapTilerStreetsUrl() ??
-                            MapConstants.openStreetMapUrl;
-                        final isMapTiler = tileUrl.contains('maptiler');
-                        _log(
-                          '🗺️ Using tile URL: ${isMapTiler ? 'MapTiler Streets' : 'OpenStreetMap'}',
-                        );
-                        // Note: Attribution is required by MapTiler and OpenStreetMap terms of service
-                        // Attribution: © MapTiler © OpenStreetMap contributors (when using MapTiler)
-                        // Attribution: © OpenStreetMap contributors (when using OpenStreetMap)
-
-                        // Handle async tile provider (now using persistent Hive cache)
-                        final tileProviderAsync = ref.watch(cachedTileProviderProvider);
-                        return tileProviderAsync.when(
-                          data: (tileProvider) => TileLayer(
-                            urlTemplate: tileUrl,
-                            userAgentPackageName: 'com.example.fridgefinder',
-                            tileProvider: tileProvider,
-                          ),
-                          loading: () => TileLayer(
-                            urlTemplate: tileUrl,
-                            userAgentPackageName: 'com.example.fridgefinder',
-                            // Use default NetworkTileProvider while cache initializes
-                          ),
-                          error: (error, stack) {
-                            _log('❌ Error loading tile cache: $error');
-                            return TileLayer(
-                              urlTemplate: tileUrl,
-                              userAgentPackageName: 'com.example.fridgefinder',
-                              // Fallback to default NetworkTileProvider on error
+                        final vectorStyleAsync =
+                            ref.watch(vectorTileStyleProvider);
+                        // Use logger.i (not _log) for real-time output — _log
+                        // stops printing after the 3-second init dump.
+                        logger.i('[TileLayer] rebuild — state: ${vectorStyleAsync.runtimeType}');
+                        return vectorStyleAsync.when(
+                          data: (style) {
+                            logger.i(
+                              '[TileLayer] ✅ Using Protomaps vector tiles '
+                              '(layers: ${style.theme.layers.length}, '
+                              'sources: ${style.theme.tileSources})',
                             );
+                            // Force a no-op map move so the new TileLayer
+                            // requests tiles for the current viewport.
+                            WidgetsBinding.instance
+                                .addPostFrameCallback((_) {
+                              if (mounted) {
+                                _mapController.move(
+                                  _mapController.camera.center,
+                                  _mapController.camera.zoom,
+                                );
+                              }
+                            });
+                            return VectorTileLayer(
+                              tileProviders: style.providers,
+                              theme: style.theme,
+                              sprites: style.sprites,
+                            );
+                          },
+                          loading: () {
+                            logger.i(
+                              '[TileLayer] ⏳ Vector style loading, using raster fallback',
+                            );
+                            return _buildRasterFallbackLayer(ref);
+                          },
+                          error: (error, stack) {
+                            logger.i(
+                              '[TileLayer] ⚠️ Vector tiles failed: $error, falling back to raster',
+                            );
+                            return _buildRasterFallbackLayer(ref);
                           },
                         );
                       },
@@ -666,6 +705,24 @@ class _MapScreenState extends ConsumerState<MapScreen>
                               _showFridgeProfile(fridge);
                             },
                           ),
+                        );
+                      },
+                    ),
+                    // Attribution widget — dynamic based on active tile source
+                    Consumer(
+                      builder: (context, ref, child) {
+                        final vectorStyleAsync =
+                            ref.watch(vectorTileStyleProvider);
+                        final isVector = vectorStyleAsync.hasValue;
+                        return RichAttributionWidget(
+                          attributions: [
+                            if (isVector)
+                              TextSourceAttribution('Protomaps'),
+                            if (!isVector &&
+                                MapTileConfig.getMapTilerApiKey() != null)
+                              TextSourceAttribution('MapTiler'),
+                            TextSourceAttribution('OpenStreetMap contributors'),
+                          ],
                         );
                       },
                     ),
@@ -814,7 +871,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                               _mapController.move(
                                 updatedLocation.position,
                                 15.0,
-                              );
+                            );
                             }
                             return;
                           }
