@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -333,7 +334,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ],
                 ),
               ),
-              // API Environment Settings Section - Only show in debug mode
+              // Firebase Environment Settings Section - Only show in debug mode
               if (kDebugMode) ...[
                 M3ESpacing.verticalMD,
                 CardM3E(
@@ -396,7 +397,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       ),
                       M3ESpacing.verticalMD,
                       Text(
-                        'Select API environment',
+                        'Firebase Environment (API + Database + Auth)',
                         style: M3ETypography.bodyMedium,
                       ),
                       M3ESpacing.verticalMD,
@@ -405,7 +406,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         context: context,
                         ref: ref,
                         title: 'Production',
-                        subtitle: 'api-prod.communityfridgefinder.com',
+                        subtitle: 'Production project (fridgefinder-app)',
                         environment: ApiEnvironment.prod,
                         isSelected: environment == ApiEnvironment.prod,
                         icon: Icons.cloud,
@@ -415,7 +416,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         context: context,
                         ref: ref,
                         title: 'Development',
-                        subtitle: 'api-dev.communityfridgefinder.com',
+                        subtitle: 'Development project (fridgefinder-app-dev)',
                         environment: ApiEnvironment.dev,
                         isSelected: environment == ApiEnvironment.dev,
                         icon: Icons.construction,
@@ -538,9 +539,38 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     required IconData icon,
   }) {
     return InkWell(
-      onTap: () {
-        ref.read(environmentProvider.notifier).setEnvironment(environment);
-      },
+      onTap: isSelected
+          ? null
+          : () {
+              showDialog(
+                context: context,
+                builder: (dialogContext) => AlertDialog(
+                  title: const Text('Restart Required'),
+                  content: const Text(
+                    'Switching Firebase environment requires an app restart. '
+                    'All Firebase services (Auth, Database, Messaging) will switch.',
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(dialogContext).pop(),
+                      child: const Text('Cancel'),
+                    ),
+                    TextButton(
+                      onPressed: () async {
+                        await ref
+                            .read(environmentProvider.notifier)
+                            .setEnvironment(environment);
+                        if (dialogContext.mounted) {
+                          Navigator.of(dialogContext).pop();
+                        }
+                        SystemNavigator.pop();
+                      },
+                      child: const Text('Restart'),
+                    ),
+                  ],
+                ),
+              );
+            },
       borderRadius: BorderRadius.circular(8),
       child: Container(
         padding: const EdgeInsets.all(12),

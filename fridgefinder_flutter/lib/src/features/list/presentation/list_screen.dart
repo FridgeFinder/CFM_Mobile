@@ -28,7 +28,10 @@ class _ListScreenState extends ConsumerState<ListScreen>
   @override
   void initState() {
     super.initState();
-    _searchController = TextEditingController();
+    // Initialize search controller from shared filter state so it has the
+    // correct text immediately (e.g. when navigating from map with active search)
+    final initialQuery = ref.read(mapFilterProvider).whenOrNull(data: (s) => s.searchQuery) ?? '';
+    _searchController = TextEditingController(text: initialQuery);
     _searchFocusNode = FocusNode();
 
     // Initialize animation controller for list entrance
@@ -76,6 +79,18 @@ class _ListScreenState extends ConsumerState<ListScreen>
   Widget build(BuildContext context) {
     // Watch shared filter state (same as map view)
     final filterStateAsync = ref.watch(mapFilterProvider);
+
+    // Sync search controller with shared filter state via ref.listen (side-effect).
+    // Fires when provider changes from other pages (e.g. map search).
+    ref.listen(mapFilterProvider, (prev, next) {
+      final query = next.whenOrNull(data: (s) => s.searchQuery) ?? '';
+      if (_searchController.text != query) {
+        _searchController.value = TextEditingValue(
+          text: query,
+          selection: TextSelection.collapsed(offset: query.length),
+        );
+      }
+    });
     // Use select() to watch only fridges with distance data, avoiding unnecessary rebuilds
     final fridgesWithDistance = ref.watch(
       fridgesSortedByDistanceProvider.select((fridges) => fridges),
@@ -100,14 +115,6 @@ class _ListScreenState extends ConsumerState<ListScreen>
           data: (_) {
             return filterStateAsync.when(
               data: (filterState) {
-                if (_searchController.text != filterState.searchQuery) {
-                  _searchController.value = TextEditingValue(
-                    text: filterState.searchQuery,
-                    selection: TextSelection.collapsed(
-                      offset: filterState.searchQuery.length,
-                    ),
-                  );
-                }
 
                 // Compute subscribedFridgeIds ONCE at the beginning to use for both filtering and green glow
                 final subscribedFridgeIds = subscriptionsAsync.when(

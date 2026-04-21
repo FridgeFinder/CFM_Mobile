@@ -6,8 +6,10 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'firebase_options.dart';
 import 'app.dart';
+import 'src/core/config/firebase_options_resolver.dart';
+import 'src/core/providers/database_provider.dart';
+import 'src/core/providers/environment_provider.dart';
 import 'src/core/utils/app_logger.dart';
 
 /// Top-level function for handling background messages (must be top-level)
@@ -35,14 +37,21 @@ void main() async {
     logger.w('Failed to load .env file: $e. Continuing without environment variables.');
   }
 
-  // Initialize Firebase
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // Initialize Hive BEFORE Firebase so we can read persisted environment
+  await Hive.initFlutter();
+
+  // Load persisted environment (dev/prod) and configure services
+  final env = await loadPersistedEnvironment();
+  Environment.setBootstrapEnvironment(env);
+  DatabaseProvider.configure(env);
+  logger.i('Environment: ${env.name}');
+
+  // Initialize Firebase with the correct project options
+  final firebaseOptions = FirebaseOptionsResolver.resolve(env);
+  await Firebase.initializeApp(options: firebaseOptions);
 
   // Set up background message handler (must be called before runApp)
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-
-  // Initialize Hive for local storage
-  await Hive.initFlutter();
 
   // Set up global error handlers
   _setupErrorHandlers();

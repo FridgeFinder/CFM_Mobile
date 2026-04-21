@@ -107,17 +107,14 @@ class FridgeProfileButtonRow extends ConsumerWidget {
     VoidCallback? onPressed,
     String label = 'Follow',
   }) {
-    return SizedBox(
-      height: 40,
-      child: FilledButton.icon(
-        onPressed: onPressed,
-        style: FilledButton.styleFrom(
-          backgroundColor: M3EColors.follow,
-          foregroundColor: Colors.black87,
-        ),
-        icon: const Icon(Icons.favorite_border, size: 20),
-        label: Text(label, style: M3ETypography.labelLarge.copyWith(color: Colors.black87), overflow: TextOverflow.ellipsis),
+    return FilledButton.icon(
+      onPressed: onPressed,
+      style: FilledButton.styleFrom(
+        backgroundColor: M3EColors.follow,
+        foregroundColor: Colors.black87,
       ),
+      icon: const Icon(Icons.favorite_border, size: 20),
+      label: Text(label, style: M3ETypography.labelLarge.copyWith(color: Colors.black87), overflow: TextOverflow.ellipsis),
     );
   }
 
@@ -125,17 +122,14 @@ class FridgeProfileButtonRow extends ConsumerWidget {
     required BuildContext context,
     required VoidCallback onPressed,
   }) {
-    return SizedBox(
-      height: 40,
-      child: FilledButton.icon(
-        onPressed: onPressed,
-        style: FilledButton.styleFrom(
-          backgroundColor: M3EColors.follow,
-          foregroundColor: Colors.black87,
-        ),
-        icon: const Icon(Icons.notifications, size: 20),
-        label: Text('Edit Alerts', style: M3ETypography.labelLarge.copyWith(color: Colors.black87), overflow: TextOverflow.ellipsis),
+    return FilledButton.icon(
+      onPressed: onPressed,
+      style: FilledButton.styleFrom(
+        backgroundColor: M3EColors.follow,
+        foregroundColor: Colors.black87,
       ),
+      icon: const Icon(Icons.notifications, size: 20),
+      label: Text('Edit Alerts', style: M3ETypography.labelLarge.copyWith(color: Colors.black87), overflow: TextOverflow.ellipsis),
     );
   }
 

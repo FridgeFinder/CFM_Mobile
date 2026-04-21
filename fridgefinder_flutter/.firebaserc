@@ -1,0 +1,7 @@
+{
+  "projects": {
+    "default": "fridgefinder-app",
+    "prod": "fridgefinder-app",
+    "dev": "fridgefinder-app-dev"
+  }
+}

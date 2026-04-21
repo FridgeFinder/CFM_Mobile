@@ -1,5 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:fridgefinder_app/src/core/providers/database_provider.dart';
+import 'package:fridgefinder_app/src/core/providers/environment_provider.dart';
 import 'dart:io';
 
 /// Setup Hive for testing with temporary directory
@@ -17,9 +19,12 @@ Future<void> initHiveForTesting() async {
   }
 }
 
-/// Clean up Hive after tests
+/// Clean up Hive and reset environment after tests
 Future<void> cleanupHive() async {
   try {
+    // Reset database URL to prod to prevent test pollution
+    DatabaseProvider.configure(ApiEnvironment.prod);
+    Environment.setBootstrapEnvironment(ApiEnvironment.prod);
     // Close all boxes
     await Hive.close();
   } catch (e) {

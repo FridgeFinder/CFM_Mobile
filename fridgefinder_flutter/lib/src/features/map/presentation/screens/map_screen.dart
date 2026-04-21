@@ -84,9 +84,15 @@ class _MapScreenState extends ConsumerState<MapScreen>
     _log('🚀 initState: Starting map screen initialization');
     _mapController = MapController();
     _log('✅ initState: MapController created');
-    _searchController = TextEditingController();
+    // Initialize search controller from shared filter state so it has the
+    // correct text immediately (e.g. when navigating from list with active search)
+    final initialQuery = ref.read(mapFilterProvider).whenOrNull(data: (s) => s.searchQuery) ?? '';
+    _searchController = TextEditingController(text: initialQuery);
+    if (initialQuery.isNotEmpty) {
+      _isSearchVisible = true;
+    }
     _searchFocusNode = FocusNode();
-    _log('✅ initState: Controllers and focus nodes created');
+    _log('✅ initState: Controllers and focus nodes created (initialQuery: "$initialQuery")');
 
     // Schedule a check to output logs after everything should be loaded
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -356,21 +362,22 @@ class _MapScreenState extends ConsumerState<MapScreen>
     final filteredFridges = ref.watch(mapFilteredFridgesProvider);
     _log('🔍 build: filteredFridges count = ${filteredFridges.length}');
 
-    // Auto-expand search bar when filter has a non-empty searchQuery (e.g. synced from list view)
-    final filterStateAsync = ref.watch(mapFilterProvider);
-    final currentSearchQuery = filterStateAsync.whenOrNull(data: (s) => s.searchQuery) ?? '';
-    if (currentSearchQuery.isNotEmpty && !_isSearchVisible) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) setState(() => _isSearchVisible = true);
-      });
-    }
-    // Sync search controller text with shared filter state
-    if (_searchController.text != currentSearchQuery) {
-      _searchController.value = TextEditingValue(
-        text: currentSearchQuery,
-        selection: TextSelection.collapsed(offset: currentSearchQuery.length),
-      );
-    }
+    // Sync search controller with shared filter state via ref.listen (side-effect,
+    // not build-time logic). Fires when provider changes from other pages.
+    ref.listen(mapFilterProvider, (prev, next) {
+      final query = next.whenOrNull(data: (s) => s.searchQuery) ?? '';
+      if (_searchController.text != query) {
+        _searchController.value = TextEditingValue(
+          text: query,
+          selection: TextSelection.collapsed(offset: query.length),
+        );
+      }
+      if (query.isNotEmpty && !_isSearchVisible) {
+        setState(() => _isSearchVisible = true);
+      } else if (query.isEmpty && _isSearchVisible) {
+        setState(() => _isSearchVisible = false);
+      }
+    });
 
     final subscriptionsAsync = ref.watch(subscribedFridgesProvider);
     _log(

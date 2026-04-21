@@ -187,9 +187,10 @@ class _SearchBarM3EState extends State<SearchBarM3E>
       reverseCurve: const Interval(0.0, 0.5, curve: Curves.easeOut),
     );
 
-    // Set initial state
-    if (widget.expandedByDefault || widget.autoFocus) {
+    // Set initial state — also expand if controller already has text
+    if (widget.expandedByDefault || widget.autoFocus || _textController.text.isNotEmpty) {
       _isExpanded = true;
+      _hasText = _textController.text.isNotEmpty;
       _expandController.value = 1.0;
     }
 

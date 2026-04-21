@@ -69,7 +69,8 @@ class _MainShellState extends ConsumerState<MainShell>
       // Trigger fade through animation for same-level navigation (bottom nav)
       _animationController.forward(from: 0.0);
       // Dismiss any open fridge profile sheet on tab switch
-      ref.read(bottomSheetCloseTriggerProvider.notifier).triggerClose();
+      // Deferred to avoid modifying provider during widget tree build
+      Future(() => ref.read(bottomSheetCloseTriggerProvider.notifier).triggerClose());
     }
   }
 
