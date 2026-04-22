@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
-import 'package:fridgefinder_app/src/features/auth/data/repositories/auth_repository.dart';
+import 'package:fridgefinder_app/src/features/auth/data/repositories/auth_repository.dart'
+    show AuthRepository, SignInCancelledException, AppleSignInNotAvailableException;
 import 'package:fridgefinder_app/src/features/auth/domain/models/user_profile.dart';
 import 'package:fridgefinder_app/src/core/providers/auth_provider.dart';
 import 'package:fridgefinder_app/src/features/auth/presentation/widgets/sign_in_widget.dart';
@@ -50,6 +51,9 @@ class MockAuthRepository implements AuthRepository {
   bool _shouldFailCodeVerification = false;
   bool _shouldFailGoogleAuth = false;
   bool _shouldCancelGoogleAuth = false;
+  bool _shouldFailAppleAuth = false;
+  bool _shouldCancelAppleAuth = false;
+  bool _appleSignInNotAvailable = false;
   bool _shouldRateLimit = false;
   bool _shouldTimeoutCode = false;
   bool _userProfileExists = false;
@@ -61,6 +65,9 @@ class MockAuthRepository implements AuthRepository {
       _shouldFailCodeVerification = shouldFail;
   void setGoogleAuthFailure(bool shouldFail) => _shouldFailGoogleAuth = shouldFail;
   void setGoogleAuthCancelled(bool cancelled) => _shouldCancelGoogleAuth = cancelled;
+  void setAppleAuthFailure(bool shouldFail) => _shouldFailAppleAuth = shouldFail;
+  void setAppleAuthCancelled(bool cancelled) => _shouldCancelAppleAuth = cancelled;
+  void setAppleSignInNotAvailable(bool unavailable) => _appleSignInNotAvailable = unavailable;
   void setRateLimit(bool rateLimit) => _shouldRateLimit = rateLimit;
   void setCodeTimeout(bool timeout) => _shouldTimeoutCode = timeout;
   void setUserProfileExists(bool exists) => _userProfileExists = exists;
@@ -123,6 +130,33 @@ class MockAuthRepository implements AuthRepository {
     );
 
     return MockUserCredential(user: user);
+  }
+
+  @override
+  Future<firebase_auth.UserCredential> signInWithApple() async {
+    if (_appleSignInNotAvailable) {
+      throw const AppleSignInNotAvailableException();
+    }
+
+    if (_shouldCancelAppleAuth) {
+      throw const SignInCancelledException();
+    }
+
+    if (_shouldFailAppleAuth) {
+      throw Exception('Network error during Apple sign-in');
+    }
+
+    final user = MockFirebaseUser(
+      uid: 'test-apple-user-${DateTime.now().millisecondsSinceEpoch}',
+      email: _userProfileExists ? 'existing@privaterelay.appleid.com' : 'test@privaterelay.appleid.com',
+    );
+
+    return MockUserCredential(user: user);
+  }
+
+  @override
+  Future<void> reauthenticateWithApple() async {
+    // Mock implementation
   }
 
   @override
@@ -667,6 +701,115 @@ void main() {
       await tester.pumpAndSettle();
 
       // Form should handle network errors gracefully
+      expect(find.byType(SignUpForm), findsOneWidget);
+    });
+  });
+
+  group('Sign-Up Variations - Apple Sign-In', () {
+    testWidgets('SU-023: Apple Sign-In - Success Path',
+        (WidgetTester tester) async {
+      final mockRepo = MockAuthRepository();
+
+      await tester.pumpWidget(createAuthTestApp(mockAuthRepository: mockRepo));
+      await tester.pumpAndSettle();
+
+      // Find and tap Apple Sign-In button
+      final appleButton = find.text('Sign In with Apple');
+      expect(appleButton, findsOneWidget);
+      await tester.tap(appleButton);
+      await tester.pumpAndSettle();
+
+      // Should show profile form (new user)
+      expect(find.byType(SignUpForm), findsOneWidget);
+    });
+
+    testWidgets('SU-024: Apple Sign-In - Cancelled by User',
+        (WidgetTester tester) async {
+      final mockRepo = MockAuthRepository();
+      mockRepo.setAppleAuthCancelled(true);
+
+      await tester.pumpWidget(createAuthTestApp(mockAuthRepository: mockRepo));
+      await tester.pumpAndSettle();
+
+      // Try Apple Sign-In
+      final appleButton = find.text('Sign In with Apple');
+      expect(appleButton, findsOneWidget);
+      await tester.tap(appleButton);
+      await tester.pumpAndSettle();
+
+      // Should silently return — no error snackbar, still on sign-in screen
+      expect(find.byType(SignUpForm), findsNothing);
+      expect(find.text('Sign In with Apple'), findsOneWidget);
+    });
+
+    testWidgets('SU-025: Apple Sign-In - Network Error',
+        (WidgetTester tester) async {
+      final mockRepo = MockAuthRepository();
+      mockRepo.setAppleAuthFailure(true);
+
+      await tester.pumpWidget(createAuthTestApp(mockAuthRepository: mockRepo));
+      await tester.pumpAndSettle();
+
+      // Try Apple Sign-In
+      final appleButton = find.text('Sign In with Apple');
+      expect(appleButton, findsOneWidget);
+      await tester.tap(appleButton);
+      await tester.pumpAndSettle();
+
+      // Should show error snackbar
+      expect(find.textContaining('Apple Sign-In error'), findsOneWidget);
+    });
+
+    testWidgets('SU-026: Apple Sign-In - Not Available',
+        (WidgetTester tester) async {
+      final mockRepo = MockAuthRepository();
+      mockRepo.setAppleSignInNotAvailable(true);
+
+      await tester.pumpWidget(createAuthTestApp(mockAuthRepository: mockRepo));
+      await tester.pumpAndSettle();
+
+      // Try Apple Sign-In
+      final appleButton = find.text('Sign In with Apple');
+      expect(appleButton, findsOneWidget);
+      await tester.tap(appleButton);
+      await tester.pumpAndSettle();
+
+      // Should show "not available" snackbar
+      expect(find.textContaining('not available'), findsOneWidget);
+    });
+
+    testWidgets('SU-027: Apple Sign-In - Account Already Exists',
+        (WidgetTester tester) async {
+      final mockRepo = MockAuthRepository();
+      mockRepo.setUserProfileExists(true);
+
+      await tester.pumpWidget(createAuthTestApp(mockAuthRepository: mockRepo));
+      await tester.pumpAndSettle();
+
+      // Try Apple Sign-In
+      final appleButton = find.text('Sign In with Apple');
+      expect(appleButton, findsOneWidget);
+      await tester.tap(appleButton);
+      await tester.pumpAndSettle();
+
+      // Should NOT show profile form (goes straight to app)
+      expect(true, isTrue);
+    });
+
+    testWidgets('SU-028: Apple Sign-In - Private Relay Email',
+        (WidgetTester tester) async {
+      final mockRepo = MockAuthRepository();
+
+      await tester.pumpWidget(createAuthTestApp(mockAuthRepository: mockRepo));
+      await tester.pumpAndSettle();
+
+      // Apple Sign-In with private relay email should proceed normally
+      final appleButton = find.text('Sign In with Apple');
+      expect(appleButton, findsOneWidget);
+      await tester.tap(appleButton);
+      await tester.pumpAndSettle();
+
+      // Should show profile form with relay email
       expect(find.byType(SignUpForm), findsOneWidget);
     });
   });

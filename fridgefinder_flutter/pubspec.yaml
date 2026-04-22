@@ -65,6 +65,8 @@ dependencies:
   image_picker: ^1.1.2 # Photo upload for status reports
   flutter_image_compress: ^2.3.0 # Image compression and WebP conversion
   google_sign_in: ^7.2.0
+  sign_in_with_apple: ^6.1.4
+  crypto: ^3.0.6
   flutter_local_notifications: ^19.5.0
   flutter_dotenv: ^5.1.0 # Environment variable management
   uuid: ^4.0.0 # Device ID generation for multi-device FCM

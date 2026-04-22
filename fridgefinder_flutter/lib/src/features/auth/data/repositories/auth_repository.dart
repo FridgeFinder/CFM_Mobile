@@ -1,14 +1,21 @@
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:firebase_database/firebase_database.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart' hide generateNonce;
 import '../../../../core/utils/app_logger.dart';
 import '../../../../core/providers/database_provider.dart';
 import '../../../../core/utils/firebase_helpers.dart';
 import '../../domain/models/user_profile.dart';
+import '../utils/apple_sign_in_utils.dart';
 
-/// Thrown when the user cancels Google Sign-In (dismisses the picker).
+/// Thrown when the user cancels sign-in (dismisses the picker).
 class SignInCancelledException implements Exception {
   const SignInCancelledException();
+}
+
+/// Thrown when Apple Sign-In is not available on the device.
+class AppleSignInNotAvailableException implements Exception {
+  const AppleSignInNotAvailableException();
 }
 
 /// Repository for authentication operations
@@ -310,6 +317,94 @@ class AuthRepository {
       logger.i('Phone re-authentication successful');
     } catch (e) {
       logger.e('Error during phone re-authentication: $e');
+      rethrow;
+    }
+  }
+
+  /// Sign in with Apple
+  Future<firebase_auth.UserCredential> signInWithApple() async {
+    try {
+      final isAvailable = await SignInWithApple.isAvailable();
+      if (!isAvailable) {
+        throw const AppleSignInNotAvailableException();
+      }
+
+      final rawNonce = generateNonce();
+      final hashedNonce = sha256ofString(rawNonce);
+
+      final appleCredential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+        nonce: hashedNonce,
+      );
+
+      final oauthCredential = firebase_auth.OAuthProvider('apple.com').credential(
+        idToken: appleCredential.identityToken,
+        rawNonce: rawNonce,
+        accessToken: appleCredential.authorizationCode,
+      );
+
+      final userCredential = await _auth.signInWithCredential(oauthCredential);
+
+      // Apple only sends name on first sign-in; update display name if provided
+      final givenName = appleCredential.givenName;
+      final familyName = appleCredential.familyName;
+      if (givenName != null || familyName != null) {
+        final displayName = [givenName, familyName]
+            .where((n) => n != null && n.isNotEmpty)
+            .join(' ');
+        if (displayName.isNotEmpty) {
+          await userCredential.user?.updateDisplayName(displayName);
+        }
+      }
+
+      logger.i('Apple sign-in successful: ${userCredential.user?.email}');
+      return userCredential;
+    } on SignInWithAppleAuthorizationException catch (e) {
+      if (e.code == AuthorizationErrorCode.canceled) {
+        logger.i('Apple sign-in cancelled by user');
+        throw const SignInCancelledException();
+      }
+      logger.e('Apple Sign-In authorization error: ${e.code} - ${e.message}');
+      rethrow;
+    } on AppleSignInNotAvailableException {
+      rethrow;
+    } on firebase_auth.FirebaseAuthException catch (e) {
+      logger.e('Firebase Auth error during Apple sign-in: ${e.code} - ${e.message}');
+      rethrow;
+    } catch (e) {
+      logger.e('Error signing in with Apple: $e');
+      rethrow;
+    }
+  }
+
+  /// Re-authenticate user with Apple
+  Future<void> reauthenticateWithApple() async {
+    try {
+      final rawNonce = generateNonce();
+      final hashedNonce = sha256ofString(rawNonce);
+
+      final appleCredential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+        nonce: hashedNonce,
+      );
+
+      final oauthCredential = firebase_auth.OAuthProvider('apple.com').credential(
+        idToken: appleCredential.identityToken,
+        rawNonce: rawNonce,
+        accessToken: appleCredential.authorizationCode,
+      );
+
+      await _auth.currentUser?.reauthenticateWithCredential(oauthCredential);
+
+      logger.i('Apple re-authentication successful');
+    } catch (e) {
+      logger.e('Error during Apple re-authentication: $e');
       rethrow;
     }
   }

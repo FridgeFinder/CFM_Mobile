@@ -188,6 +188,102 @@ class _SignInWidgetState extends ConsumerState<SignInWidget> {
     }
   }
 
+  Future<void> _signInWithApple() async {
+    setState(() => _isLoading = true);
+    try {
+      final repository = ref.read(authRepositoryProvider);
+      final credential = await repository.signInWithApple();
+
+      if (!mounted) {
+        setState(() => _isLoading = false);
+        return;
+      }
+
+      // Check if user profile exists by email (not userId!)
+      final existingProfile = await repository.findUserProfileByEmailOrPhone(
+        email: credential.user!.email,
+      );
+
+      if (existingProfile == null) {
+        // New user - show sign-up form
+        if (!mounted) {
+          setState(() => _isLoading = false);
+          return;
+        }
+
+        final result = await showDialog<bool>(
+          context: context,
+          barrierDismissible: false,
+          builder: (dialogContext) => Dialog(
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: SignUpForm(userCredential: credential),
+              ),
+            ),
+          ),
+        );
+
+        if (result == true) {
+          setState(() => _isLoading = false);
+
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              Navigator.of(context).pop();
+              widget.onSignInSuccess?.call();
+            }
+          });
+        } else {
+          if (mounted) {
+            setState(() => _isLoading = false);
+          }
+        }
+      } else {
+        // Existing user - update profile with new userId if needed
+        if (existingProfile.userId != credential.user!.uid) {
+          logger.i(
+            'Migrating profile from ${existingProfile.userId} to ${credential.user!.uid}',
+          );
+          final updatedProfile = existingProfile.copyWith(
+            userId: credential.user!.uid,
+          );
+          await repository.updateUserProfile(updatedProfile);
+          await repository.deleteAccount(existingProfile.userId);
+          ref.invalidate(userProfileProvider);
+        }
+
+        setState(() => _isLoading = false);
+
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            Navigator.of(context).pop();
+            widget.onSignInSuccess?.call();
+          }
+        });
+      }
+    } on SignInCancelledException {
+      // User cancelled Apple sign-in — silently reset loading state
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    } on AppleSignInNotAvailableException {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Apple Sign-In is not available on this device')),
+        );
+      }
+    } catch (e) {
+      logger.e('Error signing in with Apple: $e');
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Apple Sign-In error: $e')));
+      }
+    }
+  }
+
   Future<void> _signInWithGoogle() async {
     setState(() => _isLoading = true);
     try {
@@ -316,6 +412,12 @@ class _SignInWidgetState extends ConsumerState<SignInWidget> {
                 icon: Icons.g_mobiledata,
                 onPressed: _isLoading ? null : _signInWithGoogle,
                 child: const Text('Sign In with Gmail'),
+              ),
+              M3ESpacing.verticalXS,
+              OutlinedButtonM3E(
+                icon: Icons.apple,
+                onPressed: _isLoading ? null : _signInWithApple,
+                child: const Text('Sign In with Apple'),
               ),
             ] else ...[
               Text('Enter verification code', style: M3ETypography.titleMedium),

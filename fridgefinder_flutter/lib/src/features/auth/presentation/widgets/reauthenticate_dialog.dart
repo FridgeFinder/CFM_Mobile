@@ -35,6 +35,9 @@ class _ReauthenticateDialogState extends ConsumerState<ReauthenticateDialog> {
   bool get _isGoogleAuth => widget.user.providerData.any(
         (provider) => provider.providerId == 'google.com',
       );
+  bool get _isAppleAuth => widget.user.providerData.any(
+        (provider) => provider.providerId == 'apple.com',
+      );
 
   Future<void> _reauthenticateWithPhone() async {
     setState(() {
@@ -106,6 +109,31 @@ class _ReauthenticateDialogState extends ConsumerState<ReauthenticateDialog> {
       setState(() {
         _isLoading = false;
         _errorMessage = 'Invalid verification code. Please try again.';
+      });
+    }
+  }
+
+  Future<void> _reauthenticateWithApple() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      logger.i('Attempting Apple re-authentication');
+      final repository = ref.read(authRepositoryProvider);
+      await repository.reauthenticateWithApple();
+
+      logger.i('Apple re-authentication successful, closing dialog with result: true');
+
+      if (mounted) {
+        Navigator.of(context).pop(true);
+      }
+    } catch (e) {
+      logger.e('Error during Apple re-authentication: $e');
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Failed to re-authenticate with Apple: $e';
       });
     }
   }
@@ -276,6 +304,38 @@ class _ReauthenticateDialogState extends ConsumerState<ReauthenticateDialog> {
                         child: CircularProgressIndicatorM3E.small(),
                       )
                     : const Text('Continue with Google'),
+              ),
+            ] else if (_isAppleAuth) ...[
+              Text(
+                'Signed in with:',
+                style: M3ETypography.bodySmall,
+              ),
+              M3ESpacing.verticalXS,
+              Row(
+                children: [
+                  const Icon(Icons.apple, size: 32),
+                  M3ESpacing.horizontalXS,
+                  Expanded(
+                    child: Text(
+                      widget.user.email ?? '',
+                      style: M3ETypography.titleMedium.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              M3ESpacing.verticalXL,
+              FilledButtonM3E(
+                icon: Icons.apple,
+                onPressed: _isLoading ? null : _reauthenticateWithApple,
+                child: _isLoading
+                    ? SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicatorM3E.small(),
+                      )
+                    : const Text('Continue with Apple'),
               ),
             ] else ...[
               Text(
