@@ -68,6 +68,7 @@ abstract class UserProfile with _$UserProfile {
     String? fcmToken,
     Map<String, String>? fcmTokens,
     @Default(UserSettings()) UserSettings settings,
+    @Default(false) bool newsletterOptIn,
     required DateTime createdAt,
     DateTime? lastLoginAt,
   }) = _UserProfile;

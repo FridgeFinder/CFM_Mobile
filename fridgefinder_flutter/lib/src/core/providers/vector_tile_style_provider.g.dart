@@ -50,4 +50,4 @@ final class VectorTileStyleProvider
   }
 }
 
-String _$vectorTileStyleHash() => r'e3f36e169139dc9b37b1080b436799cca6605378';
+String _$vectorTileStyleHash() => r'f47b648ed335c32a9703de4994a4720b7cfc439e';

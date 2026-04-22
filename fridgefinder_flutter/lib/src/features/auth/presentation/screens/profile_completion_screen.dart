@@ -29,6 +29,8 @@ class _ProfileCompletionScreenState
   bool _isSubmitting = false;
   bool _isRollingDice = false;
   String? _errorMessage;
+  bool _newsletterOptIn = false;
+  String? _newsletterEmail;
 
   Future<void> _createProfile() async {
     // Validate username
@@ -51,9 +53,10 @@ class _ProfileCompletionScreenState
       }
 
       // Create new profile
+      final authEmail = authUser.email;
       final newProfile = UserProfile(
         userId: authUser.uid,
-        email: authUser.email,
+        email: authEmail ?? _newsletterEmail,
         phoneNumber: authUser.phoneNumber,
         username: _username,
         isVolunteer: _isVolunteer,
@@ -61,6 +64,7 @@ class _ProfileCompletionScreenState
         points: 0,
         fcmToken: null,
         settings: const UserSettings(),
+        newsletterOptIn: _newsletterOptIn,
         createdAt: DateTime.now(),
         lastLoginAt: DateTime.now(),
       );
@@ -320,6 +324,41 @@ class _ProfileCompletionScreenState
                       ),
                       const SizedBox(height: 16),
                     ],
+                    // Email field for phone-auth users (no Google email)
+                    Builder(
+                      builder: (context) {
+                        final authEmail =
+                            ref.read(authUserProvider).value?.email;
+                        if (authEmail == null) {
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              TextFieldM3E(
+                                labelText: 'Email address (optional)',
+                                hintText: 'you@example.com',
+                                keyboardType: TextInputType.emailAddress,
+                                onChanged: (value) {
+                                  setState(() => _newsletterEmail =
+                                      value.isEmpty ? null : value);
+                                },
+                              ),
+                              const SizedBox(height: 12),
+                            ],
+                          );
+                        }
+                        return const SizedBox.shrink();
+                      },
+                    ),
+                    // Newsletter opt-in checkbox
+                    CheckboxM3E(
+                      label:
+                          'I\'d like to receive occasional updates and newsletters about community fridges via email',
+                      value: _newsletterOptIn,
+                      onChanged: (value) {
+                        setState(() => _newsletterOptIn = value ?? false);
+                      },
+                    ),
+                    const SizedBox(height: 16),
                     // Error message
                     if (_errorMessage != null) ...[
                       Text(

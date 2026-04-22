@@ -29,6 +29,8 @@ class _SignUpFormState extends ConsumerState<SignUpForm>
   String? _zipCode;
   String? _selectedUsername;
   bool _isGeneratingUsername = false;
+  bool _newsletterOptIn = false;
+  String? _newsletterEmail;
 
   @override
   void initState() {
@@ -145,14 +147,16 @@ class _SignUpFormState extends ConsumerState<SignUpForm>
       }
 
       final repository = ref.read(authRepositoryProvider);
+      final authEmail = user.email;
       final profile = UserProfile(
         userId: user.uid,
-        email: user.email,
+        email: authEmail ?? _newsletterEmail,
         phoneNumber: user.phoneNumber,
         username: _selectedUsername!,
         isVolunteer: _isVolunteer,
         zipCode: _isVolunteer ? _zipCode : null,
         points: 0,
+        newsletterOptIn: _newsletterOptIn,
         createdAt: DateTime.now(),
       );
 
@@ -396,6 +400,28 @@ class _SignUpFormState extends ConsumerState<SignUpForm>
               ),
             ],
           ),
+        ),
+        M3ESpacing.verticalMD,
+        // Email field for phone-auth users (no Google email available)
+        if (widget.userCredential.user?.email == null) ...[
+          TextFieldM3E(
+            labelText: 'Email address (optional)',
+            hintText: 'you@example.com',
+            keyboardType: TextInputType.emailAddress,
+            onChanged: (value) {
+              setState(() => _newsletterEmail = value.isEmpty ? null : value);
+            },
+          ),
+          M3ESpacing.verticalSM,
+        ],
+        // Newsletter opt-in checkbox
+        CheckboxM3E(
+          label:
+              'I\'d like to receive occasional updates and newsletters about community fridges via email',
+          value: _newsletterOptIn,
+          onChanged: (value) {
+            setState(() => _newsletterOptIn = value ?? false);
+          },
         ),
       ],
     );

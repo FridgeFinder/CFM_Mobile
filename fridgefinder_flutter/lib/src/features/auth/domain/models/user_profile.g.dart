@@ -47,6 +47,7 @@ _UserProfile _$UserProfileFromJson(Map<String, dynamic> json) => _UserProfile(
   settings: json['settings'] == null
       ? const UserSettings()
       : UserSettings.fromJson(json['settings'] as Map<String, dynamic>),
+  newsletterOptIn: json['newsletterOptIn'] as bool? ?? false,
   createdAt: DateTime.parse(json['createdAt'] as String),
   lastLoginAt: json['lastLoginAt'] == null
       ? null
@@ -65,6 +66,7 @@ Map<String, dynamic> _$UserProfileToJson(_UserProfile instance) =>
       'fcmToken': instance.fcmToken,
       'fcmTokens': instance.fcmTokens,
       'settings': instance.settings.toJson(),
+      'newsletterOptIn': instance.newsletterOptIn,
       'createdAt': instance.createdAt.toIso8601String(),
       'lastLoginAt': instance.lastLoginAt?.toIso8601String(),
     };
