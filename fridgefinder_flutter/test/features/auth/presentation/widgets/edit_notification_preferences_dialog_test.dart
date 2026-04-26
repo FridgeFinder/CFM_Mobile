@@ -193,7 +193,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Tap Save button
-      await tester.tap(find.widgetWithText(ElevatedButton, 'Save'));
+      await tester.tap(find.text('Save'));
       await tester.pump(); // Start the save operation
 
       // CRITICAL TEST: Verify loading indicator appears in Save button
@@ -272,7 +272,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Tap Save button
-      await tester.tap(find.widgetWithText(ElevatedButton, 'Save'));
+      await tester.tap(find.text('Save'));
       await tester.pump();
 
       // Verify loading indicator appears

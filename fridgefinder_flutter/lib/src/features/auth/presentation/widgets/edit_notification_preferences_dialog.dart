@@ -516,7 +516,7 @@ class _NotificationPreferencesDialogState
         ),
       ),
       actions: [
-        if (widget.mode == NotificationPreferencesMode.edit) ...[
+        if (widget.mode == NotificationPreferencesMode.edit)
           TextButton(
             onPressed: _isLoading ? null : () => _handleUnfollow(context),
             style: TextButton.styleFrom(
@@ -524,8 +524,6 @@ class _NotificationPreferencesDialogState
             ),
             child: const Text('Unfollow'),
           ),
-          const Spacer(),
-        ],
         TextButtonM3E(
           onPressed: _isLoading ? null : () => Navigator.of(context).pop(false),
           child: const Text('Cancel'),
