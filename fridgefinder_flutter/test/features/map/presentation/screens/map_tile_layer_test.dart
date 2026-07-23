@@ -93,7 +93,7 @@ void main() {
       final result = errorState.when(
         data: (_) => 'vector_tile_layer',
         loading: () => 'raster_fallback_loading',
-        error: (_, __) => 'raster_fallback_error',
+        error: (_, _) => 'raster_fallback_error',
       );
 
       expect(result, 'raster_fallback_error');

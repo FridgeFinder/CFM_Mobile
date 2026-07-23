@@ -46,9 +46,11 @@ void main() async {
   DatabaseProvider.configure(env);
   logger.i('Environment: ${env.name}');
 
-  // Initialize Firebase with the correct project options
+  // Initialize Firebase with the selected environment's options.
+  // If a native plugin pre-initialized a different default app, replace it
+  // so Auth/Database/Messaging all point at the chosen environment.
   final firebaseOptions = FirebaseOptionsResolver.resolve(env);
-  await Firebase.initializeApp(options: firebaseOptions);
+  await _initializeFirebaseForEnvironment(firebaseOptions);
 
   // Set up background message handler (must be called before runApp)
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
@@ -66,6 +68,52 @@ void main() async {
       child: const FridgeFinderApp(),
     ),
   );
+}
+
+Future<void> _initializeFirebaseForEnvironment(FirebaseOptions options) async {
+  if (Firebase.apps.isEmpty) {
+    await Firebase.initializeApp(options: options);
+    logger.i('Initialized Firebase app for project: ${options.projectId}');
+    return;
+  }
+
+  final existingApp = Firebase.app();
+  final existingOptions = existingApp.options;
+  final isSameProject = existingOptions.projectId == options.projectId;
+  final isSameAppId = existingOptions.appId == options.appId;
+
+  if (isSameProject && isSameAppId) {
+    logger.i('Reusing Firebase app for project: ${existingOptions.projectId}');
+    return;
+  }
+
+  logger.w(
+    'Replacing pre-initialized Firebase app '
+    '(project: ${existingOptions.projectId}) with selected environment '
+    '(project: ${options.projectId}).',
+  );
+
+  try {
+    await existingApp.delete();
+  } on FirebaseException catch (e) {
+    logger.w('Failed to delete pre-initialized Firebase app: ${e.code}');
+  }
+
+  if (Firebase.apps.isEmpty) {
+    await Firebase.initializeApp(options: options);
+    logger.i('Initialized Firebase app for project: ${options.projectId}');
+    return;
+  }
+
+  final current = Firebase.app().options;
+  final switched =
+      current.projectId == options.projectId && current.appId == options.appId;
+  if (!switched) {
+    logger.w(
+      'Firebase default app remained on project ${current.projectId}; '
+      'app restart may be required to fully switch environments.',
+    );
+  }
 }
 
 /// Set up global error handlers for better crash reporting

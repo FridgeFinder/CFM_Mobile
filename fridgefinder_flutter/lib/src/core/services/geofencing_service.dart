@@ -36,8 +36,8 @@ class GeofencingService {
   }) : _authRepository = authRepository ?? AuthRepository(),
        _fridgeRepository = fridgeRepository,
        _localNotifications = localNotifications ?? LocalNotificationService(),
-       // Firebase Cloud Functions always uses PRODUCTION instance
-       // (not affected by fridge API environment setting)
+      // Firebase Cloud Functions uses the currently selected Firebase
+      // environment (dev/prod) from app bootstrap.
        _functions = functions ?? FirebaseFunctions.instance;
 
   /// Start monitoring location for geofencing

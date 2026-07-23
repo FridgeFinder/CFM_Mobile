@@ -20,9 +20,8 @@ class AppleSignInNotAvailableException implements Exception {
 
 /// Repository for authentication operations
 ///
-/// PRODUCTION ENVIRONMENT ONLY
-/// Firebase Auth always uses production (FirebaseAuth.instance).
-/// Not affected by fridge data API environment setting.
+/// Uses the currently selected Firebase environment (dev/prod)
+/// initialized during app bootstrap in main.dart.
 class AuthRepository {
   final firebase_auth.FirebaseAuth _auth;
   final DatabaseReference _database;

@@ -551,6 +551,13 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     // Tile layer: vector tiles (Protomaps) with raster fallback (MapTiler/OSM)
                     Consumer(
                       builder: (context, ref, child) {
+                        if (!MapTileConfig.hasProtomapsApiKey()) {
+                          logger.i(
+                            '[TileLayer] Protomaps key missing, using raster fallback',
+                          );
+                          return _buildRasterFallbackLayer(ref);
+                        }
+
                         final vectorStyleAsync =
                             ref.watch(vectorTileStyleProvider);
                         // Use logger.i (not _log) for real-time output — _log
@@ -711,15 +718,16 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     // Attribution widget — dynamic based on active tile source
                     Consumer(
                       builder: (context, ref, child) {
-                        final vectorStyleAsync =
-                            ref.watch(vectorTileStyleProvider);
-                        final isVector = vectorStyleAsync.hasValue;
+                        final hasProtomapsKey =
+                            MapTileConfig.hasProtomapsApiKey();
+                        final isVector = hasProtomapsKey &&
+                            ref.watch(vectorTileStyleProvider).hasValue;
                         return RichAttributionWidget(
                           attributions: [
                             if (isVector)
                               TextSourceAttribution('Protomaps'),
                             if (!isVector &&
-                                MapTileConfig.getMapTilerApiKey() != null)
+                                MapTileConfig.hasMapTilerApiKey())
                               TextSourceAttribution('MapTiler'),
                             TextSourceAttribution('OpenStreetMap contributors'),
                           ],

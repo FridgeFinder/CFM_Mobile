@@ -14,9 +14,8 @@ import 'local_notification_service.dart';
 
 /// Service for managing Firebase Cloud Messaging
 ///
-/// PRODUCTION ENVIRONMENT ONLY
-/// This always uses production FCM (FirebaseMessaging.instance).
-/// Not affected by fridge data API environment setting.
+/// Uses the currently selected Firebase environment (dev/prod)
+/// initialized during app bootstrap in main.dart.
 ///
 /// Multi-device support: tokens are stored at `users/{uid}/fcmTokens/{deviceId}`
 /// with dual-write to `users/{uid}/fcmToken` for backend compatibility.
