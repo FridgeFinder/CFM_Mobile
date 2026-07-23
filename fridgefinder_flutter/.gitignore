@@ -28,10 +28,19 @@ migrate_working_dir/
 **/ios/Flutter/.last_build_id
 .dart_tool/
 .flutter-plugins-dependencies
+# Numbered duplicates created by rsync/iCloud (e.g. ".flutter-plugins-dependencies 2")
+.flutter-plugins-dependencies[[:space:]]*
 .pub-cache/
 .pub/
 /build/
 /coverage/
+
+# Xcode build artefact duplicates from safe-run script / iCloud sync
+**/ios/Flutter/Flutter[[:space:]]*.podspec
+**/ios/Flutter/Generated[[:space:]]*.xcconfig
+**/ios/Flutter/flutter_export_environment[[:space:]]*.sh
+# Xcode scheme backups
+**/*.xcscheme.backup
 
 # Symbolication related
 app.*.symbols
@@ -59,6 +68,9 @@ app.*.map.json
 
 # App Store Connect API Key
 *.p8
+
+# Local env files (contain real API keys — do not commit)
+.env
 
 # Screenshots
 screenshots/

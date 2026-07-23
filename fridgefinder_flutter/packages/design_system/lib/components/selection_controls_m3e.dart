@@ -650,7 +650,7 @@ class _SliderM3EState extends State<SliderM3E>
                 trackHeight: 4.0,
                 valueIndicatorShape: const PaddleSliderValueIndicatorShape(),
                 showValueIndicator: (widget.showValueLabel && _isDragging)
-                    ? ShowValueIndicator.always
+                    ? ShowValueIndicator.onDrag
                     : ShowValueIndicator.never,
                 valueIndicatorTextStyle: Theme.of(context).textTheme.labelMedium?.copyWith(
                   color: colorScheme.onPrimary,

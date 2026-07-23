@@ -91,8 +91,8 @@ class TestNotificationUtils {
         if (notes != null && notes.isNotEmpty) 'notes': notes,
         if (photoUrl != null && photoUrl.isNotEmpty) 'photoUrl': photoUrl,
         // Add custom notification fields if provided
-        if (title != null) 'testTitle': title,
-        if (body != null) 'testBody': body,
+        'testTitle': ?title,
+        'testBody': ?body,
       };
 
       await reportRef.set(reportData);

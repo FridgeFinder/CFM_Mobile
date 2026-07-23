@@ -11,6 +11,7 @@
 - [Quick Start](#quick-start)
 - [Prerequisites](#prerequisites)
 - [Installation & Setup](#installation--setup)
+- [Reliable iOS Launch (macOS)](#reliable-ios-launch-macos)
 - [Project Structure](#project-structure)
 - [Architecture](#architecture)
 - [Features](#features)
@@ -41,6 +42,8 @@ flutter run
 ```
 
 That's it! The app will launch with dev environment settings by default.
+
+If you are on macOS and iOS build/signing fails when running from Desktop or cloud-synced folders, use the safe iOS workflow in [Reliable iOS Launch (macOS)](#reliable-ios-launch-macos).
 
 ---
 
@@ -126,17 +129,32 @@ Run this after modifying any:
 The app uses a **dual environment configuration**:
 
 - **Fridge Data API:** DEV environment by default (`api-dev.communityfridgefinder.com`)
-- **Firebase Services:** PRODUCTION environment (always)
+- **Firebase Services:** Dev/Prod switchable (matches selected app environment)
 
-To switch fridge API environment:
+To switch environment (API + Firebase):
 
 1. Open the app
 2. Go to **Profile** → **Settings**
-3. Toggle **API Environment** between Dev/Prod
+3. Toggle **Firebase Environment (API + Database + Auth)** between Dev/Prod
+4. Confirm restart when prompted
 
 This persists to local storage via Hive.
 
-**Note:** Firebase services (Auth, Messaging, Database, Cloud Functions) always use production. See `ENVIRONMENT_CONFIGURATION.md` for details.
+**Note:** Firebase services (Auth, Messaging, Realtime Database, Cloud Functions, FCM) follow the selected environment after restart. See `ENVIRONMENT_CONFIGURATION.md` for details.
+
+### 4.1 Map Tile API Keys (Optional, Recommended)
+
+Create or update `fridgefinder_flutter/.env` with:
+
+```env
+PROTOMAPS_API_KEY=your_key_here
+MAPTILER_API_KEY=your_key_here
+```
+
+Notes:
+
+- If both keys are missing, the app now falls back to OpenStreetMap raster tiles.
+- This fallback works for local development, but adding at least one key improves map quality and reliability.
 
 ### 5. Run the App
 
@@ -152,7 +170,27 @@ flutter run --release
 
 # Enable verbose logging
 flutter run -v
+
+# macOS/iOS recommended launch path (handles simulator + safe build path)
+./scripts/run_ios_safe.sh "iPhone 17"
 ```
+
+### 6. Reliable iOS Launch (macOS)
+
+Use this flow if iOS launches are flaky or fail with code-signing issues:
+
+```bash
+cd fridgefinder_flutter
+open -a Simulator
+xcrun simctl boot "iPhone 17" || true
+./scripts/run_ios_safe.sh "iPhone 17"
+```
+
+What this does:
+
+- Boots the simulator explicitly.
+- Runs the app from a safe local build path via `scripts/run_ios_safe.sh`.
+- Avoids common iOS code-signing failures caused by building directly under Desktop/cloud-synced paths.
 
 ---
 
@@ -1137,6 +1175,24 @@ dart run build_runner build
 - Usually occurs during hot restart with Riverpod
 - Solution: Use full restart or run `flutter run -r`
 
+#### 9. iOS simulator opens, then Flutter says "Lost connection to device"
+
+- The app may still have launched successfully; this often indicates a dev-tool disconnect rather than a failed install.
+- Re-open/boot simulator and run again:
+
+```bash
+open -a Simulator
+xcrun simctl boot "iPhone 17" || true
+./scripts/run_ios_safe.sh "iPhone 17"
+```
+
+#### 10. Map shows fallback tiles or warnings about missing Protomaps/MapTiler keys
+
+- Ensure `fridgefinder_flutter/.env` contains valid values for:
+  - `PROTOMAPS_API_KEY`
+  - `MAPTILER_API_KEY`
+- If keys are missing, OpenStreetMap fallback is expected behavior in dev.
+
 ### Debug Mode Tips
 
 ```bash
@@ -1499,14 +1555,14 @@ Built with ❤️ by the Community Fridge Finder team and contributors.
 
 - ✅ **Dual Environment Configuration:**
   - **Fridge Data API:** DEV by default (`api-dev.communityfridgefinder.com`)
-  - **Firebase Services:** PRODUCTION always
+  - **Firebase Services:** Dev/Prod selectable (current behavior)
   - Comprehensive documentation: `ENVIRONMENT_CONFIGURATION.md`
   - Clear separation in codebase with comments
   - No emulator mode active in production builds
 
 - ✅ **Dependencies:**
   - Added `cloud_functions: ^6.0.3` package
-  - All Firebase services verified to use production
+  - Firebase services are selected by environment at app startup
 
 #### 📝 Documentation Updates
 
@@ -1516,7 +1572,7 @@ Built with ❤️ by the Community Fridge Finder team and contributors.
   - Clear comments in all Firebase service files
 
 - ✅ **Code Documentation:**
-  - "PRODUCTION ENVIRONMENT ONLY" comments added to:
+  - Firebase environment comments added to:
     - `auth_repository.dart` - Firebase Auth
     - `fcm_service.dart` - Cloud Messaging
     - `database_provider.dart` - Realtime Database
