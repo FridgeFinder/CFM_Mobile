@@ -11,6 +11,29 @@ import '../fixtures/fridge_fixtures.dart';
 import '../helpers/test_helpers.dart';
 import '../test_helpers.dart';
 
+NotificationPreferences legacyNotificationPreferences({
+  bool updatedWithFood = false,
+  bool runningLow = false,
+  bool empty = false,
+  bool needsCleaning = false,
+  bool needsServicing = false,
+  bool routineValidation = false,
+}) {
+  final flags = FridgeNotificationFlags(
+    hasFood: updatedWithFood,
+    noFood: runningLow || empty,
+    dirty: needsCleaning,
+    outOfOrder: needsServicing,
+  );
+
+  return NotificationPreferences(
+    contactTypePreferences: ContactTypePreferences(
+      email: flags,
+      device: flags,
+    ),
+  );
+}
+
 /// Mock User for authentication tests
 class TestUser implements firebase_auth.User {
   @override
@@ -96,7 +119,7 @@ void main() {
           SubscriptionPreferences(
             fridgeId: FridgeFixtures.verifiedFridgeWithFood.id,
             subscribedAt: DateTime.now(),
-            notificationPreferences: const NotificationPreferences(),
+            notificationPreferences: legacyNotificationPreferences(),
           ),
         ],
         fcmToken: 'test-fcm-token-1',
@@ -120,7 +143,7 @@ void main() {
           SubscriptionPreferences(
             fridgeId: FridgeFixtures.verifiedFridgeWithFood.id,
             subscribedAt: DateTime.now(),
-            notificationPreferences: const NotificationPreferences(),
+            notificationPreferences: legacyNotificationPreferences(),
           ),
         ],
         fcmToken: 'test-fcm-token-2',
@@ -144,7 +167,7 @@ void main() {
           SubscriptionPreferences(
             fridgeId: FridgeFixtures.verifiedFridgeWithFood.id,
             subscribedAt: DateTime.now(),
-            notificationPreferences: const NotificationPreferences(),
+            notificationPreferences: legacyNotificationPreferences(),
           ),
         ],
         fcmToken: 'test-fcm-token-3',
@@ -168,7 +191,7 @@ void main() {
           SubscriptionPreferences(
             fridgeId: FridgeFixtures.verifiedFridgeWithFood.id,
             subscribedAt: DateTime.now(),
-            notificationPreferences: const NotificationPreferences(),
+            notificationPreferences: legacyNotificationPreferences(),
           ),
         ],
         fcmToken: 'test-fcm-token-4',
@@ -196,7 +219,7 @@ void main() {
           SubscriptionPreferences(
             fridgeId: FridgeFixtures.verifiedFridgeWithFood.id,
             subscribedAt: DateTime.now(),
-            notificationPreferences: const NotificationPreferences(),
+            notificationPreferences: legacyNotificationPreferences(),
           ),
         ],
       ));
@@ -222,7 +245,7 @@ void main() {
           SubscriptionPreferences(
             fridgeId: 'invalid-fridge-id',
             subscribedAt: DateTime.now(),
-            notificationPreferences: const NotificationPreferences(),
+            notificationPreferences: legacyNotificationPreferences(),
           ),
         ],
       ));
@@ -248,7 +271,7 @@ void main() {
           SubscriptionPreferences(
             fridgeId: FridgeFixtures.verifiedFridgeWithFood.id,
             subscribedAt: DateTime.now(),
-            notificationPreferences: const NotificationPreferences(),
+            notificationPreferences: legacyNotificationPreferences(),
           ),
         ],
       ));
@@ -275,17 +298,17 @@ void main() {
           SubscriptionPreferences(
             fridgeId: FridgeFixtures.verifiedFridgeWithFood.id,
             subscribedAt: DateTime.now(),
-            notificationPreferences: const NotificationPreferences(),
+            notificationPreferences: legacyNotificationPreferences(),
           ),
           SubscriptionPreferences(
             fridgeId: FridgeFixtures.fridgeDirty.id,
             subscribedAt: DateTime.now(),
-            notificationPreferences: const NotificationPreferences(),
+            notificationPreferences: legacyNotificationPreferences(),
           ),
           SubscriptionPreferences(
             fridgeId: FridgeFixtures.fridgeOutOfOrder.id,
             subscribedAt: DateTime.now(),
-            notificationPreferences: const NotificationPreferences(),
+            notificationPreferences: legacyNotificationPreferences(),
           ),
         ],
       ));
@@ -311,7 +334,7 @@ void main() {
           SubscriptionPreferences(
             fridgeId: FridgeFixtures.verifiedFridgeWithFood.id,
             subscribedAt: DateTime.now(),
-            notificationPreferences: const NotificationPreferences(),
+            notificationPreferences: legacyNotificationPreferences(),
           ),
         ],
       ));
@@ -334,27 +357,27 @@ void main() {
           SubscriptionPreferences(
             fridgeId: FridgeFixtures.verifiedFridgeWithFood.id,
             subscribedAt: DateTime.now(),
-            notificationPreferences: const NotificationPreferences(),
+            notificationPreferences: legacyNotificationPreferences(),
           ),
           SubscriptionPreferences(
             fridgeId: FridgeFixtures.fridgeDirty.id,
             subscribedAt: DateTime.now(),
-            notificationPreferences: const NotificationPreferences(),
+            notificationPreferences: legacyNotificationPreferences(),
           ),
           SubscriptionPreferences(
             fridgeId: FridgeFixtures.fridgeOutOfOrder.id,
             subscribedAt: DateTime.now(),
-            notificationPreferences: const NotificationPreferences(),
+            notificationPreferences: legacyNotificationPreferences(),
           ),
           SubscriptionPreferences(
             fridgeId: FridgeFixtures.ghostFridge.id,
             subscribedAt: DateTime.now(),
-            notificationPreferences: const NotificationPreferences(),
+            notificationPreferences: legacyNotificationPreferences(),
           ),
           SubscriptionPreferences(
             fridgeId: FridgeFixtures.notAtLocationFridge.id,
             subscribedAt: DateTime.now(),
-            notificationPreferences: const NotificationPreferences(),
+            notificationPreferences: legacyNotificationPreferences(),
           ),
         ],
       ));
@@ -395,7 +418,7 @@ void main() {
           SubscriptionPreferences(
             fridgeId: FridgeFixtures.verifiedFridgeWithFood.id,
             subscribedAt: DateTime.now(),
-            notificationPreferences: const NotificationPreferences(
+            notificationPreferences: legacyNotificationPreferences(
               updatedWithFood: true,
             ),
           ),
@@ -420,7 +443,7 @@ void main() {
           SubscriptionPreferences(
             fridgeId: FridgeFixtures.verifiedFridgeWithFood.id,
             subscribedAt: DateTime.now(),
-            notificationPreferences: const NotificationPreferences(
+            notificationPreferences: legacyNotificationPreferences(
               runningLow: true,
             ),
           ),
@@ -445,7 +468,7 @@ void main() {
           SubscriptionPreferences(
             fridgeId: FridgeFixtures.verifiedFridgeWithFood.id,
             subscribedAt: DateTime.now(),
-            notificationPreferences: const NotificationPreferences(
+            notificationPreferences: legacyNotificationPreferences(
               empty: true,
             ),
           ),
@@ -470,7 +493,7 @@ void main() {
           SubscriptionPreferences(
             fridgeId: FridgeFixtures.fridgeDirty.id,
             subscribedAt: DateTime.now(),
-            notificationPreferences: const NotificationPreferences(
+            notificationPreferences: legacyNotificationPreferences(
               needsCleaning: true,
             ),
           ),
@@ -495,7 +518,7 @@ void main() {
           SubscriptionPreferences(
             fridgeId: FridgeFixtures.fridgeOutOfOrder.id,
             subscribedAt: DateTime.now(),
-            notificationPreferences: const NotificationPreferences(
+            notificationPreferences: legacyNotificationPreferences(
               needsServicing: true,
             ),
           ),
@@ -520,7 +543,7 @@ void main() {
           SubscriptionPreferences(
             fridgeId: FridgeFixtures.verifiedFridgeWithFood.id,
             subscribedAt: DateTime.now(),
-            notificationPreferences: const NotificationPreferences(
+            notificationPreferences: legacyNotificationPreferences(
               routineValidation: true,
             ),
           ),
@@ -547,7 +570,7 @@ void main() {
           SubscriptionPreferences(
             fridgeId: FridgeFixtures.verifiedFridgeWithFood.id,
             subscribedAt: DateTime.now(),
-            notificationPreferences: const NotificationPreferences(),
+            notificationPreferences: legacyNotificationPreferences(),
           ),
         ],
       ));
@@ -570,7 +593,7 @@ void main() {
           SubscriptionPreferences(
             fridgeId: FridgeFixtures.verifiedFridgeWithFood.id,
             subscribedAt: DateTime.now(),
-            notificationPreferences: const NotificationPreferences(),
+            notificationPreferences: legacyNotificationPreferences(),
           ),
         ],
       ));
@@ -593,7 +616,7 @@ void main() {
           SubscriptionPreferences(
             fridgeId: FridgeFixtures.verifiedFridgeWithFood.id,
             subscribedAt: DateTime.now(),
-            notificationPreferences: const NotificationPreferences(),
+            notificationPreferences: legacyNotificationPreferences(),
           ),
         ],
       ));
@@ -616,7 +639,7 @@ void main() {
           SubscriptionPreferences(
             fridgeId: FridgeFixtures.verifiedFridgeWithFood.id,
             subscribedAt: DateTime.now(),
-            notificationPreferences: const NotificationPreferences(),
+            notificationPreferences: legacyNotificationPreferences(),
           ),
         ],
       ));
@@ -639,7 +662,7 @@ void main() {
           SubscriptionPreferences(
             fridgeId: FridgeFixtures.verifiedFridgeWithFood.id,
             subscribedAt: DateTime.now(),
-            notificationPreferences: const NotificationPreferences(),
+            notificationPreferences: legacyNotificationPreferences(),
           ),
         ],
       ));
@@ -685,7 +708,7 @@ void main() {
           SubscriptionPreferences(
             fridgeId: FridgeFixtures.verifiedFridgeWithFood.id,
             subscribedAt: DateTime.now(),
-            notificationPreferences: const NotificationPreferences(),
+            notificationPreferences: legacyNotificationPreferences(),
           ),
         ],
         fcmToken: 'old-fcm-token',
@@ -712,7 +735,7 @@ void main() {
           SubscriptionPreferences(
             fridgeId: FridgeFixtures.verifiedFridgeWithFood.id,
             subscribedAt: DateTime.now(),
-            notificationPreferences: const NotificationPreferences(),
+            notificationPreferences: legacyNotificationPreferences(),
           ),
         ],
         fcmToken: 'test-fcm-token',
@@ -781,7 +804,7 @@ void main() {
           SubscriptionPreferences(
             fridgeId: FridgeFixtures.verifiedFridgeWithFood.id,
             subscribedAt: DateTime.now(),
-            notificationPreferences: const NotificationPreferences(),
+            notificationPreferences: legacyNotificationPreferences(),
           ),
         ],
         fcmToken: 'persistent-fcm-token',
@@ -853,7 +876,7 @@ void main() {
           SubscriptionPreferences(
             fridgeId: FridgeFixtures.verifiedFridgeWithFood.id,
             subscribedAt: DateTime.now(),
-            notificationPreferences: const NotificationPreferences(),
+            notificationPreferences: legacyNotificationPreferences(),
           ),
         ],
       ));
@@ -880,7 +903,7 @@ void main() {
           SubscriptionPreferences(
             fridgeId: FridgeFixtures.verifiedFridgeWithFood.id,
             subscribedAt: DateTime.now(),
-            notificationPreferences: const NotificationPreferences(),
+            notificationPreferences: legacyNotificationPreferences(),
           ),
         ],
       ));
@@ -907,7 +930,7 @@ void main() {
           SubscriptionPreferences(
             fridgeId: 'non-existent-fridge-id',
             subscribedAt: DateTime.now(),
-            notificationPreferences: const NotificationPreferences(),
+            notificationPreferences: legacyNotificationPreferences(),
           ),
         ],
       ));
@@ -933,17 +956,17 @@ void main() {
           SubscriptionPreferences(
             fridgeId: FridgeFixtures.verifiedFridgeWithFood.id,
             subscribedAt: DateTime.now(),
-            notificationPreferences: const NotificationPreferences(),
+            notificationPreferences: legacyNotificationPreferences(),
           ),
           SubscriptionPreferences(
             fridgeId: FridgeFixtures.fridgeDirty.id,
             subscribedAt: DateTime.now(),
-            notificationPreferences: const NotificationPreferences(),
+            notificationPreferences: legacyNotificationPreferences(),
           ),
           SubscriptionPreferences(
             fridgeId: FridgeFixtures.fridgeOutOfOrder.id,
             subscribedAt: DateTime.now(),
-            notificationPreferences: const NotificationPreferences(),
+            notificationPreferences: legacyNotificationPreferences(),
           ),
         ],
       ));

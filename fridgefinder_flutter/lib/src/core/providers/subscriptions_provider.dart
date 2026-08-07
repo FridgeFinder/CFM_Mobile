@@ -1,13 +1,87 @@
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:flutter/services.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../features/auth/domain/models/subscription_preferences.dart';
+import '../../features/auth/data/repositories/notifications_repository.dart';
 import '../../features/map/domain/models/fridge_domain.dart';
 import 'auth_provider.dart';
-import 'database_provider.dart';
 import '../utils/app_logger.dart';
-import '../utils/firebase_helpers.dart';
 import 'notification_providers.dart';
 
 part 'subscriptions_provider.g.dart';
+
+const _subscriptionsCacheBoxName = 'subscriptions_cache';
+
+String _subscriptionsCacheKey(String userId) => 'subscriptions_$userId';
+
+Map<String, List<SubscriptionPreferences>> _lastSubscriptionsSnapshots = {};
+
+Future<bool> _ensureHiveInitialized() async {
+  try {
+    await Hive.initFlutter();
+    return true;
+  } on MissingPluginException catch (_) {
+    return false;
+  } catch (e) {
+    if (e.toString().contains('already initialized')) {
+      return true;
+    }
+    logger.w('Unable to initialize Hive: $e');
+    return false;
+  }
+}
+
+Future<Box<String>?> _openSubscriptionsCacheBox() async {
+  try {
+    if (!await _ensureHiveInitialized()) {
+      return null;
+    }
+    if (Hive.isBoxOpen(_subscriptionsCacheBoxName)) {
+      return Hive.box<String>(_subscriptionsCacheBoxName);
+    }
+    return await Hive.openBox<String>(_subscriptionsCacheBoxName);
+  } catch (e) {
+    if (e.toString().contains('initialize Hive') ||
+        e.toString().contains('You need to initialize Hive')) {
+      return null;
+    }
+    logger.w('Unable to open subscriptions cache box: $e');
+    return null;
+  }
+}
+
+List<SubscriptionPreferences> _decodeSubscriptions(String? rawJson) {
+  if (rawJson == null || rawJson.isEmpty) return const [];
+
+  try {
+    final decoded = jsonDecode(rawJson);
+    if (decoded is! List) return const [];
+
+    return decoded
+        .whereType<Map<String, dynamic>>()
+        .map(SubscriptionPreferences.fromJson)
+        .toList();
+  } catch (e) {
+    logger.w('Unable to decode subscriptions cache: $e');
+    return const [];
+  }
+}
+
+String _encodeSubscriptions(List<SubscriptionPreferences> subscriptions) {
+  final normalized = subscriptions
+      .map((subscription) => subscription.toJson())
+      .toList()
+    ..sort((a, b) {
+      final fridgeA = a['fridgeId'] as String? ?? '';
+      final fridgeB = b['fridgeId'] as String? ?? '';
+      return fridgeA.compareTo(fridgeB);
+    });
+
+  return jsonEncode(normalized);
+}
 
 /// Provider for user's subscribed fridges
 @riverpod
@@ -25,56 +99,74 @@ Stream<List<SubscriptionPreferences>> subscribedFridges(
     return;
   }
 
-  final database = DatabaseProvider.databaseRef;
-  final subscriptionsRef = database
-      .child('users')
-      .child(authUser.uid)
-      .child('subscribedFridges');
+  final cacheBox = await _openSubscriptionsCacheBox();
+  final cacheKey = _subscriptionsCacheKey(authUser.uid);
+  final cachedRaw = cacheBox?.get(cacheKey);
+  final cachedSubscriptions = _decodeSubscriptions(cachedRaw);
 
-  yield* subscriptionsRef.onValue.map((event) {
-    if (!event.snapshot.exists) {
-      return <SubscriptionPreferences>[];
+  final previousSnapshot = _lastSubscriptionsSnapshots[authUser.uid];
+  if (previousSnapshot != null && previousSnapshot.isNotEmpty && cachedSubscriptions.isEmpty) {
+    yield previousSnapshot;
+  }
+
+  if (cachedSubscriptions.isNotEmpty) {
+    yield cachedSubscriptions;
+  }
+
+  final repository = ref.watch(notificationsRepositoryProvider);
+  try {
+    final subscriptions = await repository.getAllForUser(authUser.uid);
+    final latestRaw = _encodeSubscriptions(subscriptions);
+    if (cacheBox != null && latestRaw != cachedRaw) {
+      await cacheBox.put(cacheKey, latestRaw);
     }
 
-    final data = event.snapshot.value;
-    if (data is! Map) {
-      return <SubscriptionPreferences>[];
-    }
+    _lastSubscriptionsSnapshots[authUser.uid] = subscriptions;
 
-    return data.entries.map((entry) {
-      final fridgeId = entry.key;
-      final value = entry.value as Map<Object?, Object?>;
-      final convertedValue = convertFirebaseMap(value);
-      return SubscriptionPreferences.fromJson({
-        'fridgeId': fridgeId,
-        ...convertedValue,
-      });
-    }).toList();
-  });
+    if (latestRaw != cachedRaw || cachedSubscriptions.isEmpty) {
+      yield subscriptions;
+    }
+  } catch (e) {
+    logger.w('Failed to refresh subscriptions from API: $e');
+    if (cachedSubscriptions.isEmpty) {
+      rethrow;
+    }
+  }
 }
 
 /// Provider for checking if a fridge is subscribed
 @riverpod
-Future<bool> isFridgeSubscribed(
+bool isFridgeSubscribed(
   Ref ref,
   String fridgeId,
-) async {
-  final subscriptions = await ref.watch(subscribedFridgesProvider.future);
-  return subscriptions.any((sub) => sub.fridgeId == fridgeId);
+) {
+  final subscriptionsAsync = ref.watch(subscribedFridgesProvider);
+  return subscriptionsAsync.when(
+    data: (subscriptions) =>
+        subscriptions.any((sub) => sub.fridgeId == fridgeId),
+    loading: () => false,
+    error: (_, _) => false,
+  );
 }
 
 /// Provider for subscription preferences for a specific fridge
 @riverpod
-Future<SubscriptionPreferences?> fridgeSubscriptionPreferences(
+SubscriptionPreferences? fridgeSubscriptionPreferences(
   Ref ref,
   String fridgeId,
-) async {
-  final subscriptions = await ref.watch(subscribedFridgesProvider.future);
-  try {
-    return subscriptions.firstWhere((sub) => sub.fridgeId == fridgeId);
-  } catch (e) {
-    return null;
-  }
+) {
+  final subscriptionsAsync = ref.watch(subscribedFridgesProvider);
+  return subscriptionsAsync.when(
+    data: (subscriptions) {
+      try {
+        return subscriptions.firstWhere((sub) => sub.fridgeId == fridgeId);
+      } catch (_) {
+        return null;
+      }
+    },
+    loading: () => null,
+    error: (_, _) => null,
+  );
 }
 
 /// Notifier for managing subscriptions
@@ -83,6 +175,12 @@ class SubscriptionManager extends _$SubscriptionManager {
   @override
   FutureOr<void> build() {
     // No initial state needed
+  }
+
+  void _invalidateSubscriptionViews(String fridgeId) {
+    ref.invalidate(subscribedFridgesProvider);
+    ref.invalidate(isFridgeSubscribedProvider(fridgeId));
+    ref.invalidate(fridgeSubscriptionPreferencesProvider(fridgeId));
   }
 
   /// Follow a fridge with notification preferences
@@ -110,18 +208,12 @@ class SubscriptionManager extends _$SubscriptionManager {
         throw Exception('User must be authenticated');
       }
 
-      // Check if this is the user's first subscription
-      final existingSubscriptions = await ref.read(subscribedFridgesProvider.future);
+      // Check if this is truly the first subscription from backend source of truth.
+      final repository = ref.read(notificationsRepositoryProvider);
+      final existingSubscriptions = await repository.getAllForUser(authUser.uid);
       if (!ref.mounted) return;
 
       final isFirstSubscription = existingSubscriptions.isEmpty;
-
-      final database = DatabaseProvider.databaseRef;
-      final subscriptionRef = database
-          .child('users')
-          .child(authUser.uid)
-          .child('subscribedFridges')
-          .child(fridgeId);
 
       final subscription = SubscriptionPreferences(
         fridgeId: fridgeId,
@@ -129,8 +221,13 @@ class SubscriptionManager extends _$SubscriptionManager {
         notificationPreferences: preferences,
       );
 
-      await subscriptionRef.set(subscription.toJson());
+      await repository.followFridge(
+        userId: authUser.uid,
+        fridgeId: fridgeId,
+        preferences: subscription.notificationPreferences,
+      );
       if (!ref.mounted) return;
+      _invalidateSubscriptionViews(fridgeId);
 
       logger.i('Subscribed to fridge: $fridgeId');
 
@@ -145,16 +242,6 @@ class SubscriptionManager extends _$SubscriptionManager {
 
         if (permissionsGranted) {
           logger.i('Notification permissions granted for first subscription');
-
-          // Also request geofencing permission if user is a volunteer
-          final userProfileAsync = ref.read(userProfileProvider);
-          userProfileAsync.whenData((profile) async {
-            if (profile != null && profile.isVolunteer) {
-              // Geofencing will be enabled when user enables it in settings
-              // For now, just log that we could request it
-              logger.d('User is volunteer - geofencing can be enabled in settings');
-            }
-          });
         } else {
           logger.w('Notification permissions not granted - user can enable later in settings');
         }
@@ -178,13 +265,10 @@ class SubscriptionManager extends _$SubscriptionManager {
         throw Exception('User must be authenticated');
       }
 
-      final database = DatabaseProvider.databaseRef;
-      await database
-          .child('users')
-          .child(authUser.uid)
-          .child('subscribedFridges')
-          .child(fridgeId)
-          .remove();
+        final repository = ref.read(notificationsRepositoryProvider);
+        await repository.unfollowFridge(userId: authUser.uid, fridgeId: fridgeId);
+        if (!ref.mounted) return;
+        _invalidateSubscriptionViews(fridgeId);
 
       logger.i('Unsubscribed from fridge: $fridgeId');
     } catch (e) {
@@ -209,14 +293,14 @@ class SubscriptionManager extends _$SubscriptionManager {
         throw Exception('User must be authenticated');
       }
 
-      final database = DatabaseProvider.databaseRef;
-      await database
-          .child('users')
-          .child(authUser.uid)
-          .child('subscribedFridges')
-          .child(fridgeId)
-          .child('notificationPreferences')
-          .update(preferences.toJson());
+      final repository = ref.read(notificationsRepositoryProvider);
+      await repository.updatePreferences(
+        userId: authUser.uid,
+        fridgeId: fridgeId,
+        preferences: preferences,
+      );
+      if (!ref.mounted) return;
+      _invalidateSubscriptionViews(fridgeId);
 
       logger.i('Updated notification preferences for fridge: $fridgeId');
     } catch (e) {

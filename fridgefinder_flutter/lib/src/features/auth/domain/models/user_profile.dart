@@ -3,6 +3,40 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'user_profile.freezed.dart';
 part 'user_profile.g.dart';
 
+enum UserType {
+  organizer('organizer'),
+  host('host'),
+  neighbor('neighbor'),
+  volunteer('volunteer');
+
+  const UserType(this.value);
+  final String value;
+
+  static UserType fromString(String value) {
+    switch (value.toLowerCase()) {
+      case 'organizer':
+        return UserType.organizer;
+      case 'host':
+        return UserType.host;
+      case 'volunteer':
+        return UserType.volunteer;
+      case 'neighbor':
+      default:
+        return UserType.neighbor;
+    }
+  }
+}
+
+class UserTypeConverter implements JsonConverter<UserType, String> {
+  const UserTypeConverter();
+
+  @override
+  UserType fromJson(String json) => UserType.fromString(json);
+
+  @override
+  String toJson(UserType object) => object.value;
+}
+
 /// Notification frequency options
 enum NotificationFrequency {
   immediate('immediate'),
@@ -42,8 +76,7 @@ abstract class UserSettings with _$UserSettings {
   const UserSettings._();
 
   const factory UserSettings({
-    @Default(true) bool notificationsEnabled,
-    @Default(NotificationFrequency.immediate) NotificationFrequency notificationFrequency,
+    @Default(false) bool emailNotificationEnabled,
     @Default(false) bool geofencingEnabled,
   }) = _UserSettings;
 
@@ -62,16 +95,16 @@ abstract class UserProfile with _$UserProfile {
     String? email,
     String? phoneNumber,
     required String username,
-    required bool isVolunteer,
-    String? zipCode,
+    @UserTypeConverter() @Default(UserType.neighbor) UserType userType,
+    String? zipcode,
     @Default(0) int points,
-    String? fcmToken,
-    Map<String, String>? fcmTokens,
     @Default(UserSettings()) UserSettings settings,
-    @Default(false) bool newsletterOptIn,
     required DateTime createdAt,
+    DateTime? lastUpdated,
     DateTime? lastLoginAt,
   }) = _UserProfile;
+
+  String? get zipCode => zipcode;
 
   factory UserProfile.fromJson(Map<String, dynamic> json) =>
       _$UserProfileFromJson(json);

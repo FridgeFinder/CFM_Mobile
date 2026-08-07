@@ -75,6 +75,34 @@ class _ListScreenState extends ConsumerState<ListScreen>
     );
   }
 
+  Future<void> _handlePullToRefresh() async {
+    ref.invalidate(fridgeListProvider);
+    ref.invalidate(subscribedFridgesProvider);
+
+    await Future.wait([
+      ref.read(fridgeListProvider.future),
+      ref.read(subscribedFridgesProvider.future),
+    ]);
+  }
+
+  Widget _buildRefreshableEmptyState({
+    required BuildContext context,
+    required Widget child,
+  }) {
+    return RefreshIndicator(
+      onRefresh: _handlePullToRefresh,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: [
+          SizedBox(
+            height: MediaQuery.of(context).size.height * 0.55,
+            child: Center(child: child),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // Watch shared filter state (same as map view)
@@ -200,7 +228,8 @@ class _ListScreenState extends ConsumerState<ListScreen>
                     // List of Fridges
                     Expanded(
                       child: filtered.isEmpty
-                          ? Center(
+                          ? _buildRefreshableEmptyState(
+                              context: context,
                               child: common_widgets.EmptyStateView(
                                 title:
                                     filterState.searchQuery.isEmpty &&
@@ -232,37 +261,41 @@ class _ListScreenState extends ConsumerState<ListScreen>
                                     : null,
                               ),
                             )
-                          : ListView.separated(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: M3ESpacing.md,
+                          : RefreshIndicator(
+                              onRefresh: _handlePullToRefresh,
+                              child: ListView.separated(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: M3ESpacing.md,
+                                ),
+                                separatorBuilder: (context, index) =>
+                                    M3ESpacing.verticalSM,
+                                itemCount: filtered.length,
+                                itemBuilder: (context, index) {
+                                  final fridgeWithDistance = filtered[index];
+                                  // Wrap each card with staggered entrance animation
+                                  return M3ETransitions.listItemEntrance(
+                                    animation: _listAnimationController,
+                                    index: index,
+                                    totalItems: filtered.length.clamp(
+                                      0,
+                                      10,
+                                    ), // Limit stagger to first 10
+                                    child: FridgeCard(
+                                      fridge: fridgeWithDistance.fridge,
+                                      distanceKm: fridgeWithDistance.distanceKm,
+                                      isSubscribed: subscribedFridgeIds.contains(
+                                        fridgeWithDistance.fridge.id,
+                                      ),
+                                      onTap: () => _showFridgeProfile(
+                                        context,
+                                        ref,
+                                        fridgeWithDistance.fridge,
+                                      ),
+                                    ),
+                                  );
+                                },
                               ),
-                              separatorBuilder: (context, index) =>
-                                  M3ESpacing.verticalSM,
-                              itemCount: filtered.length,
-                              itemBuilder: (context, index) {
-                                final fridgeWithDistance = filtered[index];
-                                // Wrap each card with staggered entrance animation
-                                return M3ETransitions.listItemEntrance(
-                                  animation: _listAnimationController,
-                                  index: index,
-                                  totalItems: filtered.length.clamp(
-                                    0,
-                                    10,
-                                  ), // Limit stagger to first 10
-                                  child: FridgeCard(
-                                    fridge: fridgeWithDistance.fridge,
-                                    distanceKm: fridgeWithDistance.distanceKm,
-                                    isSubscribed: subscribedFridgeIds.contains(
-                                      fridgeWithDistance.fridge.id,
-                                    ),
-                                    onTap: () => _showFridgeProfile(
-                                      context,
-                                      ref,
-                                      fridgeWithDistance.fridge,
-                                    ),
-                                  ),
-                                );
-                              },
                             ),
                     ),
                   ],

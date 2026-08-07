@@ -2,95 +2,70 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fridgefinder_app/src/features/auth/domain/models/user_profile.dart';
 
 void main() {
-  group('UserProfile - fcmTokens field', () {
-    test('fromJson with old fcmToken string deserializes — fcmToken is set, fcmTokens is null',
-        () {
+  group('UserProfile model', () {
+    test('fromJson parses current shape', () {
       final json = {
         'userId': 'user1',
         'username': 'testuser',
-        'isVolunteer': false,
-        'fcmToken': 'old_token_string',
-        'createdAt': '2024-01-01T00:00:00.000',
+        'userType': 'volunteer',
+        'zipcode': '94107',
+        'points': 12,
+        'settings': {
+          'emailNotificationEnabled': true,
+          'geofencingEnabled': true,
+        },
+        'createdAt': '2024-01-01T00:00:00.000Z',
       };
 
       final profile = UserProfile.fromJson(json);
-      expect(profile.fcmToken, equals('old_token_string'));
-      expect(profile.fcmTokens, isNull);
+      expect(profile.userId, 'user1');
+      expect(profile.userType, UserType.volunteer);
+      expect(profile.zipcode, '94107');
+      expect(profile.zipCode, '94107');
+      expect(profile.points, 12);
+      expect(profile.settings.emailNotificationEnabled, isTrue);
+      expect(profile.settings.geofencingEnabled, isTrue);
     });
 
-    test('fromJson with new fcmTokens map deserializes correctly', () {
-      final json = {
-        'userId': 'user1',
-        'username': 'testuser',
-        'isVolunteer': false,
-        'fcmTokens': {'dev1': 'tok1', 'dev2': 'tok2'},
-        'createdAt': '2024-01-01T00:00:00.000',
-      };
-
-      final profile = UserProfile.fromJson(json);
-      expect(profile.fcmTokens, isNotNull);
-      expect(profile.fcmTokens!['dev1'], equals('tok1'));
-      expect(profile.fcmTokens!['dev2'], equals('tok2'));
-    });
-
-    test('fromJson with BOTH fields populates both', () {
-      final json = {
-        'userId': 'user1',
-        'username': 'testuser',
-        'isVolunteer': false,
-        'fcmToken': 'latest_token',
-        'fcmTokens': {'dev1': 'tok1'},
-        'createdAt': '2024-01-01T00:00:00.000',
-      };
-
-      final profile = UserProfile.fromJson(json);
-      expect(profile.fcmToken, equals('latest_token'));
-      expect(profile.fcmTokens, isNotNull);
-      expect(profile.fcmTokens!['dev1'], equals('tok1'));
-    });
-
-    test('toJson includes fcmTokens when set', () {
+    test('toJson writes current shape', () {
       final profile = UserProfile(
-        userId: 'user1',
-        username: 'testuser',
-        isVolunteer: false,
-        fcmToken: 'tok',
-        fcmTokens: {'dev1': 'tok1'},
-        createdAt: DateTime(2024, 1, 1),
+        userId: 'user2',
+        username: 'neighbor-user',
+        userType: UserType.neighbor,
+        zipcode: '10001',
+        points: 3,
+        settings: const UserSettings(
+          emailNotificationEnabled: false,
+          geofencingEnabled: false,
+        ),
+        createdAt: DateTime.utc(2025, 1, 1),
       );
 
       final json = profile.toJson();
-      expect(json['fcmTokens'], isNotNull);
-      expect((json['fcmTokens'] as Map)['dev1'], equals('tok1'));
+      expect(json['userType'], 'neighbor');
+      expect(json['zipcode'], '10001');
+      expect(json['points'], 3);
+      expect(json.containsKey('fcmToken'), isFalse);
+      expect(json.containsKey('fcmTokens'), isFalse);
     });
 
-    test('toJson excludes fcmTokens when null', () {
+    test('copyWith updates userType and zipcode', () {
       final profile = UserProfile(
-        userId: 'user1',
-        username: 'testuser',
-        isVolunteer: false,
-        createdAt: DateTime(2024, 1, 1),
-      );
-
-      final json = profile.toJson();
-      expect(json['fcmTokens'], isNull);
-    });
-
-    test('copyWith works for fcmTokens', () {
-      final profile = UserProfile(
-        userId: 'user1',
-        username: 'testuser',
-        isVolunteer: false,
-        createdAt: DateTime(2024, 1, 1),
+        userId: 'user3',
+        username: 'copy-user',
+        userType: UserType.neighbor,
+        createdAt: DateTime.utc(2025, 1, 1),
       );
 
       final updated = profile.copyWith(
-        fcmTokens: {'dev1': 'tok1', 'dev2': 'tok2'},
+        userType: UserType.host,
+        zipcode: '30301',
       );
 
-      expect(updated.fcmTokens, isNotNull);
-      expect(updated.fcmTokens!.length, equals(2));
-      expect(profile.fcmTokens, isNull); // original unchanged
+      expect(updated.userType, UserType.host);
+      expect(updated.zipcode, '30301');
+      expect(profile.userType, UserType.neighbor);
+      expect(profile.zipcode, isNull);
     });
   });
 }

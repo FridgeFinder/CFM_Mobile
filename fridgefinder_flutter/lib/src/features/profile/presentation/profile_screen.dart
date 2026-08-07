@@ -2,9 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:design_system/design_system.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -17,7 +15,6 @@ import '../../../core/providers/points_provider.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../features/auth/domain/models/user_profile.dart';
 import '../../../features/auth/presentation/widgets/sign_in_widget.dart';
-import '../../../features/auth/presentation/widgets/reauthenticate_dialog.dart';
 import '../../../common_widgets/loading_messages.dart';
 import 'test_notification_screen.dart';
 
@@ -31,8 +28,41 @@ class ProfileScreen extends ConsumerStatefulWidget {
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   // Local state for optimistic updates
   bool? _localNotificationsEnabled;
-  bool? _localGeofencingEnabled;
   // NotificationFrequency? _localNotificationFrequency; // TODO: Restore when frequency UI is re-enabled
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadDeviceNotificationState();
+    });
+  }
+
+  Future<void> _loadDeviceNotificationState() async {
+    try {
+      final fcmService = ref.read(fcmServiceProvider);
+      final cachedEnabled = await fcmService.getCachedDeviceNotificationsEnabled();
+      if (!mounted) return;
+      if (cachedEnabled != null) {
+        setState(() => _localNotificationsEnabled = cachedEnabled);
+      }
+
+      final enabled = await fcmService.getDeviceNotificationsEnabled();
+      if (!mounted) return;
+      setState(() => _localNotificationsEnabled = enabled);
+    } catch (_) {
+      if (!mounted) return;
+      // Keep profile screen usable in test/bootstrap environments where
+      // Firebase-backed notification services may not be initialized.
+      setState(() => _localNotificationsEnabled = false);
+    }
+  }
+
+  Future<void> _handleRefresh() async {
+    ref.invalidate(userProfileProvider);
+    ref.invalidate(userPointsProvider);
+    await _loadDeviceNotificationState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,17 +71,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final locationAccessEnabled = ref.watch(locationAccessProvider);
 
     return Scaffold(
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: EdgeInsets.only(
-            left: M3ESpacing.lg,
-            right: M3ESpacing.lg,
-            top: M3ESpacing.sm,
-            bottom: M3ESpacing.lg,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+      body: RefreshIndicator(
+        onRefresh: _handleRefresh,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Padding(
+            padding: EdgeInsets.only(
+              left: M3ESpacing.lg,
+              right: M3ESpacing.lg,
+              top: M3ESpacing.sm,
+              bottom: M3ESpacing.lg,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
               // User Info Section (if authenticated)
               Consumer(
                 builder: (context, ref, child) {
@@ -65,7 +98,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Text(
-                            'Sign in to follow fridges and track your volunteer points',
+                              'Sign in to follow fridges and track your points',
                             style: M3ETypography.bodyMedium,
                           ),
                           M3ESpacing.verticalMD,
@@ -124,61 +157,60 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                     profile.username,
                                     style: M3ETypography.titleLarge,
                                   ),
-                                  if (profile.isVolunteer)
-                                    Row(
-                                      children: [
-                                        const Icon(
-                                          Icons.volunteer_activism,
-                                          size: 16,
-                                        ),
-                                        M3ESpacing.horizontalXS,
-                                        Text(
-                                          'Volunteer',
-                                          style: M3ETypography.bodySmall,
-                                        ),
-                                      ],
-                                    ),
+                                  Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.badge_outlined,
+                                        size: 16,
+                                      ),
+                                      M3ESpacing.horizontalXS,
+                                      Text(
+                                        profile.userType.value[0]
+                                                .toUpperCase() +
+                                            profile.userType.value.substring(1),
+                                        style: M3ETypography.bodySmall,
+                                      ),
+                                    ],
+                                  ),
                                 ],
                               ),
                             ),
                           ],
                         ),
-                        if (profile.isVolunteer) ...[
-                          M3ESpacing.verticalMD,
-                          userPointsAsync.when(
-                            loading: () => const SizedBox.shrink(),
-                            error: (_, _) => const SizedBox.shrink(),
-                            data: (points) => Container(
-                              padding: M3ESpacing.all(M3ESpacing.sm),
-                              decoration: BoxDecoration(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.primaryContainer,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.stars,
+                        M3ESpacing.verticalMD,
+                        userPointsAsync.when(
+                          loading: () => const SizedBox.shrink(),
+                          error: (_, _) => const SizedBox.shrink(),
+                          data: (points) => Container(
+                            padding: M3ESpacing.all(M3ESpacing.sm),
+                            decoration: BoxDecoration(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.primaryContainer,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.stars,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onPrimaryContainer,
+                                ),
+                                M3ESpacing.horizontalXS,
+                                Text(
+                                  '$points points',
+                                  style: M3ETypography.titleMedium.copyWith(
                                     color: Theme.of(
                                       context,
                                     ).colorScheme.onPrimaryContainer,
+                                    fontWeight: FontWeight.bold,
                                   ),
-                                  M3ESpacing.horizontalXS,
-                                  Text(
-                                    '$points points',
-                                    style: M3ETypography.titleMedium.copyWith(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.onPrimaryContainer,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
                           ),
-                        ],
+                        ),
                         M3ESpacing.verticalMD,
                         // Notification Settings
                         SizedBox(
@@ -522,7 +554,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ],
                 ),
               ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -721,85 +754,59 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ),
             ),
             SwitchM3E(
-              value:
-                  _localNotificationsEnabled ??
-                  profile.settings.notificationsEnabled,
+              value: _localNotificationsEnabled ?? false,
               onChanged: (value) async {
                 // Optimistic update - change UI immediately
                 setState(() => _localNotificationsEnabled = value);
 
                 try {
-                  // Request permission if enabling
-                  if (value) {
-                    final messaging = FirebaseMessaging.instance;
+                  final fcmService = ref.read(fcmServiceProvider);
+                  final success = await fcmService.setDeviceNotificationsEnabled(value);
 
-                    // Check current notification settings
-                    final currentSettings = await messaging
-                        .getNotificationSettings();
-
-                    if (currentSettings.authorizationStatus ==
-                            AuthorizationStatus.denied ||
-                        currentSettings.authorizationStatus ==
-                            AuthorizationStatus.notDetermined) {
-                      // Request permission
-                      final settings = await messaging.requestPermission(
-                        alert: true,
-                        badge: true,
-                        sound: true,
+                  if (!success && value) {
+                    if (context.mounted) {
+                      final shouldOpenSettings = await DialogM3E.showCustom<bool>(
+                        context: context,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Notification Permission Required',
+                              style: M3ETypography.headlineSmall,
+                            ),
+                            M3ESpacing.verticalMD,
+                            Text(
+                              'Push notifications are disabled. '
+                              'Please enable them in Settings to receive updates about your followed fridges.',
+                              style: M3ETypography.bodyMedium,
+                            ),
+                            M3ESpacing.verticalXL,
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                TextButtonM3E(
+                                  onPressed: () => Navigator.of(context).pop(false),
+                                  child: const Text('Cancel'),
+                                ),
+                                M3ESpacing.horizontalXS,
+                                FilledButtonM3E(
+                                  onPressed: () => Navigator.of(context).pop(true),
+                                  child: const Text('Open Settings'),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       );
 
-                      if (settings.authorizationStatus !=
-                              AuthorizationStatus.authorized &&
-                          settings.authorizationStatus !=
-                              AuthorizationStatus.provisional) {
-                        if (context.mounted) {
-                          // If permanently denied, guide to settings
-                          final shouldOpenSettings =
-                              await DialogM3E.showCustom<bool>(
-                                context: context,
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Notification Permission Required',
-                                      style: M3ETypography.headlineSmall,
-                                    ),
-                                    M3ESpacing.verticalMD,
-                                    Text(
-                                      'Push notifications are disabled. '
-                                      'Please enable them in Settings to receive updates about your followed fridges.',
-                                      style: M3ETypography.bodyMedium,
-                                    ),
-                                    M3ESpacing.verticalXL,
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.end,
-                                      children: [
-                                        TextButtonM3E(
-                                          onPressed: () =>
-                                              Navigator.of(context).pop(false),
-                                          child: const Text('Cancel'),
-                                        ),
-                                        M3ESpacing.horizontalXS,
-                                        FilledButtonM3E(
-                                          onPressed: () =>
-                                              Navigator.of(context).pop(true),
-                                          child: const Text('Open Settings'),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              );
-
-                          if (shouldOpenSettings == true) {
-                            await openAppSettings();
-                          }
-                        }
-                        return;
+                      if (shouldOpenSettings == true) {
+                        await openAppSettings();
                       }
                     }
-                  } else {
+                  }
+
+                  if (!value) {
                     // Disabling - just update the setting
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -814,23 +821,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     }
                   }
 
-                  final updatedProfile = profile.copyWith(
-                    settings: profile.settings.copyWith(
-                      notificationsEnabled: value,
-                    ),
-                  );
-                  final repository = ref.read(authRepositoryProvider);
-                  await repository.updateUserProfile(updatedProfile);
-
-                  // Invalidate to refresh data, but local state prevents jank
-                  ref.invalidate(userProfileProvider);
-
-                  // Clear local state after a delay to let new data load
-                  Future.delayed(const Duration(milliseconds: 500), () {
-                    if (mounted) {
-                      setState(() => _localNotificationsEnabled = null);
-                    }
-                  });
+                  await _loadDeviceNotificationState();
                 } catch (e) {
                   // On error, revert local state and show error
                   if (mounted) {
@@ -847,228 +838,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ],
         ),
         M3ESpacing.verticalSM,
-        // Only show geofencing toggle for volunteers
-        if (profile.isVolunteer) ...[
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Geofencing', style: M3ETypography.bodyLarge),
-                    Text(
-                      'Get notified when near fridges needing attention',
-                      style: M3ETypography.bodyMedium,
-                    ),
-                  ],
-                ),
-              ),
-              SwitchM3E(
-                value:
-                    _localGeofencingEnabled ??
-                    profile.settings.geofencingEnabled,
-                onChanged: (value) async {
-                  // Optimistic update - change UI immediately
-                  setState(() => _localGeofencingEnabled = value);
-
-                  try {
-                    // Request location permission if enabling
-                    if (value) {
-                      // Use Geolocator for location permissions (handles iOS two-step flow)
-                      LocationPermission permission =
-                          await Geolocator.checkPermission();
-                      debugPrint(
-                        'Geofencing toggle - current permission: $permission',
-                      );
-
-                      // Check if we already have 'always' permission
-                      if (permission == LocationPermission.always) {
-                        debugPrint(
-                          'Already have "always" permission, enabling geofencing',
-                        );
-                        // Already have always permission, proceed
-                      } else if (permission == LocationPermission.denied ||
-                          permission == LocationPermission.whileInUse) {
-                        // Request permission (this will show system dialog)
-                        debugPrint('Requesting location permission...');
-                        permission = await Geolocator.requestPermission();
-                        debugPrint('After request, permission: $permission');
-
-                        // Check if we got at least whileInUse or always
-                        if (permission == LocationPermission.denied ||
-                            permission == LocationPermission.deniedForever) {
-                          if (context.mounted) {
-                            if (permission ==
-                                LocationPermission.deniedForever) {
-                              // Guide to settings
-                              final shouldOpenSettings =
-                                  await DialogM3E.showCustom<bool>(
-                                    context: context,
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'Enable Location Access',
-                                          style: M3ETypography.headlineSmall,
-                                        ),
-                                        M3ESpacing.verticalMD,
-                                        Text(
-                                          'Geofencing requires location access to notify you when you\'re near fridges needing help.\n\n'
-                                          'Please tap "Open Settings" and enable location access for FridgeFinder.',
-                                          style: M3ETypography.bodyMedium,
-                                        ),
-                                        M3ESpacing.verticalXL,
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.end,
-                                          children: [
-                                            TextButtonM3E(
-                                              onPressed: () => Navigator.of(
-                                                context,
-                                              ).pop(false),
-                                              child: const Text('Cancel'),
-                                            ),
-                                            M3ESpacing.horizontalXS,
-                                            FilledButtonM3E(
-                                              onPressed: () => Navigator.of(
-                                                context,
-                                              ).pop(true),
-                                              child: const Text(
-                                                'Open Settings',
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  );
-
-                              if (shouldOpenSettings == true) {
-                                await Geolocator.openAppSettings();
-                              }
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'Location permission is required for geofencing',
-                                  ),
-                                ),
-                              );
-                            }
-                          }
-                          return;
-                        }
-
-                        // If we got whileInUse, show info about upgrading to always
-                        if (permission == LocationPermission.whileInUse &&
-                            context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Geofencing enabled. For background notifications, '
-                                'change to "Always Allow" in Settings.',
-                              ),
-                              duration: Duration(seconds: 5),
-                            ),
-                          );
-                        }
-                      } else if (permission ==
-                          LocationPermission.deniedForever) {
-                        // Permanently denied, guide to settings
-                        debugPrint('Location permission permanently denied');
-                        if (context.mounted) {
-                          final shouldOpenSettings = await DialogM3E.showCustom<bool>(
-                            context: context,
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Enable Location Access',
-                                  style: M3ETypography.headlineSmall,
-                                ),
-                                M3ESpacing.verticalMD,
-                                Text(
-                                  'Geofencing requires location access to notify you when you\'re near fridges needing help.\n\n'
-                                  'Please tap "Open Settings" and enable location access for FridgeFinder.',
-                                  style: M3ETypography.bodyMedium,
-                                ),
-                                M3ESpacing.verticalXL,
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
-                                  children: [
-                                    TextButtonM3E(
-                                      onPressed: () =>
-                                          Navigator.of(context).pop(false),
-                                      child: const Text('Cancel'),
-                                    ),
-                                    M3ESpacing.horizontalXS,
-                                    FilledButtonM3E(
-                                      onPressed: () =>
-                                          Navigator.of(context).pop(true),
-                                      child: const Text('Open Settings'),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          );
-
-                          if (shouldOpenSettings == true) {
-                            await Geolocator.openAppSettings();
-                          }
-                        }
-                        return;
-                      }
-                    } else {
-                      // Disabling - just update the setting
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Geofencing disabled'),
-                            duration: Duration(seconds: 2),
-                          ),
-                        );
-                      }
-                    }
-
-                    final updatedProfile = profile.copyWith(
-                      settings: profile.settings.copyWith(
-                        geofencingEnabled: value,
-                      ),
-                    );
-                    final repository = ref.read(authRepositoryProvider);
-                    await repository.updateUserProfile(updatedProfile);
-
-                    // Invalidate to refresh data, but local state prevents jank
-                    ref.invalidate(userProfileProvider);
-
-                    // Clear local state after a delay to let new data load
-                    Future.delayed(const Duration(milliseconds: 500), () {
-                      if (mounted) {
-                        setState(() => _localGeofencingEnabled = null);
-                      }
-                    });
-                  } catch (e) {
-                    // On error, revert local state and show error
-                    if (mounted) {
-                      setState(() => _localGeofencingEnabled = !value);
-                    }
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(
-                        context,
-                      ).showSnackBar(SnackBar(content: Text('Error: $e')));
-                    }
-                  }
-                },
-              ),
-            ],
-          ),
-          M3ESpacing.verticalSM,
-        ],
         // TODO: Notification Frequency - Hidden until batching implementation complete
         // Requires: Cloud Function batching logic, scheduled functions, pending notifications queue
         // See: NOTIFICATION_SYSTEM_DOCUMENTATION.md section on "Implement Notification Frequency"
@@ -1305,64 +1074,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 M3ESpacing.horizontalXS,
                 FilledButton(
                   onPressed: () async {
-                    // Get repository and user references FIRST, before any navigation
                     final repository = ref.read(authRepositoryProvider);
-                    final authUser = ref.read(currentAuthUserProvider);
-                    final user = authUser.value;
-
-                    if (user == null) {
-                      if (context.mounted) {
-                        try {
-                          Navigator.of(context, rootNavigator: true).pop();
-                        } catch (e) {
-                          debugPrint('Error closing dialog: $e');
-                        }
-                        showSnackbarM3E(
-                          context: context,
-                          message: 'Not authenticated',
-                        );
-                      }
-                      return;
-                    }
-
-                    // Show re-authentication dialog (on top of the confirmation dialog)
-                    if (!context.mounted) return;
-
-                    final reauthenticated = await showDialog<bool>(
-                      context: context,
-                      barrierDismissible: false,
-                      builder: (context) => ReauthenticateDialog(user: user),
-                    );
-
-                    debugPrint('Re-authentication result: $reauthenticated');
-
-                    if (reauthenticated != true) {
-                      if (context.mounted) {
-                        try {
-                          Navigator.of(context, rootNavigator: true).pop();
-                        } catch (e) {
-                          debugPrint('Error closing dialog: $e');
-                        }
-                        showSnackbarM3E(
-                          context: context,
-                          message: 'Account deletion cancelled',
-                        );
-                      }
-                      return;
-                    }
-
-                    // If re-authentication succeeded, proceed with deletion
-                    if (!context.mounted) {
-                      debugPrint(
-                        'Context not mounted after reauth, aborting deletion',
-                      );
-                      return;
-                    }
-
-                    debugPrint(
-                      'Proceeding with account deletion for user: $userId',
-                    );
-                    debugPrint('Context is mounted, showing loading indicator');
+                    final fcmService = ref.read(fcmServiceProvider);
 
                     // Show loading indicator
                     showSnackbarM3E(
@@ -1372,20 +1085,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       icon: const Icon(Icons.hourglass_bottom),
                     );
 
-                    debugPrint(
-                      'Loading indicator shown, calling deleteAccount',
-                    );
-
                     try {
-                      debugPrint(
-                        'About to call deleteAccount with userId: $userId',
-                      );
-
+                      // Backend owns full account deletion, including Firebase.
                       await repository.deleteAccount(userId);
-
-                      debugPrint(
-                        'Account deleted successfully from deleteAccount call',
-                      );
+                      await fcmService.deleteToken();
+                      await repository.signOut();
 
                       // Show success message and navigate away
                       if (context.mounted) {
@@ -1415,28 +1119,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           );
 
                           if (context.mounted) {
-                            debugPrint(
-                              'Navigating to home after account deletion',
-                            );
                             context.go('/');
                           }
                         }
                       }
-
-                      debugPrint(
-                        'Account deletion complete - Firebase will auto-update auth state',
-                      );
                     } catch (e) {
                       debugPrint('Error deleting account: $e');
 
                       if (context.mounted) {
-                        String errorMessage = 'Error deleting account: $e';
-
-                        // Check if it's a requires-recent-login error (shouldn't happen after reauth)
-                        if (e.toString().contains('requires-recent-login')) {
-                          errorMessage =
-                              'Please try again. Your session may have expired.';
-                        }
+                        final errorMessage = 'Error deleting account: $e';
 
                         // Close the dialog first so user can see the error and try again
                         try {

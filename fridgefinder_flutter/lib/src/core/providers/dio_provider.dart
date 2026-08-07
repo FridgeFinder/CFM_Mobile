@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import '../constants/api_constants.dart';
@@ -12,8 +13,28 @@ part 'dio_provider.g.dart';
 /// Uses dynamic base URL from environment provider
 @riverpod
 Dio dio(Ref ref) {
-  final baseUrl = ref.watch(apiBaseUrlProvider);
+  return _buildDio(ref.watch(apiBaseUrlProvider));
+}
 
+/// Riverpod provider for Users API Dio client
+@riverpod
+Dio userDio(Ref ref) {
+  return _buildDio(ref.watch(usersApiBaseUrlProvider));
+}
+
+/// Riverpod provider for Notifications API Dio client
+@riverpod
+Dio notificationsDio(Ref ref) {
+  return _buildDio(ref.watch(notificationsApiBaseUrlProvider));
+}
+
+/// Riverpod provider for User Rewards API Dio client
+@riverpod
+Dio rewardsDio(Ref ref) {
+  return _buildDio(ref.watch(rewardsApiBaseUrlProvider));
+}
+
+Dio _buildDio(String baseUrl) {
   final dioInstance = Dio(
     BaseOptions(
       baseUrl: baseUrl,
@@ -31,6 +52,33 @@ Dio dio(Ref ref) {
   dioInstance.interceptors.add(
     InterceptorsWrapper(
       onRequest: (options, handler) async {
+        // Attach Firebase JWT when available.
+        final currentUser = firebase_auth.FirebaseAuth.instance.currentUser;
+        if (currentUser != null) {
+          try {
+            final token = await currentUser.getIdToken();
+            if (token != null && token.isNotEmpty) {
+              options.headers['Authorization'] = 'Bearer $token';
+              logger.d(
+                'Attached Firebase ID token for uid ${currentUser.uid} '
+                'to ${options.baseUrl}${options.path}',
+              );
+            } else {
+              logger.w(
+                'Firebase ID token was empty for uid ${currentUser.uid} '
+                'on ${options.baseUrl}${options.path}',
+              );
+            }
+          } catch (e) {
+            logger.w('Could not attach auth token: $e');
+          }
+        } else {
+          logger.w(
+            'No Firebase user available when calling '
+            '${options.baseUrl}${options.path}',
+          );
+        }
+
         // Check internet connectivity before making request
         final connectivityResult = await Connectivity().checkConnectivity();
 
@@ -62,7 +110,7 @@ Dio dio(Ref ref) {
           // Handle Stream, List<int>, or other binary data types
           dataToLog = {'_type': 'Binary data'};
         }
-        
+
         logger.apiRequest(
           options.method,
           '${options.baseUrl}${options.path}',
@@ -79,12 +127,39 @@ Dio dio(Ref ref) {
         );
         return handler.next(response);
       },
-      onError: (error, handler) {
+      onError: (error, handler) async {
         logger.e(
           'API Error: ${error.message}',
           error: error,
           stackTrace: error.stackTrace,
         );
+
+        final statusCode = error.response?.statusCode;
+        final requestOptions = error.requestOptions;
+        final shouldRetry = (statusCode == 401 || statusCode == 403) &&
+            requestOptions.extra['retry'] != true;
+
+        if (shouldRetry) {
+          final currentUser = firebase_auth.FirebaseAuth.instance.currentUser;
+          if (currentUser != null) {
+            try {
+              final refreshedToken = await currentUser.getIdToken(true);
+              if (refreshedToken != null && refreshedToken.isNotEmpty) {
+                requestOptions.headers['Authorization'] = 'Bearer $refreshedToken';
+                requestOptions.extra['retry'] = true;
+                logger.i(
+                  'Retrying request after auth refresh for '
+                  '${requestOptions.baseUrl}${requestOptions.path}',
+                );
+                final retryResponse = await dioInstance.fetch(requestOptions);
+                return handler.resolve(retryResponse);
+              }
+            } catch (e) {
+              logger.w('Failed to refresh auth token for retry: $e');
+            }
+          }
+        }
+
         return handler.next(error);
       },
     ),
@@ -94,11 +169,11 @@ Dio dio(Ref ref) {
   if (kDebugMode) {
     dioInstance.interceptors.add(
       LogInterceptor(
-        requestBody: true,
-        responseBody: true,
+        requestBody: false,
+        responseBody: false,
         error: true,
-        requestHeader: true,
-        responseHeader: true,
+        requestHeader: false,
+        responseHeader: false,
         logPrint: (obj) => logger.d(obj), // Use our logger instead of print
       ),
     );

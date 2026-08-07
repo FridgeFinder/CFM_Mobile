@@ -52,7 +52,7 @@ final class FcmServiceProvider
   }
 }
 
-String _$fcmServiceHash() => r'fe911bb7af19820760a8ab423a788d70ea7885cd';
+String _$fcmServiceHash() => r'5b31f1ce8f2d93968d3b9b704e277d4f03cf52a0';
 
 /// Provider for Geofencing Service
 
@@ -104,4 +104,4 @@ final class GeofencingServiceProvider
   }
 }
 
-String _$geofencingServiceHash() => r'24f7ece3daefa3236e7a14f1dd25043e3b26558e';
+String _$geofencingServiceHash() => r'0cf1fb71b3c8627670feb9dee8e4c2f7fe9afdb0';

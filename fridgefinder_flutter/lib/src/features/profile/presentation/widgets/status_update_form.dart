@@ -6,7 +6,6 @@ import 'package:design_system/design_system.dart';
 import '../../../map/domain/models/fridge_domain.dart';
 import '../../../map/data/repositories/fridge_repository.dart';
 import '../../../map/presentation/controllers/fridge_list_controller.dart';
-import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/providers/points_provider.dart';
 
 /// Form for reporting fridge status updates
@@ -136,22 +135,8 @@ class _StatusUpdateFormState extends ConsumerState<StatusUpdateForm> {
       ref.invalidate(fridgeListProvider);
       ref.invalidate(singleFridgeProvider(widget.fridge.id));
 
-      // Award points if user is a volunteer
-      final userProfile = ref.read(userProfileProvider).value;
-      if (userProfile?.isVolunteer == true) {
-        final previousCondition = widget.fridge.latestFridgeReport?.condition;
-        final previousFoodPercentage =
-            widget.fridge.latestFridgeReport?.foodPercentage ?? 0.0;
-
-        final pointsManager = ref.read(pointsManagerProvider.notifier);
-        await pointsManager.awardPointsForStatusReport(
-          wasDirty: previousCondition == FridgeCondition.dirty,
-          isNowGood: conditionToSubmit == FridgeCondition.good,
-          previousFoodPercentage: previousFoodPercentage,
-          newFoodPercentage: _foodPercentage,
-          isVolunteer: true,
-        );
-      }
+      // Refresh points after report submission; points are backend-managed.
+      ref.invalidate(userPointsProvider);
 
       if (!mounted) return;
 

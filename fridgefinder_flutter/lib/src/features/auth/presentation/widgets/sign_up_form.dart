@@ -25,12 +25,9 @@ class _SignUpFormState extends ConsumerState<SignUpForm>
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
 
-  bool _isVolunteer = false;
-  String? _zipCode;
   String? _selectedUsername;
   bool _isGeneratingUsername = false;
-  bool _newsletterOptIn = false;
-  String? _newsletterEmail;
+  String? _emailOverride;
 
   @override
   void initState() {
@@ -58,9 +55,7 @@ class _SignUpFormState extends ConsumerState<SignUpForm>
     try {
       final repository = ref.read(authRepositoryProvider);
       final generator = UsernameGenerator(repository);
-      final username = await generator.generateUniqueUsername(
-        isVolunteer: _isVolunteer,
-      );
+      final username = await generator.generateUniqueUsername();
       setState(() {
         _selectedUsername = username;
         _isGeneratingUsername = false;
@@ -81,9 +76,7 @@ class _SignUpFormState extends ConsumerState<SignUpForm>
     try {
       final repository = ref.read(authRepositoryProvider);
       final generator = UsernameGenerator(repository);
-      final username = await generator.generateUniqueUsername(
-        isVolunteer: _isVolunteer,
-      );
+      final username = await generator.generateUniqueUsername();
       setState(() {
         _selectedUsername = username;
         _isGeneratingUsername = false;
@@ -100,44 +93,16 @@ class _SignUpFormState extends ConsumerState<SignUpForm>
   }
 
   void _nextStep() {
-    if (_currentStep == 0) {
-      // Volunteer status step
-      setState(() {
-        _currentStep = 1;
-        _fadeController.reset();
-        _fadeController.forward();
-      });
-      if (_isVolunteer) {
-        // Generate new username for volunteer
-        _generateInitialUsername();
-      }
-    } else if (_currentStep == 1) {
-      // Username step
-      if (_selectedUsername == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please select a username')),
-        );
-        return;
-      }
-      if (_isVolunteer && (_zipCode == null || _zipCode!.isEmpty)) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please enter your zip code')),
-        );
-        return;
-      }
-      _completeSignUp();
+    if (_selectedUsername == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a username')),
+      );
+      return;
     }
+    _completeSignUp();
   }
 
-  void _previousStep() {
-    if (_currentStep > 0) {
-      setState(() {
-        _currentStep--;
-        _fadeController.reset();
-        _fadeController.forward();
-      });
-    }
-  }
+  void _previousStep() {}
 
   Future<void> _completeSignUp() async {
     try {
@@ -150,13 +115,9 @@ class _SignUpFormState extends ConsumerState<SignUpForm>
       final authEmail = user.email;
       final profile = UserProfile(
         userId: user.uid,
-        email: authEmail ?? _newsletterEmail,
+        email: authEmail ?? _emailOverride,
         phoneNumber: user.phoneNumber,
         username: _selectedUsername!,
-        isVolunteer: _isVolunteer,
-        zipCode: _isVolunteer ? _zipCode : null,
-        points: 0,
-        newsletterOptIn: _newsletterOptIn,
         createdAt: DateTime.now(),
       );
 
@@ -195,11 +156,7 @@ class _SignUpFormState extends ConsumerState<SignUpForm>
                 type: StepperType.horizontal,
                 steps: [
                   StepperStepM3E(
-                    title: 'Volunteer',
-                    content: _buildVolunteerStep(),
-                  ),
-                  StepperStepM3E(
-                    title: _isVolunteer ? 'Zip Code' : 'Username',
+                    title: 'Username',
                     content: _buildUsernameStep(),
                   ),
                 ],
@@ -246,55 +203,12 @@ class _SignUpFormState extends ConsumerState<SignUpForm>
     );
   }
 
-  Widget _buildVolunteerStep() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Are you a volunteer?', style: M3ETypography.titleLarge),
-        M3ESpacing.verticalXS,
-        Text(
-          'Volunteers help maintain and stock community fridges',
-          style: M3ETypography.bodyMedium,
-        ),
-        M3ESpacing.verticalXL,
-        CheckboxM3E(
-          label: 'I am a volunteer',
-          value: _isVolunteer,
-          onChanged: (value) {
-            setState(() => _isVolunteer = value ?? false);
-          },
-        ),
-      ],
-    );
-  }
-
   Widget _buildUsernameStep() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          _isVolunteer ? 'Enter your zip code' : 'Choose your username',
-          style: M3ETypography.titleLarge,
-        ),
+        Text('Choose your username', style: M3ETypography.titleLarge),
         M3ESpacing.verticalXS,
-        if (_isVolunteer) ...[
-          Text(
-            'We collect zip codes for non-profit funding purposes and do not share this information with any third parties.',
-            style: M3ETypography.bodySmall.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-          ),
-          M3ESpacing.verticalMD,
-          TextFieldM3E(
-            labelText: 'Zip Code',
-            hintText: '12345',
-            keyboardType: TextInputType.number,
-            onChanged: (value) {
-              setState(() => _zipCode = value);
-            },
-          ),
-          M3ESpacing.verticalXL,
-        ],
         Text('Your username', style: M3ETypography.titleMedium),
         M3ESpacing.verticalXS,
         Container(
@@ -374,15 +288,14 @@ class _SignUpFormState extends ConsumerState<SignUpForm>
                               uri,
                               mode: LaunchMode.externalApplication,
                             )) {
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'Could not open privacy policy',
-                                    ),
+                              if (!mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Could not open privacy policy',
                                   ),
-                                );
-                              }
+                                ),
+                              );
                             }
                           },
                           child: Text(
@@ -409,20 +322,11 @@ class _SignUpFormState extends ConsumerState<SignUpForm>
             hintText: 'you@example.com',
             keyboardType: TextInputType.emailAddress,
             onChanged: (value) {
-              setState(() => _newsletterEmail = value.isEmpty ? null : value);
+              setState(() => _emailOverride = value.isEmpty ? null : value);
             },
           ),
           M3ESpacing.verticalSM,
         ],
-        // Newsletter opt-in checkbox
-        CheckboxM3E(
-          label:
-              'I\'d like to receive occasional updates and newsletters about community fridges via email',
-          value: _newsletterOptIn,
-          onChanged: (value) {
-            setState(() => _newsletterOptIn = value ?? false);
-          },
-        ),
       ],
     );
   }

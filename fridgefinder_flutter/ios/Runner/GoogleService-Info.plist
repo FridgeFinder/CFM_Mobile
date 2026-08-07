@@ -3,21 +3,21 @@
 <plist version="1.0">
 <dict>
 	<key>CLIENT_ID</key>
-	<string>576156648133-iok9kg4ln8u6okgr477n9ut6et9o0sdf.apps.googleusercontent.com</string>
+	<string>284914819627-liq1j0mvtnql3j423gat9bs1nd6g39t2.apps.googleusercontent.com</string>
 	<key>REVERSED_CLIENT_ID</key>
-	<string>com.googleusercontent.apps.576156648133-iok9kg4ln8u6okgr477n9ut6et9o0sdf</string>
+	<string>com.googleusercontent.apps.284914819627-liq1j0mvtnql3j423gat9bs1nd6g39t2</string>
 	<key>API_KEY</key>
-	<string>AIzaSyDhs2T-ez7iNKce4ITLkm-e1gMaQIpOWgA</string>
+	<string>AIzaSyAo7O3AwEsIsIJNojmRv45RcQO9Ef-FvtE</string>
 	<key>GCM_SENDER_ID</key>
-	<string>576156648133</string>
+	<string>284914819627</string>
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
 	<string>com.fridgefinder.fridgefinderFlutterApp</string>
 	<key>PROJECT_ID</key>
-	<string>fridgefinder-app</string>
+	<string>fridgefinder-app-dev</string>
 	<key>STORAGE_BUCKET</key>
-	<string>fridgefinder-app.firebasestorage.app</string>
+	<string>fridgefinder-app-dev.firebasestorage.app</string>
 	<key>IS_ADS_ENABLED</key>
 	<false></false>
 	<key>IS_ANALYTICS_ENABLED</key>
@@ -29,8 +29,8 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:576156648133:ios:a8bcb9f2c07d53688666ac</string>
+	<string>1:284914819627:ios:337f63ebf86b11e00a006e</string>
 	<key>DATABASE_URL</key>
-	<string>https://fridgefinder-app-default-rtdb.firebaseio.com</string>
+	<string>https://fridgefinder-app-dev-default-rtdb.firebaseio.com</string>
 </dict>
 </plist>

@@ -12,6 +12,7 @@ abstract class SubscriptionPreferences with _$SubscriptionPreferences {
   const factory SubscriptionPreferences({
     required String fridgeId,
     required DateTime subscribedAt,
+    DateTime? updatedAt,
     @Default(NotificationPreferences()) NotificationPreferences notificationPreferences,
   }) = _SubscriptionPreferences;
 
@@ -19,21 +20,47 @@ abstract class SubscriptionPreferences with _$SubscriptionPreferences {
       _$SubscriptionPreferencesFromJson(json);
 }
 
-/// Individual notification preference settings
+/// Notification preferences grouped by contact channel.
 @freezed
 abstract class NotificationPreferences with _$NotificationPreferences {
   const NotificationPreferences._();
 
   const factory NotificationPreferences({
-    @Default(false) bool updatedWithFood,
-    @Default(false) bool runningLow,
-    @Default(false) bool empty,
-    @Default(false) bool needsCleaning,
-    @Default(false) bool needsServicing,
-    @Default(false) bool routineValidation,
+    @Default(ContactTypePreferences()) ContactTypePreferences contactTypePreferences,
   }) = _NotificationPreferences;
 
   factory NotificationPreferences.fromJson(Map<String, dynamic> json) =>
       _$NotificationPreferencesFromJson(json);
+}
+
+@freezed
+abstract class ContactTypePreferences with _$ContactTypePreferences {
+  const ContactTypePreferences._();
+
+  const factory ContactTypePreferences({
+    @Default(FridgeNotificationFlags()) FridgeNotificationFlags email,
+    @Default(FridgeNotificationFlags()) FridgeNotificationFlags device,
+  }) = _ContactTypePreferences;
+
+  factory ContactTypePreferences.fromJson(Map<String, dynamic> json) =>
+      _$ContactTypePreferencesFromJson(json);
+}
+
+@freezed
+abstract class FridgeNotificationFlags with _$FridgeNotificationFlags {
+  const FridgeNotificationFlags._();
+
+  const factory FridgeNotificationFlags({
+    @Default(true) bool good,
+    @Default(false) bool dirty,
+    @Default(false) bool outOfOrder,
+    @Default(true) bool notAtLocation,
+    @Default(true) bool ghost,
+    @Default(false) bool noFood,
+    @Default(false) bool hasFood,
+  }) = _FridgeNotificationFlags;
+
+  factory FridgeNotificationFlags.fromJson(Map<String, dynamic> json) =>
+      _$FridgeNotificationFlagsFromJson(json);
 }
 

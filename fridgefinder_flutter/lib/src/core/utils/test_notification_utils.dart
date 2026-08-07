@@ -47,26 +47,16 @@ class TestNotificationUtils {
       logger.w('Direct FCM sending requires Firebase Admin SDK.');
       logger.i('To test FCM notifications:');
       logger.i('1. Use Firebase Console > Cloud Messaging > Send test message');
-      logger.i('2. Or create a status report in the database (see createTestStatusReport)');
-      logger.i('3. Or use the test notification button in the app');
-
-      // For now, we'll create a test status report which will trigger Cloud Functions
-      await createTestStatusReport(
-        fridgeId: fridgeId,
-        fridgeName: fridgeName ?? 'Test Fridge',
-        condition: 'good',
-        foodPercentage: 0.0,
-        title: title,
-        body: body,
-      );
+      logger.i('2. Submit a normal status update from the app UI to exercise end-to-end notifications');
+      logger.i('3. Or use Firebase Console test messaging with a real token');
     } catch (e) {
       logger.e('Error sending test FCM notification: $e');
       rethrow;
     }
   }
 
-  /// Create a test status report in Realtime Database
-  /// This will trigger the Cloud Function onFridgeStatusUpdate
+  /// Legacy helper kept for API compatibility with the debug screen.
+  /// Direct RTDB status report writes are disabled in favor of API-first flows.
   static Future<String> createTestStatusReport({
     required String fridgeId,
     String? fridgeName,
@@ -77,36 +67,12 @@ class TestNotificationUtils {
     String? title,
     String? body,
   }) async {
-    try {
-      final database = DatabaseProvider.databaseRef;
-      final reportRef = database.child('statusReports').push();
-
-      final reportData = <String, dynamic>{
-        'fridgeId': fridgeId,
-        'fridgeName': fridgeName ?? 'Test Fridge',
-        'condition': condition,
-        'foodPercentage': foodPercentage,
-        'reportDate': DateTime.now().toIso8601String(),
-        'createdAt': DateTime.now().toIso8601String(),
-        if (notes != null && notes.isNotEmpty) 'notes': notes,
-        if (photoUrl != null && photoUrl.isNotEmpty) 'photoUrl': photoUrl,
-        // Add custom notification fields if provided
-        'testTitle': ?title,
-        'testBody': ?body,
-      };
-
-      await reportRef.set(reportData);
-      final reportId = reportRef.key!;
-      
-      logger.i('Test status report created: $reportId');
-      logger.i('This will trigger Cloud Function: onFridgeStatusUpdate');
-      logger.i('Users following fridge $fridgeId will receive notifications');
-
-      return reportId;
-    } catch (e) {
-      logger.e('Error creating test status report: $e');
-      rethrow;
-    }
+    logger.w(
+      'createTestStatusReport is disabled. Submit a real fridge status update via API flow instead.',
+    );
+    throw UnsupportedError(
+      'createTestStatusReport is disabled. Submit a status update from the app UI instead.',
+    );
   }
 
   /// Get current user's FCM token

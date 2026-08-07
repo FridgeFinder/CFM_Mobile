@@ -2,21 +2,38 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fridgefinder_app/src/features/profile/presentation/profile_screen.dart';
+import 'package:fridgefinder_app/src/core/providers/auth_provider.dart';
+import 'package:fridgefinder_app/src/core/providers/environment_provider.dart';
+import 'package:fridgefinder_app/src/core/providers/location_provider.dart';
+import 'package:fridgefinder_app/src/core/providers/points_provider.dart';
+import 'package:fridgefinder_app/src/core/providers/theme_provider.dart';
 import 'package:design_system/design_system.dart';
 
 /// Tests for ProfileScreen structure and widget composition
 /// These tests verify the UI structure without requiring full provider mocking
 void main() {
+  Widget buildProfileScreenTestApp({ThemeData? theme}) {
+    return ProviderScope(
+      overrides: [
+        authUserProvider.overrideWith((ref) => Stream.value(null)),
+        isAuthenticatedProvider.overrideWith((ref) => false),
+        userProfileProvider.overrideWith((ref) => Future.value(null)),
+        userPointsProvider.overrideWith((ref) => Future.value(0)),
+        appThemeModeProvider.overrideWithValue(AppThemeMode.system),
+        environmentProvider.overrideWithValue(ApiEnvironment.dev),
+        locationAccessProvider.overrideWithValue(true),
+      ],
+      child: MaterialApp(
+        theme: theme,
+        home: const Scaffold(body: ProfileScreen()),
+      ),
+    );
+  }
+
   group('ProfileScreen Structure Tests', () {
     testWidgets('ProfileScreen widget is created successfully',
         (WidgetTester tester) async {
-      await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(
-            home: Scaffold(body: ProfileScreen()),
-          ),
-        ),
-      );
+      await tester.pumpWidget(buildProfileScreenTestApp());
 
       // Verify the widget tree renders without errors
       expect(find.byType(ProfileScreen), findsOneWidget);
@@ -24,13 +41,7 @@ void main() {
 
     testWidgets('ProfileScreen has SingleChildScrollView for scrollability',
         (WidgetTester tester) async {
-      await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(
-            home: Scaffold(body: ProfileScreen()),
-          ),
-        ),
-      );
+      await tester.pumpWidget(buildProfileScreenTestApp());
 
       await tester.pump();
 
@@ -41,12 +52,7 @@ void main() {
     testWidgets('ProfileScreen uses M3E spacing and components',
         (WidgetTester tester) async {
       await tester.pumpWidget(
-        ProviderScope(
-          child: MaterialApp(
-            theme: ThemeData(useMaterial3: true),
-            home: const Scaffold(body: ProfileScreen()),
-          ),
-        ),
+        buildProfileScreenTestApp(theme: ThemeData(useMaterial3: true)),
       );
 
       await tester.pump();
@@ -59,13 +65,10 @@ void main() {
     testWidgets('ProfileScreen displays correctly with Material3 theme',
         (WidgetTester tester) async {
       await tester.pumpWidget(
-        ProviderScope(
-          child: MaterialApp(
-            theme: ThemeData(
-              colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-              useMaterial3: true,
-            ),
-            home: const Scaffold(body: ProfileScreen()),
+        buildProfileScreenTestApp(
+          theme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+            useMaterial3: true,
           ),
         ),
       );

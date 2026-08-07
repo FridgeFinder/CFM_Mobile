@@ -4,8 +4,8 @@ import 'package:design_system/design_system.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/utils/app_logger.dart';
 import '../../data/repositories/auth_repository.dart';
+import '../../domain/models/user_profile.dart';
 import '../../../../core/utils/phone_number_helper.dart';
-import 'sign_up_form.dart';
 
 /// Sign-in widget supporting phone and Gmail authentication
 class SignInWidget extends ConsumerStatefulWidget {
@@ -23,6 +23,22 @@ class _SignInWidgetState extends ConsumerState<SignInWidget> {
   bool _isCodeSent = false;
   String? _verificationId;
   bool _isLoading = false;
+
+  Future<UserProfile?> _getExistingProfileOrNull({
+    required AuthRepository repository,
+    required String userId,
+    required String provider,
+  }) async {
+    try {
+      return await repository.getUserProfile(userId);
+    } catch (e) {
+      // Sign-in itself succeeded; treat profile lookup issues as "new user" flow.
+      logger.w(
+        'Continuing $provider sign-in without existing profile due to lookup error: $e',
+      );
+      return null;
+    }
+  }
 
   @override
   void dispose() {
@@ -108,71 +124,36 @@ class _SignInWidgetState extends ConsumerState<SignInWidget> {
 
       if (!mounted) return;
 
-      // Check if user profile exists by phone number (not userId!)
-      final existingProfile = await repository.findUserProfileByEmailOrPhone(
-        phoneNumber: credential.user!.phoneNumber,
+      // Check if profile exists for the authenticated Firebase user.
+      final existingProfile = await _getExistingProfileOrNull(
+        repository: repository,
+        userId: credential.user!.uid,
+        provider: 'phone',
       );
 
       if (existingProfile == null) {
-        // New user - show sign-up form
-        if (!mounted) {
-          setState(() => _isLoading = false);
-          return;
-        }
+        setState(() => _isLoading = false);
 
-        final result = await showDialog<bool>(
-          context: context,
-          barrierDismissible: false,
-          builder: (dialogContext) => Dialog(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: SignUpForm(userCredential: credential),
-              ),
-            ),
-          ),
-        );
-
-        if (result == true) {
-          setState(() => _isLoading = false);
-
-          // Close dialogs using a post-frame callback to ensure UI is stable
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) {
-              // Close the sign-in dialog
-              Navigator.of(context).pop();
-
-              // Let Firebase Auth state listeners handle provider updates naturally
-              // No need to manually invalidate - the auth state change will trigger updates
-              widget.onSignInSuccess?.call();
-            }
-          });
-        } else {
+        // New users now complete setup on the dedicated profile completion route.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
-            setState(() => _isLoading = false);
+            final navigator = Navigator.of(context, rootNavigator: true);
+            if (navigator.canPop()) {
+              navigator.pop();
+            }
+            widget.onSignInSuccess?.call();
           }
-        }
+        });
       } else {
-        // Existing user - update profile with new userId if needed
-        if (existingProfile.userId != credential.user!.uid) {
-          logger.i(
-            'Migrating profile from ${existingProfile.userId} to ${credential.user!.uid}',
-          );
-          final updatedProfile = existingProfile.copyWith(
-            userId: credential.user!.uid,
-          );
-          await repository.updateUserProfile(updatedProfile);
-          // Delete old profile (migration cleanup)
-          await repository.deleteAccount(existingProfile.userId);
-          ref.invalidate(userProfileProvider);
-        }
-
         setState(() => _isLoading = false);
 
         // Use post-frame callback for navigation
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
-            Navigator.of(context).pop();
+            final navigator = Navigator.of(context, rootNavigator: true);
+            if (navigator.canPop()) {
+              navigator.pop();
+            }
             widget.onSignInSuccess?.call();
           }
         });
@@ -199,64 +180,34 @@ class _SignInWidgetState extends ConsumerState<SignInWidget> {
         return;
       }
 
-      // Check if user profile exists by email (not userId!)
-      final existingProfile = await repository.findUserProfileByEmailOrPhone(
-        email: credential.user!.email,
+      // Check if profile exists for the authenticated Firebase user.
+      final existingProfile = await _getExistingProfileOrNull(
+        repository: repository,
+        userId: credential.user!.uid,
+        provider: 'apple',
       );
 
       if (existingProfile == null) {
-        // New user - show sign-up form
-        if (!mounted) {
-          setState(() => _isLoading = false);
-          return;
-        }
-
-        final result = await showDialog<bool>(
-          context: context,
-          barrierDismissible: false,
-          builder: (dialogContext) => Dialog(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: SignUpForm(userCredential: credential),
-              ),
-            ),
-          ),
-        );
-
-        if (result == true) {
-          setState(() => _isLoading = false);
-
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) {
-              Navigator.of(context).pop();
-              widget.onSignInSuccess?.call();
-            }
-          });
-        } else {
-          if (mounted) {
-            setState(() => _isLoading = false);
-          }
-        }
-      } else {
-        // Existing user - update profile with new userId if needed
-        if (existingProfile.userId != credential.user!.uid) {
-          logger.i(
-            'Migrating profile from ${existingProfile.userId} to ${credential.user!.uid}',
-          );
-          final updatedProfile = existingProfile.copyWith(
-            userId: credential.user!.uid,
-          );
-          await repository.updateUserProfile(updatedProfile);
-          await repository.deleteAccount(existingProfile.userId);
-          ref.invalidate(userProfileProvider);
-        }
-
         setState(() => _isLoading = false);
 
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
-            Navigator.of(context).pop();
+            final navigator = Navigator.of(context, rootNavigator: true);
+            if (navigator.canPop()) {
+              navigator.pop();
+            }
+            widget.onSignInSuccess?.call();
+          }
+        });
+      } else {
+        setState(() => _isLoading = false);
+
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            final navigator = Navigator.of(context, rootNavigator: true);
+            if (navigator.canPop()) {
+              navigator.pop();
+            }
             widget.onSignInSuccess?.call();
           }
         });
@@ -270,7 +221,9 @@ class _SignInWidgetState extends ConsumerState<SignInWidget> {
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Apple Sign-In is not available on this device')),
+          const SnackBar(
+            content: Text('Apple Sign-In is not available on this device'),
+          ),
         );
       }
     } catch (e) {
@@ -295,71 +248,35 @@ class _SignInWidgetState extends ConsumerState<SignInWidget> {
         return;
       }
 
-      // Check if user profile exists by email (not userId!)
-      final existingProfile = await repository.findUserProfileByEmailOrPhone(
-        email: credential.user!.email,
+      // Check if profile exists for the authenticated Firebase user.
+      final existingProfile = await _getExistingProfileOrNull(
+        repository: repository,
+        userId: credential.user!.uid,
+        provider: 'google',
       );
 
       if (existingProfile == null) {
-        // New user - show sign-up form
-        if (!mounted) {
-          setState(() => _isLoading = false);
-          return;
-        }
+        setState(() => _isLoading = false);
 
-        final result = await showDialog<bool>(
-          context: context,
-          barrierDismissible: false,
-          builder: (dialogContext) => Dialog(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: SignUpForm(userCredential: credential),
-              ),
-            ),
-          ),
-        );
-
-        if (result == true) {
-          setState(() => _isLoading = false);
-
-          // Close dialogs using a post-frame callback to ensure UI is stable
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) {
-              // Close the sign-in dialog
-              Navigator.of(context).pop();
-
-              // Let Firebase Auth state listeners handle provider updates naturally
-              // No need to manually invalidate - the auth state change will trigger updates
-              widget.onSignInSuccess?.call();
-            }
-          });
-        } else {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
-            setState(() => _isLoading = false);
+            final navigator = Navigator.of(context, rootNavigator: true);
+            if (navigator.canPop()) {
+              navigator.pop();
+            }
+            widget.onSignInSuccess?.call();
           }
-        }
+        });
       } else {
-        // Existing user - update profile with new userId if needed
-        if (existingProfile.userId != credential.user!.uid) {
-          logger.i(
-            'Migrating profile from ${existingProfile.userId} to ${credential.user!.uid}',
-          );
-          final updatedProfile = existingProfile.copyWith(
-            userId: credential.user!.uid,
-          );
-          await repository.updateUserProfile(updatedProfile);
-          // Delete old profile (migration cleanup)
-          await repository.deleteAccount(existingProfile.userId);
-          ref.invalidate(userProfileProvider);
-        }
-
         setState(() => _isLoading = false);
 
         // Use post-frame callback for navigation
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
-            Navigator.of(context).pop();
+            final navigator = Navigator.of(context, rootNavigator: true);
+            if (navigator.canPop()) {
+              navigator.pop();
+            }
             widget.onSignInSuccess?.call();
           }
         });

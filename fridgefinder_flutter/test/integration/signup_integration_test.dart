@@ -193,7 +193,8 @@ class MockAuthRepository implements AuthRepository {
     }
 
     // Validate required fields for volunteers
-    if (profile.isVolunteer && (profile.zipCode == null || profile.zipCode!.isEmpty)) {
+    if (profile.userType == UserType.volunteer &&
+        (profile.zipCode == null || profile.zipCode!.isEmpty)) {
       throw Exception('Zip code required for volunteers');
     }
 

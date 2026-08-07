@@ -55,7 +55,7 @@ final class FridgeListProvider
   }
 }
 
-String _$fridgeListHash() => r'0098bff8b97de9c1d33798fac93ac1aa5d118b46';
+String _$fridgeListHash() => r'2bc01d5263c3040858099b1022ae1516145bb69f';
 
 /// Notifier for managing a single selected fridge ID
 

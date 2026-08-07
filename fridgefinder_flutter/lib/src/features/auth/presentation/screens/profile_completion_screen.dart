@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:design_system/design_system.dart';
@@ -23,14 +24,21 @@ class ProfileCompletionScreen extends ConsumerStatefulWidget {
 
 class _ProfileCompletionScreenState
     extends ConsumerState<ProfileCompletionScreen> {
-  String _zipCode = '';
   String _username = '';
-  bool _isVolunteer = false;
   bool _isSubmitting = false;
   bool _isRollingDice = false;
   String? _errorMessage;
-  bool _newsletterOptIn = false;
-  String? _newsletterEmail;
+  String? _emailOverride;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _username.isEmpty && !_isRollingDice) {
+        _generateUsername();
+      }
+    });
+  }
 
   Future<void> _createProfile() async {
     // Validate username
@@ -56,15 +64,10 @@ class _ProfileCompletionScreenState
       final authEmail = authUser.email;
       final newProfile = UserProfile(
         userId: authUser.uid,
-        email: authEmail ?? _newsletterEmail,
+        email: authEmail ?? _emailOverride,
         phoneNumber: authUser.phoneNumber,
         username: _username,
-        isVolunteer: _isVolunteer,
-        zipCode: _isVolunteer ? _zipCode : null,
-        points: 0,
-        fcmToken: null,
         settings: const UserSettings(),
-        newsletterOptIn: _newsletterOptIn,
         createdAt: DateTime.now(),
         lastLoginAt: DateTime.now(),
       );
@@ -101,11 +104,25 @@ class _ProfileCompletionScreenState
     try {
       final repository = ref.read(authRepositoryProvider);
       final generator = UsernameGenerator(repository);
-      final username = await generator.generateUniqueUsername(
-        isVolunteer: _isVolunteer,
-      );
+      String username;
+      try {
+        username = await generator
+            .generateUniqueUsername(maxAttempts: 3)
+            .timeout(const Duration(seconds: 7));
+      } on TimeoutException {
+        username = generator.generateOfflineUsername();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Username service is slow. Using a quick generated username.',
+              ),
+            ),
+          );
+        }
+      }
 
-      // Wait for animation to complete before updating username
+      // Keep roll visible long enough to avoid abrupt state changes.
       await Future.delayed(const Duration(milliseconds: 800));
 
       if (mounted) {
@@ -117,9 +134,18 @@ class _ProfileCompletionScreenState
     } catch (e) {
       logger.e('Error generating username: $e');
       if (mounted) {
-        setState(() => _isRollingDice = false);
+        final repository = ref.read(authRepositoryProvider);
+        final generator = UsernameGenerator(repository);
+        setState(() {
+          _username = generator.generateOfflineUsername();
+          _isRollingDice = false;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error generating username: $e')),
+          const SnackBar(
+            content: Text(
+              'Could not verify username availability. Using a generated username.',
+            ),
+          ),
         );
       }
     }
@@ -128,6 +154,13 @@ class _ProfileCompletionScreenState
   @override
   Widget build(BuildContext context) {
     final profileAsync = ref.watch(userProfileProvider);
+    UserProfile? profile;
+    profileAsync.when(
+      data: (value) => profile = value,
+      loading: () {},
+      error: (_, _) {},
+    );
+    final profileLoadError = profileAsync.hasError;
 
     return PopScope(
       canPop: false, // Prevent back navigation
@@ -161,41 +194,36 @@ class _ProfileCompletionScreenState
           ),
           title: const Text('Complete Your Profile'),
         ),
-        body: profileAsync.when(
-          loading: () => const Center(child: LoadingIndicatorM3E()),
-          error: (error, stack) => Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                const SizedBox(height: 16),
-                Text('Error loading profile: $error'),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () => ref.invalidate(userProfileProvider),
-                  child: const Text('Retry'),
-                ),
-              ],
-            ),
-          ),
-          data: (profile) {
+        body: Builder(
+          builder: (context) {
             // If profile is null, user authenticated but never completed sign-up
-            // Show form to create their profile
+            // Show form to create their profile, even while profile fetch is in-flight.
             if (profile == null) {
-              // Generate initial username if not set
-              if (_username.isEmpty) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (mounted) {
-                    _generateUsername();
-                  }
-                });
-              }
-
               return SingleChildScrollView(
                 padding: EdgeInsets.all(M3ESpacing.xl),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    if (profileLoadError) ...[
+                      CardM3E(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Still checking your profile. You can continue setup now.',
+                              style: M3ETypography.bodyMedium,
+                            ),
+                            const SizedBox(height: 8),
+                            TextButton.icon(
+                              onPressed: () => ref.invalidate(userProfileProvider),
+                              icon: const Icon(Icons.refresh),
+                              label: const Text('Retry Profile Check'),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
                     const Icon(
                       Icons.person_add,
                       size: 64,
@@ -239,7 +267,9 @@ class _ProfileCompletionScreenState
                                 ),
                                 child: Text(
                                   _username.isEmpty
-                                      ? 'Generating...'
+                                      ? (_isRollingDice
+                                            ? 'Generating...'
+                                            : 'Tap dice to generate')
                                       : _username,
                                   style: M3ETypography.bodyLarge.copyWith(
                                     color: _username.isEmpty
@@ -283,47 +313,24 @@ class _ProfileCompletionScreenState
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Tap the dice to generate a new username',
+                          'Tap the dice to generate a username',
                           style: M3ETypography.bodySmall.copyWith(
                             color: Theme.of(
                               context,
                             ).colorScheme.onSurfaceVariant,
                           ),
                         ),
+                        if (_username.isEmpty && !_isRollingDice) ...[
+                          const SizedBox(height: 8),
+                          TextButton.icon(
+                            onPressed: _generateUsername,
+                            icon: const Icon(Icons.casino_outlined),
+                            label: const Text('Generate Username'),
+                          ),
+                        ],
                       ],
                     ),
                     const SizedBox(height: 24),
-                    // Volunteer checkbox
-                    CheckboxM3E(
-                      label: 'I am a volunteer',
-                      value: _isVolunteer,
-                      onChanged: (value) {
-                        setState(() => _isVolunteer = value ?? false);
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    // Zip code field (if volunteer)
-                    if (_isVolunteer) ...[
-                      TextFieldM3E(
-                        labelText: 'Zip Code',
-                        hintText: '12345',
-                        keyboardType: TextInputType.number,
-                        onChanged: (value) {
-                          setState(() {
-                            _zipCode = value;
-                            _errorMessage = null;
-                          });
-                        },
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'We collect zip codes for non-profit funding purposes and don\'t share data with anyone.',
-                        style: M3ETypography.bodySmall.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                    ],
                     // Email field for phone-auth users (no Google email)
                     Builder(
                       builder: (context) {
@@ -338,7 +345,7 @@ class _ProfileCompletionScreenState
                                 hintText: 'you@example.com',
                                 keyboardType: TextInputType.emailAddress,
                                 onChanged: (value) {
-                                  setState(() => _newsletterEmail =
+                                  setState(() => _emailOverride =
                                       value.isEmpty ? null : value);
                                 },
                               ),
@@ -349,16 +356,7 @@ class _ProfileCompletionScreenState
                         return const SizedBox.shrink();
                       },
                     ),
-                    // Newsletter opt-in checkbox
-                    CheckboxM3E(
-                      label:
-                          'I\'d like to receive occasional updates and newsletters about community fridges via email',
-                      value: _newsletterOptIn,
-                      onChanged: (value) {
-                        setState(() => _newsletterOptIn = value ?? false);
-                      },
-                    ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 4),
                     // Error message
                     if (_errorMessage != null) ...[
                       Text(

@@ -11,6 +11,7 @@ const admin = require('firebase-admin');
 admin.initializeApp();
 
 const db = admin.database();
+const ENABLE_GEOFENCE_NOTIFICATIONS = false;
 
 /**
  * Server-side caching for improved performance
@@ -108,280 +109,6 @@ async function sendNotificationToUser(userId, notification) {
 }
 
 /**
- * Notification Rules Configuration
- * Maps fridge conditions and food levels to notification types with custom messages
- * Rules are evaluated in priority order (lower number = higher priority)
- */
-const NOTIFICATION_RULES = [
-  // Priority 1: Critical conditions (highest priority)
-  {
-    id: 'out_of_order',
-    preferenceKey: 'needsServicing',
-    condition: (report, prefs) => report.condition === 'out of order' && prefs.needsServicing,
-    title: (fridgeName) => `${fridgeName} needs servicing`,
-    body: (fridgeName) => 'This fridge is out of order and needs immediate attention!',
-    priority: 1,
-    urgent: true, // Always send immediately regardless of frequency setting
-  },
-
-  // Priority 2: Maintenance needs
-  {
-    id: 'dirty',
-    preferenceKey: 'needsCleaning',
-    condition: (report, prefs) => report.condition === 'dirty' && prefs.needsCleaning,
-    title: (fridgeName) => `${fridgeName} needs cleaning`,
-    body: (fridgeName) => 'This fridge needs some TLC - help keep it clean for the community!',
-    priority: 2,
-  },
-
-  // Priority 3: Empty fridge
-  {
-    id: 'empty',
-    preferenceKey: 'empty',
-    condition: (report, prefs) => report.foodPercentage === 0 && prefs.empty,
-    title: (fridgeName) => `${fridgeName} is now empty`,
-    body: (fridgeName) => 'This fridge is completely empty. Can you help stock it?',
-    priority: 3,
-  },
-
-  // Priority 4: Running low on food
-  {
-    id: 'running_low',
-    preferenceKey: 'runningLow',
-    condition: (report, prefs) => {
-      // Running low means 33% or less (but not empty, which is handled above)
-      return report.foodPercentage !== undefined &&
-             report.foodPercentage > 0 &&
-             report.foodPercentage <= 0.33 &&
-             prefs.runningLow;
-    },
-    title: (fridgeName) => `${fridgeName} is running low on food`,
-    body: (fridgeName) => 'Food supplies are getting low - consider stocking if you can!',
-    priority: 4,
-  },
-
-  // Priority 5: Positive updates - restocked
-  {
-    id: 'updated_with_food',
-    preferenceKey: 'updatedWithFood',
-    condition: (report, prefs) => report.foodPercentage >= 0.66 && prefs.updatedWithFood,
-    title: (fridgeName) => `${fridgeName} has been restocked`,
-    body: (fridgeName) => 'Fresh food is available - check it out!',
-    priority: 5,
-  },
-
-  // Priority 6: Routine validation (lowest priority)
-  {
-    id: 'routine_validation',
-    preferenceKey: 'routineValidation',
-    condition: (report, prefs) => {
-      if (!prefs.routineValidation || !report.reportDate) return false;
-      const reportDate = new Date(report.reportDate);
-      const daysSinceUpdate = (Date.now() - reportDate.getTime()) / (1000 * 60 * 60 * 24);
-      return daysSinceUpdate > 2;
-    },
-    title: (fridgeName) => `${fridgeName} needs a status update`,
-    body: (fridgeName, report) => {
-      const reportDate = new Date(report.reportDate);
-      const days = Math.floor((Date.now() - reportDate.getTime()) / (1000 * 60 * 60 * 24));
-      return `It's been ${days} days since the last update. Quick photo?`;
-    },
-    priority: 6,
-  },
-];
-
-/**
- * Evaluate notification rules for a status report
- * Returns the highest priority matching notification, or null if none match
- *
- * @param {Object} reportData - The status report data
- * @param {Object} userPreferences - User's notification preferences
- * @returns {Object|null} Notification object with title, body, and metadata, or null
- */
-function evaluateNotifications(reportData, userPreferences) {
-  // Find all rules that match the current report and user preferences
-  const matchingRules = NOTIFICATION_RULES
-    .filter((rule) => rule.condition(reportData, userPreferences))
-    .sort((a, b) => a.priority - b.priority); // Sort by priority (lower = higher priority)
-
-  if (matchingRules.length === 0) {
-    return null;
-  }
-
-  // Return the highest priority match (first in sorted array)
-  const rule = matchingRules[0];
-  const fridgeName = reportData.fridgeName || 'A community fridge';
-
-  return {
-    id: rule.id,
-    title: rule.title(fridgeName, reportData),
-    body: rule.body(fridgeName, reportData),
-    urgent: rule.urgent || false,
-    data: {
-      type: 'fridge_update',
-      fridgeId: reportData.fridgeId,
-      notificationId: rule.id,
-    },
-  };
-}
-
-/**
- * Triggered when a fridge status report is created/updated
- * Sends notifications to subscribed users based on their preferences
- */
-exports.onFridgeStatusUpdate = functions.database
-  .ref('statusReports/{reportId}')
-  .onCreate(async (snapshot, context) => {
-    const reportData = snapshot.val();
-    const fridgeId = reportData.fridgeId;
-
-    if (!fridgeId) {
-      console.log('No fridgeId in report');
-      return null;
-    }
-
-    // Get all users subscribed to this fridge
-    const usersRef = db.ref('users');
-    const usersSnapshot = await usersRef.once('value');
-    const users = usersSnapshot.val();
-
-    if (!users) {
-      return null;
-    }
-
-    const notifications = [];
-
-    for (const [userId, userData] of Object.entries(users)) {
-      if (!userData.subscribedFridges || !userData.subscribedFridges[fridgeId]) {
-        continue;
-      }
-
-      const subscription = userData.subscribedFridges[fridgeId];
-      const prefs = subscription.notificationPreferences || {};
-
-      // Evaluate notification rules using the mapping configuration
-      const notification = evaluateNotifications(reportData, prefs);
-
-      if (notification) {
-        notifications.push(
-          sendNotificationToUser(userId, notification),
-        );
-      }
-    }
-
-    // Send all notifications in parallel
-    await Promise.allSettled(notifications);
-
-    // Write to activity feed
-    try {
-      const timestamp = Date.now();
-      const reportId = context.params.reportId;
-
-      await db.ref(`activityFeed/${timestamp}_report_${reportId}`).set({
-        type: 'report',
-        timestamp: timestamp,
-        reportId: reportId,
-        fridgeId: reportData.fridgeId,
-        fridgeName: reportData.fridgeName || fridgeId,
-        condition: reportData.condition,
-        foodPercentage: reportData.foodPercentage || 0,
-        photoUrl: reportData.photoUrl || null,
-        reportDate: reportData.reportDate || new Date().toISOString(),
-      });
-
-      console.log(`Activity feed: Status report created - ${reportId}`);
-
-      // Invalidate stats cache since data changed
-      await invalidateStatsCache();
-    } catch (error) {
-      console.error('Error writing report to activity feed:', error);
-      // Don't throw - we don't want to block report creation
-    }
-
-    return null;
-  });
-
-/**
- * Triggered when a user subscribes to a fridge
- * Requests notification permission and sets up initial preferences
- */
-exports.onUserSubscribe = functions.database
-  .ref('users/{userId}/subscribedFridges/{fridgeId}')
-  .onCreate(async (snapshot, context) => {
-    const {userId, fridgeId} = context.params;
-
-    console.log(`User ${userId} subscribed to fridge ${fridgeId}`);
-
-    // You can add logic here to:
-    // 1. Send welcome notification
-    // 2. Request notification permissions (handled client-side)
-    // 3. Set up geofencing if enabled
-
-    return null;
-  });
-
-/**
- * Scheduled function to check for fridges needing routine validation
- * Runs daily at 9 AM
- */
-exports.checkRoutineValidation = functions.pubsub
-  .schedule('0 9 * * *') // 9 AM daily
-  .timeZone('America/New_York')
-  .onRun(async (context) => {
-    const usersRef = db.ref('users');
-    const usersSnapshot = await usersRef.once('value');
-    const users = usersSnapshot.val();
-
-    if (!users) {
-      return null;
-    }
-
-    const notifications = [];
-    const now = Date.now();
-    const twoDaysAgo = now - (2 * 24 * 60 * 60 * 1000);
-
-    for (const [userId, userData] of Object.entries(users)) {
-      if (!userData.subscribedFridges) {
-        continue;
-      }
-
-      for (const [fridgeId, subscription] of Object.entries(userData.subscribedFridges)) {
-        const prefs = subscription.notificationPreferences || {};
-
-        if (!prefs.routineValidation) {
-          continue;
-        }
-
-        // Check last report date (you'll need to fetch this from your API)
-        // For now, this is a placeholder - you'll need to integrate with your fridge API
-        const lastReportDate = subscription.lastReportDate;
-
-        if (lastReportDate &&
-          new Date(lastReportDate).getTime() < twoDaysAgo) {
-          const reportTime = new Date(lastReportDate).getTime();
-          const daysSinceUpdate =
-            Math.floor((now - reportTime) / (1000 * 60 * 60 * 24));
-
-          notifications.push(
-            sendNotificationToUser(userId, {
-              title: 'Routine Validation Needed',
-              body: `Subscribed fridge needs update (${daysSinceUpdate}d)`,
-              data: {
-                type: 'routine_validation',
-                fridgeId: fridgeId,
-                daysSinceUpdate: daysSinceUpdate.toString(),
-              },
-            }),
-          );
-        }
-      }
-    }
-
-    await Promise.allSettled(notifications);
-    return null;
-  });
-
-/**
  * HTTP Callable Function: Send geofencing notification
  * Called by the app when a user enters a geofence near a fridge that needs attention
  *
@@ -395,6 +122,15 @@ exports.checkRoutineValidation = functions.pubsub
  * }
  */
 exports.sendGeofencingNotification = functions.https.onCall(async (data, context) => {
+  if (!ENABLE_GEOFENCE_NOTIFICATIONS) {
+    console.log('sendGeofencingNotification is temporarily disabled');
+    return {
+      success: false,
+      reason: 'temporarily_disabled',
+      message: 'Geofencing notifications are temporarily disabled.',
+    };
+  }
+
   // Verify the user is authenticated
   if (!context.auth) {
     throw new functions.https.HttpsError(
@@ -513,6 +249,11 @@ exports.sendGeofencingNotification = functions.https.onCall(async (data, context
  * ============================================================================
  * DASHBOARD STATISTICS FUNCTIONS
  * For web dashboard analytics and reporting
+ *
+ * LEGACY NOTE:
+ * Mobile app flows no longer write the primary status/subscription data that
+ * these functions aggregate from Realtime Database. Treat dashboard output as
+ * stale/incomplete until migrated to current backend APIs.
  * ============================================================================
  */
 
