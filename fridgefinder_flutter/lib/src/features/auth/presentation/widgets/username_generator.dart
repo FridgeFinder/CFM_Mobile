@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:async';
 import '../../data/repositories/auth_repository.dart';
 import '../../../../core/utils/app_logger.dart';
 
@@ -7,8 +8,7 @@ class UsernameGenerator {
   final AuthRepository _authRepository;
   final Random _random = Random();
 
-  // Food-themed words for non-volunteers
-  static const List<String> foodAdjectives = [
+  static const List<String> adjectives = [
     'happy',
     'fresh',
     'tasty',
@@ -26,7 +26,7 @@ class UsernameGenerator {
     'nutritious',
   ];
 
-  static const List<String> foodNouns = [
+  static const List<String> nouns = [
     'fridge',
     'foodie',
     'feast',
@@ -44,76 +44,49 @@ class UsernameGenerator {
     'bounty',
   ];
 
-  // Volunteer-themed words
-  static const List<String> volunteerAdjectives = [
-    'hero',
-    'brave',
-    'kind',
-    'helpful',
-    'caring',
-    'generous',
-    'dedicated',
-    'committed',
-    'passionate',
-    'inspiring',
-    'amazing',
-    'super',
-    'awesome',
-    'stellar',
-    'stellar',
-  ];
-
-  static const List<String> volunteerNouns = [
-    'volunteer',
-    'helper',
-    'champion',
-    'supporter',
-    'ally',
-    'friend',
-    'neighbor',
-    'citizen',
-    'activist',
-    'advocate',
-    'guardian',
-    'protector',
-    'defender',
-    'warrior',
-    'star',
-  ];
-
   UsernameGenerator(this._authRepository);
 
-  /// Generate a unique username based on volunteer status
-  Future<String> generateUniqueUsername({
-    required bool isVolunteer,
-    int maxAttempts = 10,
-  }) async {
+  /// Generate a unique username.
+  Future<String> generateUniqueUsername({int maxAttempts = 10}) async {
     for (int attempt = 0; attempt < maxAttempts; attempt++) {
-      final username = _generateUsername(isVolunteer: isVolunteer);
-      
-      final isUnique = await _authRepository.isUsernameUnique(username);
+      final username = _generateUsername();
+
+      bool isUnique = false;
+      try {
+        isUnique = await _authRepository
+            .isUsernameUnique(username)
+            .timeout(const Duration(seconds: 2));
+      } on TimeoutException {
+        logger.w(
+          'Username uniqueness check timed out for $username (attempt ${attempt + 1}/$maxAttempts)',
+        );
+        continue;
+      }
+
       if (isUnique) {
         logger.d('Generated unique username: $username');
         return username;
       }
-      
+
       logger.d('Username $username already exists, trying again...');
     }
-    
-    // If we can't generate a unique one, append timestamp
-    final baseUsername = _generateUsername(isVolunteer: isVolunteer);
-    final timestamp = DateTime.now().millisecondsSinceEpoch;
-    final username = '$baseUsername${timestamp.toString().substring(8)}';
-    
+
+    // If API checks are slow/unavailable, fall back to a locally unique-ish value.
+    final username = generateOfflineUsername();
+
     logger.w('Using timestamp-based username: $username');
     return username;
   }
 
+  /// Generate a local fallback username when API checks are slow/unavailable.
+  String generateOfflineUsername() {
+    final baseUsername = _generateUsername();
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    return '$baseUsername${timestamp.toString().substring(8)}';
+  }
+
   /// Generate a single username (not checked for uniqueness)
-  String _generateUsername({required bool isVolunteer}) {
-    final adjectives = isVolunteer ? volunteerAdjectives : foodAdjectives;
-    final nouns = isVolunteer ? volunteerNouns : foodNouns;
-    
+  String _generateUsername() {
     final adjective = adjectives[_random.nextInt(adjectives.length)];
     final noun = nouns[_random.nextInt(nouns.length)];
     final number = _random.nextInt(999) + 1;
@@ -122,24 +95,23 @@ class UsernameGenerator {
   }
 
   /// Generate multiple username options
-  Future<List<String>> generateUsernameOptions({
-    required bool isVolunteer,
-    int count = 3,
-  }) async {
+  Future<List<String>> generateUsernameOptions({int count = 3}) async {
     final options = <String>[];
     final seen = <String>{};
-    
+
     while (options.length < count) {
-      final username = _generateUsername(isVolunteer: isVolunteer);
+      final username = _generateUsername();
       if (!seen.contains(username)) {
         seen.add(username);
-        final isUnique = await _authRepository.isUsernameUnique(username);
+        final isUnique = await _authRepository
+            .isUsernameUnique(username)
+            .timeout(const Duration(seconds: 2), onTimeout: () => false);
         if (isUnique) {
           options.add(username);
         }
       }
     }
-    
+
     return options;
   }
 }

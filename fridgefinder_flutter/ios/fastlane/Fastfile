@@ -3,6 +3,14 @@
 default_platform(:ios)
 
 platform :ios do
+  def validated_app_env(default_value)
+    app_env = (ENV["APP_ENV"] || default_value).strip
+    unless ["dev", "prod"].include?(app_env)
+      UI.user_error!("APP_ENV must be 'dev' or 'prod' (got: #{app_env})")
+    end
+    app_env
+  end
+
   desc "Generate screenshots for App Store"
   lane :screenshots do
     # Build the app for screenshots
@@ -36,6 +44,9 @@ platform :ios do
 
   desc "Upload existing IPA to TestFlight"
   lane :testflight do
+    app_env = validated_app_env("prod")
+    sh("cd .. && APP_ENV=#{app_env} ./scripts/require_prod_env.sh")
+
     # Set up App Store Connect API Key
     api_key = app_store_connect_api_key(
       key_id: ENV["APP_STORE_CONNECT_API_KEY_ID"],
@@ -56,6 +67,9 @@ platform :ios do
 
   desc "Upload existing IPA to App Store Connect"
   lane :upload_release do
+    app_env = validated_app_env("prod")
+    sh("cd .. && APP_ENV=#{app_env} ./scripts/require_prod_env.sh")
+
     # Set up App Store Connect API Key
     api_key = app_store_connect_api_key(
       key_id: ENV["APP_STORE_CONNECT_API_KEY_ID"],
@@ -77,6 +91,9 @@ platform :ios do
 
   desc "Build and upload to App Store Connect"
   lane :release do
+    app_env = validated_app_env("prod")
+    sh("cd .. && APP_ENV=#{app_env} ./scripts/require_prod_env.sh")
+
     # Ensure we're on the correct branch/tag
     # ensure_git_status_clean
 
@@ -91,7 +108,7 @@ platform :ios do
     # Or ensure certificates are already in keychain before building
 
     # Build the app using Flutter
-    sh("cd .. && flutter build ipa --release")
+    sh("cd .. && flutter build ipa --release --dart-define=APP_ENV=#{app_env}")
 
     # Set up App Store Connect API Key
     api_key = app_store_connect_api_key(

@@ -153,10 +153,19 @@ class MockFridgeRepository implements IFridgeRepository {
 
   /// Get all fridges
   @override
-  Future<List<FridgeDomain>> getFridges() async {
+  Future<List<FridgeDomain>> getFridges({bool includeGhosts = false}) async {
     _checkShouldFail();
     await _simulateNetworkDelay();
-    return _fridges.values.toList();
+    final fridges = _fridges.values.toList();
+    if (includeGhosts) {
+      return fridges;
+    }
+    return fridges
+        .where(
+          (fridge) =>
+              fridge.latestFridgeReport?.condition != FridgeCondition.ghost,
+        )
+        .toList();
   }
 
   /// Get single fridge by ID

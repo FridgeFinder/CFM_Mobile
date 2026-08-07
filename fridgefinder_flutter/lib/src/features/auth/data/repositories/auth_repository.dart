@@ -1,10 +1,11 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
-import 'package:firebase_database/firebase_database.dart';
+import 'package:dio/dio.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart' hide generateNonce;
 import '../../../../core/utils/app_logger.dart';
-import '../../../../core/providers/database_provider.dart';
-import '../../../../core/utils/firebase_helpers.dart';
+import '../../../../core/exceptions/app_exception.dart';
 import '../../domain/models/user_profile.dart';
 import '../utils/apple_sign_in_utils.dart';
 
@@ -24,16 +25,16 @@ class AppleSignInNotAvailableException implements Exception {
 /// initialized during app bootstrap in main.dart.
 class AuthRepository {
   final firebase_auth.FirebaseAuth _auth;
-  final DatabaseReference _database;
+  final Dio _dio;
   final GoogleSignIn _googleSignIn;
 
   AuthRepository({
     firebase_auth.FirebaseAuth? auth,
-    DatabaseReference? database,
+    Dio? dio,
     GoogleSignIn? googleSignIn,
-  })  : _auth = auth ?? firebase_auth.FirebaseAuth.instance,
-        _database = database ?? DatabaseProvider.databaseRef,
-        _googleSignIn = googleSignIn ?? GoogleSignIn.instance;
+  }) : _auth = auth ?? firebase_auth.FirebaseAuth.instance,
+       _dio = dio ?? Dio(),
+       _googleSignIn = googleSignIn ?? GoogleSignIn.instance;
 
   /// Get current user
   firebase_auth.User? get currentUser => _auth.currentUser;
@@ -50,7 +51,9 @@ class AuthRepository {
     try {
       // Verify phone number is in E.164 format
       if (!phoneNumber.startsWith('+')) {
-        throw Exception('Phone number must include country code (e.g., +1234567890)');
+        throw Exception(
+          'Phone number must include country code (e.g., +1234567890)',
+        );
       }
 
       await _auth.verifyPhoneNumber(
@@ -66,13 +69,16 @@ class AuthRepository {
           }
         },
         verificationFailed: (error) {
-          logger.e('Phone verification failed: ${error.code} - ${error.message}');
+          logger.e(
+            'Phone verification failed: ${error.code} - ${error.message}',
+          );
           String errorMessage = 'Verification failed';
-          
+
           // Provide user-friendly error messages
           switch (error.code) {
             case 'invalid-phone-number':
-              errorMessage = 'Invalid phone number format. Please include country code (e.g., +1234567890)';
+              errorMessage =
+                  'Invalid phone number format. Please include country code (e.g., +1234567890)';
               break;
             case 'too-many-requests':
               errorMessage = 'Too many requests. Please try again later.';
@@ -81,9 +87,10 @@ class AuthRepository {
               errorMessage = 'SMS quota exceeded. Please try again later.';
               break;
             default:
-              errorMessage = error.message ?? 'Verification failed. Please try again.';
+              errorMessage =
+                  error.message ?? 'Verification failed. Please try again.';
           }
-          
+
           verificationFailed(errorMessage);
         },
         codeSent: (verificationId, resendToken) {
@@ -92,7 +99,9 @@ class AuthRepository {
         },
         codeAutoRetrievalTimeout: (verificationId) {
           // Auto-retrieval timeout - user will need to enter code manually
-          logger.d('Auto-retrieval timeout for verification ID: $verificationId');
+          logger.d(
+            'Auto-retrieval timeout for verification ID: $verificationId',
+          );
         },
         timeout: const Duration(seconds: 60),
       );
@@ -121,25 +130,33 @@ class AuthRepository {
         verificationId: verificationId,
         smsCode: code,
       );
-      
+
       final userCredential = await _auth.signInWithCredential(credential);
-      logger.i('Phone verification successful: ${userCredential.user?.phoneNumber}');
+      logger.i(
+        'Phone verification successful: ${userCredential.user?.phoneNumber}',
+      );
+      final signedInUserId = userCredential.user?.uid;
+      if (signedInUserId != null) {
+        unawaited(updateLastLogin(signedInUserId));
+      }
       return userCredential;
     } on firebase_auth.FirebaseAuthException catch (e) {
       logger.e('Firebase Auth error verifying code: ${e.code} - ${e.message}');
-      
+
       String errorMessage = 'Verification failed';
       switch (e.code) {
         case 'invalid-verification-code':
-          errorMessage = 'Invalid verification code. Please check and try again.';
+          errorMessage =
+              'Invalid verification code. Please check and try again.';
           break;
         case 'session-expired':
-          errorMessage = 'Verification session expired. Please request a new code.';
+          errorMessage =
+              'Verification session expired. Please request a new code.';
           break;
         default:
           errorMessage = e.message ?? 'Verification failed';
       }
-      
+
       throw Exception(errorMessage);
     } catch (e) {
       logger.e('Error verifying phone code: $e');
@@ -152,10 +169,11 @@ class AuthRepository {
     try {
       // Initialize Google Sign-In if not already initialized
       await _googleSignIn.initialize();
-      
+
       // Attempt lightweight authentication first (no UI)
-      GoogleSignInAccount? googleUser = await _googleSignIn.attemptLightweightAuthentication();
-      
+      GoogleSignInAccount? googleUser = await _googleSignIn
+          .attemptLightweightAuthentication();
+
       // If lightweight auth fails, use authenticate() which shows native UI
       googleUser ??= await _googleSignIn.authenticate();
 
@@ -169,7 +187,11 @@ class AuthRepository {
 
       // Sign in to Firebase with the Google credential
       final userCredential = await _auth.signInWithCredential(credential);
-      
+      final signedInUserId = userCredential.user?.uid;
+      if (signedInUserId != null) {
+        unawaited(updateLastLogin(signedInUserId));
+      }
+
       logger.i('Google sign-in successful: ${userCredential.user?.email}');
       return userCredential;
     } on GoogleSignInException catch (e) {
@@ -181,7 +203,9 @@ class AuthRepository {
       logger.e('Google Sign-In error: ${e.code} - $e');
       rethrow;
     } on firebase_auth.FirebaseAuthException catch (e) {
-      logger.e('Firebase Auth error during Google sign-in: ${e.code} - ${e.message}');
+      logger.e(
+        'Firebase Auth error during Google sign-in: ${e.code} - ${e.message}',
+      );
       rethrow;
     } catch (e) {
       logger.e('Error signing in with Google: $e');
@@ -194,10 +218,10 @@ class AuthRepository {
     try {
       // Sign out from Firebase Auth
       await _auth.signOut();
-      
+
       // Sign out from Google Sign-In
       await _googleSignIn.signOut();
-      
+
       logger.i('User signed out');
     } catch (e) {
       logger.e('Error signing out: $e');
@@ -205,70 +229,69 @@ class AuthRepository {
     }
   }
 
-  /// Create user profile in Realtime Database
+  /// Create user profile in Users API
   Future<void> createUserProfile(UserProfile profile) async {
     try {
-      final userRef = _database.child('users').child(profile.userId);
-      await userRef.set(profile.toJson());
+      await _dio.post('/users', data: _toCreateUserRequest(profile));
       logger.i('User profile created: ${profile.userId}');
+    } on DioException catch (e) {
+      throw _handleDioError(e, 'Failed to create user profile');
     } catch (e) {
       logger.e('Error creating user profile: $e');
       rethrow;
     }
   }
 
-  /// Get user profile from Realtime Database
+  /// Get user profile from Users API
   Future<UserProfile?> getUserProfile(String userId) async {
     try {
-      final snapshot = await _database.child('users').child(userId).get();
-      if (snapshot.exists) {
-        final data = snapshot.value as Map<Object?, Object?>;
-        return UserProfile.fromJson(
-          convertFirebaseMap(data),
+      final response = await _dio.get('/users/$userId');
+      final userPayload = _extractUserPayload(response.data);
+      if (userPayload == null) {
+        logger.w(
+          'User profile response had no user payload for $userId: '
+          '${response.data.runtimeType}',
         );
+        return null;
       }
-      return null;
+
+      final normalized = _normalizeUserPayload(userPayload);
+      try {
+        return UserProfile.fromJson(normalized);
+      } catch (e) {
+        // Legacy profile payloads may still carry points in non-numeric formats.
+        // Points are no longer authoritative for app logic, so fall back safely.
+        logger.w('User profile parse fallback for $userId: $e');
+        final fallbackPayload = Map<String, dynamic>.from(normalized)
+          ..remove('points');
+        return UserProfile.fromJson(fallbackPayload);
+      }
+    } on DioException catch (e) {
+      final statusCode = e.response?.statusCode;
+      if (statusCode == 404) {
+        logger.w(
+          'User profile lookup returned $statusCode for $userId; '
+          'treating as no existing profile so sign-in can continue.',
+        );
+        return null;
+      }
+      throw _handleDioError(e, 'Failed to load user profile');
     } catch (e) {
       logger.e('Error getting user profile: $e');
-      return null;
-    }
-  }
-
-  /// Find user profile by email or phone number (for existing user detection)
-  Future<UserProfile?> findUserProfileByEmailOrPhone({
-    String? email,
-    String? phoneNumber,
-  }) async {
-    try {
-      final usersSnapshot = await _database.child('users').get();
-      if (!usersSnapshot.exists) return null;
-
-      final usersData = usersSnapshot.value as Map<Object?, Object?>;
-
-      for (final entry in usersData.entries) {
-        final userData = entry.value as Map<Object?, Object?>;
-        final userMap = convertFirebaseMap(userData);
-
-        // Check if email or phone matches
-        if ((email != null && userMap['email'] == email) ||
-            (phoneNumber != null && userMap['phoneNumber'] == phoneNumber)) {
-          return UserProfile.fromJson(userMap);
-        }
-      }
-
-      return null;
-    } catch (e) {
-      logger.e('Error finding user profile: $e');
-      return null;
+      rethrow;
     }
   }
 
   /// Update user profile
   Future<void> updateUserProfile(UserProfile profile) async {
     try {
-      final userRef = _database.child('users').child(profile.userId);
-      await userRef.update(profile.toJson());
+      await _dio.patch(
+        '/users/${profile.userId}',
+        data: _toUpdateUserRequest(profile),
+      );
       logger.i('User profile updated: ${profile.userId}');
+    } on DioException catch (e) {
+      throw _handleDioError(e, 'Failed to update user profile');
     } catch (e) {
       logger.e('Error updating user profile: $e');
       rethrow;
@@ -278,10 +301,12 @@ class AuthRepository {
   /// Update last login timestamp
   Future<void> updateLastLogin(String userId) async {
     try {
-      await _database
-          .child('users')
-          .child(userId)
-          .update({'lastLoginAt': DateTime.now().toIso8601String()});
+      await _dio.patch(
+        '/users/$userId',
+        data: {'lastLoginAt': DateTime.now().toIso8601String()},
+      );
+    } on DioException catch (e) {
+      logger.e('Error updating last login: ${e.message}');
     } catch (e) {
       logger.e('Error updating last login: $e');
       // Don't rethrow - this is not critical
@@ -339,21 +364,27 @@ class AuthRepository {
         nonce: hashedNonce,
       );
 
-      final oauthCredential = firebase_auth.OAuthProvider('apple.com').credential(
-        idToken: appleCredential.identityToken,
-        rawNonce: rawNonce,
-        accessToken: appleCredential.authorizationCode,
-      );
+      final oauthCredential = firebase_auth.OAuthProvider('apple.com')
+          .credential(
+            idToken: appleCredential.identityToken,
+            rawNonce: rawNonce,
+            accessToken: appleCredential.authorizationCode,
+          );
 
       final userCredential = await _auth.signInWithCredential(oauthCredential);
+      final signedInUserId = userCredential.user?.uid;
+      if (signedInUserId != null) {
+        unawaited(updateLastLogin(signedInUserId));
+      }
 
       // Apple only sends name on first sign-in; update display name if provided
       final givenName = appleCredential.givenName;
       final familyName = appleCredential.familyName;
       if (givenName != null || familyName != null) {
-        final displayName = [givenName, familyName]
-            .where((n) => n != null && n.isNotEmpty)
-            .join(' ');
+        final displayName = [
+          givenName,
+          familyName,
+        ].where((n) => n != null && n.isNotEmpty).join(' ');
         if (displayName.isNotEmpty) {
           await userCredential.user?.updateDisplayName(displayName);
         }
@@ -371,7 +402,9 @@ class AuthRepository {
     } on AppleSignInNotAvailableException {
       rethrow;
     } on firebase_auth.FirebaseAuthException catch (e) {
-      logger.e('Firebase Auth error during Apple sign-in: ${e.code} - ${e.message}');
+      logger.e(
+        'Firebase Auth error during Apple sign-in: ${e.code} - ${e.message}',
+      );
       rethrow;
     } catch (e) {
       logger.e('Error signing in with Apple: $e');
@@ -393,11 +426,12 @@ class AuthRepository {
         nonce: hashedNonce,
       );
 
-      final oauthCredential = firebase_auth.OAuthProvider('apple.com').credential(
-        idToken: appleCredential.identityToken,
-        rawNonce: rawNonce,
-        accessToken: appleCredential.authorizationCode,
-      );
+      final oauthCredential = firebase_auth.OAuthProvider('apple.com')
+          .credential(
+            idToken: appleCredential.identityToken,
+            rawNonce: rawNonce,
+            accessToken: appleCredential.authorizationCode,
+          );
 
       await _auth.currentUser?.reauthenticateWithCredential(oauthCredential);
 
@@ -415,7 +449,8 @@ class AuthRepository {
       await _googleSignIn.initialize();
 
       // Attempt lightweight authentication first (no UI)
-      GoogleSignInAccount? googleUser = await _googleSignIn.attemptLightweightAuthentication();
+      GoogleSignInAccount? googleUser = await _googleSignIn
+          .attemptLightweightAuthentication();
 
       // If lightweight auth fails, use authenticate() which shows native UI
       googleUser ??= await _googleSignIn.authenticate();
@@ -438,39 +473,35 @@ class AuthRepository {
     }
   }
 
-  /// Delete user account (requires recent authentication)
+  /// Delete user account via backend-owned deletion flow.
   Future<void> deleteAccount(String userId) async {
     try {
       logger.i('deleteAccount called for userId: $userId');
 
-      // Delete from Realtime Database
-      logger.i('Deleting user from Realtime Database...');
-      await _database.child('users').child(userId).remove();
-      logger.i('User deleted from Realtime Database');
+      // Delete from Users API
+      logger.i('Deleting user from Users API...');
+      await _dio.delete('/users/$userId');
+      logger.i('User deleted from Users API');
 
-      // Delete from Firebase Auth
-      logger.i('Deleting user from Firebase Auth...');
-      final currentUser = _auth.currentUser;
-      if (currentUser == null) {
-        logger.e('No current user found in Firebase Auth');
-        throw Exception('No authenticated user found');
-      }
-
-      // Revoke Google access and clear cached account so the next sign-in
-      // shows the account picker instead of silently reusing the credential.
+      // Backend handles Firebase account deletion. Best-effort local cleanup
+      // ensures UI state is reset immediately on this device.
       try {
         await _googleSignIn.disconnect();
         logger.i('Google account disconnected');
       } catch (e) {
-        // Non-fatal: user may not have signed in with Google
         logger.w('Google disconnect skipped (not a Google user): $e');
       }
 
-      logger.i('Current user ID: ${currentUser.uid}');
-      await currentUser.delete();
-      logger.i('User deleted from Firebase Auth');
+      try {
+        await _auth.signOut();
+      } catch (e) {
+        logger.w('Local auth sign-out failed after backend delete: $e');
+      }
 
       logger.i('User account deleted successfully: $userId');
+    } on DioException catch (e) {
+      logger.e('Error deleting user from Users API: ${e.message}');
+      rethrow;
     } catch (e) {
       logger.e('Error deleting account: $e');
       logger.e('Stack trace: ${StackTrace.current}');
@@ -481,16 +512,310 @@ class AuthRepository {
   /// Check if username is unique
   Future<bool> isUsernameUnique(String username) async {
     try {
-      final snapshot = await _database
-          .child('users')
-          .orderByChild('username')
-          .equalTo(username)
-          .get();
-      return !snapshot.exists;
+      final response = await _dio.get('/users/check-username/$username');
+      final data = response.data;
+      if (data is Map<String, dynamic>) {
+        return data['available'] == true;
+      }
+      return false;
+    } on DioException catch (e) {
+      logger.e('Error checking username uniqueness: ${e.message}');
+      return false;
     } catch (e) {
       logger.e('Error checking username uniqueness: $e');
       return false;
     }
   }
-}
 
+  Future<void> registerUserDevice({
+    required String userId,
+    required String installationId,
+    required String token,
+    required String platform,
+  }) async {
+    try {
+      await _dio.post(
+        '/users/$userId/user-devices/$installationId',
+        data: {'token': token, 'platform': platform},
+      );
+    } on DioException catch (e) {
+      throw _handleDioError(e, 'Failed to register user device');
+    }
+  }
+
+  Future<Map<String, dynamic>?> getUserDevice({
+    required String userId,
+    required String installationId,
+  }) async {
+    try {
+      final response = await _dio.get(
+        '/users/$userId/user-devices/$installationId',
+      );
+      final data = response.data;
+      if (data is Map<String, dynamic> &&
+          data['device'] is Map<String, dynamic>) {
+        return data['device'] as Map<String, dynamic>;
+      }
+      return null;
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) {
+        return null;
+      }
+      throw _handleDioError(e, 'Failed to fetch user device');
+    }
+  }
+
+  Future<void> updateUserDevice({
+    required String userId,
+    required String installationId,
+    bool? notificationsEnabled,
+    DateTime? invalidAt,
+    DateTime? lastSeenAt,
+    DateTime? lastDeliveredAt,
+  }) async {
+    final data = <String, dynamic>{
+      'notificationsEnabled': notificationsEnabled,
+      'invalidAt': invalidAt?.toIso8601String(),
+      'lastSeenAt': lastSeenAt?.toIso8601String(),
+      'lastDeliveredAt': lastDeliveredAt?.toIso8601String(),
+    }..removeWhere((_, value) => value == null);
+
+    if (data.isEmpty) return;
+
+    try {
+      await _dio.patch(
+        '/users/$userId/user-devices/$installationId',
+        data: data,
+      );
+    } on DioException catch (e) {
+      throw _handleDioError(e, 'Failed to update user device');
+    }
+  }
+
+  Future<void> unregisterUserDevice({
+    required String userId,
+    required String installationId,
+  }) async {
+    try {
+      await _dio.delete('/users/$userId/user-devices/$installationId');
+    } on DioException catch (e) {
+      throw _handleDioError(e, 'Failed to unregister user device');
+    }
+  }
+
+  Map<String, dynamic> _toCreateUserRequest(UserProfile profile) {
+    final request = {
+      'userId': profile.userId,
+      'username': profile.username,
+      'email': profile.email,
+      'phoneNumber': profile.phoneNumber,
+      'zipcode': profile.zipcode,
+    };
+
+    request.removeWhere((_, value) => value == null);
+    return request;
+  }
+
+  Map<String, dynamic> _normalizeUserPayload(Map<String, dynamic> source) {
+    final normalized = Map<String, dynamic>.from(source);
+
+    // Normalize API payload fields to app model keys.
+    final normalizedUserType = _normalizeUserType(normalized);
+    if (normalizedUserType != null) {
+      normalized['userType'] = normalizedUserType;
+    } else {
+      normalized.remove('userType');
+    }
+
+    final pointsRaw = normalized['points'];
+    if (pointsRaw is String) {
+      final parsedPoints = int.tryParse(pointsRaw);
+      if (parsedPoints != null) {
+        normalized['points'] = parsedPoints;
+      } else {
+        normalized.remove('points');
+      }
+    } else if (pointsRaw is num) {
+      normalized['points'] = pointsRaw.toInt();
+    } else if (pointsRaw != null) {
+      normalized.remove('points');
+    }
+
+    normalized['createdAt'] =
+        _toIsoDateString(
+          normalized['createdAt'],
+        );
+    normalized['lastUpdated'] = _toIsoDateString(
+      normalized['lastUpdated'],
+    );
+    normalized['lastLoginAt'] = _toIsoDateString(
+      normalized['lastLoginAt'],
+    );
+
+    final settingsRaw = normalized['settings'];
+    if (settingsRaw is Map<String, dynamic>) {
+      final settings = {
+        'emailNotificationEnabled': _boolFromJson(
+          settingsRaw['emailNotificationEnabled'],
+          defaultValue: false,
+        ),
+        'geofencingEnabled': _boolFromJson(
+          settingsRaw['geofenceEnabled'],
+          defaultValue: false,
+        ),
+      };
+      normalized['settings'] = settings;
+    } else {
+      normalized.remove('settings');
+    }
+
+    return normalized;
+  }
+
+  String? _normalizeUserType(Map<String, dynamic> normalized) {
+    final explicitType = normalized['userType'];
+
+    final explicitTypeString = explicitType?.toString().trim().toLowerCase();
+    if (explicitTypeString == 'organizer' ||
+        explicitTypeString == 'host' ||
+        explicitTypeString == 'volunteer' ||
+        explicitTypeString == 'neighbor') {
+      return explicitTypeString;
+    }
+    if (explicitTypeString != null && explicitTypeString.isNotEmpty) {
+      return explicitTypeString;
+    }
+
+    return null;
+  }
+
+  bool _boolFromJson(dynamic value, {required bool defaultValue}) {
+    if (value == null) return defaultValue;
+    if (value is bool) return value;
+    if (value is num) return value != 0;
+    if (value is String) {
+      final normalized = value.trim().toLowerCase();
+      if (normalized == 'true' || normalized == '1' || normalized == 'yes') {
+        return true;
+      }
+      if (normalized == 'false' || normalized == '0' || normalized == 'no') {
+        return false;
+      }
+    }
+    return defaultValue;
+  }
+
+  Map<String, dynamic>? _extractUserPayload(dynamic data) {
+    if (data is! Map<String, dynamic>) {
+      return null;
+    }
+
+    if (data['user'] is Map<String, dynamic>) {
+      return Map<String, dynamic>.from(data['user'] as Map<String, dynamic>);
+    }
+
+    if (data['data'] is Map<String, dynamic>) {
+      final nested = data['data'] as Map<String, dynamic>;
+      if (nested['user'] is Map<String, dynamic>) {
+        return Map<String, dynamic>.from(
+          nested['user'] as Map<String, dynamic>,
+        );
+      }
+      if (nested.containsKey('userId')) {
+        return Map<String, dynamic>.from(nested);
+      }
+    }
+
+    if (data.containsKey('userId')) {
+      return Map<String, dynamic>.from(data);
+    }
+
+    return null;
+  }
+
+  String? _toIsoDateString(dynamic value) {
+    if (value == null) {
+      return null;
+    }
+
+    if (value is String) {
+      return DateTime.tryParse(value)?.toIso8601String();
+    }
+
+    if (value is DateTime) {
+      return value.toIso8601String();
+    }
+
+    if (value is int) {
+      // Handle both seconds and milliseconds unix timestamps.
+      final isMilliseconds = value > 1000000000000;
+      final dt = DateTime.fromMillisecondsSinceEpoch(
+        isMilliseconds ? value : value * 1000,
+      );
+      return dt.toIso8601String();
+    }
+
+    return null;
+  }
+
+  Map<String, dynamic> _toUpdateUserRequest(UserProfile profile) {
+    return {
+      'username': profile.username,
+      'email': profile.email,
+      'phoneNumber': profile.phoneNumber,
+      'zipcode': profile.zipcode,
+      'settings': {
+        'emailNotificationEnabled':
+            profile.settings.emailNotificationEnabled,
+        'geofenceEnabled': profile.settings.geofencingEnabled,
+      },
+      if (profile.lastLoginAt != null)
+        'lastLoginAt': profile.lastLoginAt?.toIso8601String(),
+    };
+  }
+
+  AppException _handleDioError(DioException e, String defaultMessage) {
+    final statusCode = e.response?.statusCode;
+    final responseData = e.response?.data;
+
+    String? apiErrorMessage;
+    if (responseData is Map<String, dynamic>) {
+      final errorObject = responseData['error'];
+      if (errorObject is Map<String, dynamic>) {
+        apiErrorMessage = errorObject['message'] as String?;
+      }
+      apiErrorMessage ??=
+          responseData['message'] as String? ??
+          responseData['error'] as String?;
+    } else if (responseData is String) {
+      apiErrorMessage = responseData;
+    }
+
+    if (statusCode == 401 || statusCode == 403) {
+      return AuthException(
+        apiErrorMessage ?? 'Authentication failed.',
+        originalError: e,
+      );
+    }
+
+    if (statusCode == 404) {
+      return NotFoundException(
+        apiErrorMessage ?? defaultMessage,
+        originalError: e,
+      );
+    }
+
+    if (statusCode != null && statusCode >= 400 && statusCode < 500) {
+      return ServerException(
+        apiErrorMessage ?? defaultMessage,
+        statusCode: statusCode,
+        originalError: e,
+      );
+    }
+
+    return NetworkException(
+      apiErrorMessage ?? defaultMessage,
+      originalError: e,
+    );
+  }
+}

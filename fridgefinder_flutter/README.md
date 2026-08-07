@@ -1,17 +1,72 @@
-# fridgefinder_app
+# FridgeFinder Flutter
 
-A new Flutter project.
+## Environment Setup
 
-## Getting Started
+This app supports two runtime environments:
 
-This project is a starting point for a Flutter application.
+- `dev`
+- `prod`
 
-A few resources to get you started if this is your first Flutter project:
+Runtime environment is selected with Dart define:
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+```bash
+--dart-define=APP_ENV=dev
+```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+If `APP_ENV` is not provided, app bootstrap defaults to `dev`.
+
+## Platform Firebase Configuration
+
+Flutter shares app code, but Firebase native SDKs still require platform-specific
+configuration files.
+
+### iOS
+
+- Dev Firebase plist: `ios/Runner/GoogleService-Info.dev.plist`
+- Prod Firebase plist: `ios/Runner/GoogleService-Info.prod.plist`
+- Dev URL scheme plist: `ios/Runner/Info.dev.plist`
+- Prod URL scheme plist: `ios/Runner/Info.prod.plist`
+
+Xcode build configuration selects the correct files automatically.
+
+### Android
+
+- Dev Firebase config: `android/app/src/debug/google-services.json`
+- Prod Firebase config: `android/app/src/release/google-services.json`
+- Prod profile config: `android/app/src/profile/google-services.json`
+
+Google Services plugin picks the correct file by build type.
+
+## Local Run Commands
+
+Use helper scripts to avoid accidental environment mismatch:
+
+### iOS
+
+```bash
+APP_ENV=dev ./scripts/run_ios_safe.sh "iPhone 17"
+APP_ENV=prod ./scripts/run_ios_safe.sh "iPhone 17"
+```
+
+### Android
+
+```bash
+APP_ENV=dev ./scripts/run_android_safe.sh android
+APP_ENV=prod ./scripts/run_android_safe.sh android
+```
+
+You can replace `android` with a specific Android device ID from `flutter devices`.
+
+## Fastlane Environment Guardrails
+
+Release lanes enforce explicit environment and require `APP_ENV=prod`.
+
+- iOS: `ios/fastlane/Fastfile`
+- Android: `android/fastlane/Fastfile`
+- Guard script: `scripts/require_prod_env.sh`
+
+Set environment before release lanes:
+
+```bash
+export APP_ENV=prod
+```

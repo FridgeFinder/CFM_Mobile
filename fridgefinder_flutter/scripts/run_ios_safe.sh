@@ -8,6 +8,12 @@ SRC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SAFE_ROOT="${HOME}/Developer"
 SAFE_DIR="${SAFE_ROOT}/fridgefinder_flutter_ios_safe"
 DEVICE_NAME="${1:-iPhone 17}"
+APP_ENV_VALUE="${APP_ENV:-dev}"
+
+if [[ "${APP_ENV_VALUE}" != "dev" && "${APP_ENV_VALUE}" != "prod" ]]; then
+  echo "APP_ENV must be 'dev' or 'prod' (got: ${APP_ENV_VALUE})" >&2
+  exit 1
+fi
 
 mkdir -p "${SAFE_ROOT}"
 
@@ -25,5 +31,5 @@ cd "${SAFE_DIR}"
 echo "Installing dependencies..."
 flutter pub get
 
-echo "Launching on ${DEVICE_NAME}..."
-flutter run -d "${DEVICE_NAME}"
+echo "Launching on ${DEVICE_NAME} with APP_ENV=${APP_ENV_VALUE}..."
+flutter run -d "${DEVICE_NAME}" --dart-define="APP_ENV=${APP_ENV_VALUE}"

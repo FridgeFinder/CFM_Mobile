@@ -201,6 +201,7 @@
 			buildPhases = (
 				D32E28340EDE15A3D5D846B1 /* [CP] Check Pods Manifest.lock */,
 				9740EEB61CF901F6004384FC /* Run Script */,
+				CAA2EA2F1A170B7F00E1D7C6 /* Select Firebase Config */,
 				97C146EA1CF9000F007C117D /* Sources */,
 				97C146EB1CF9000F007C117D /* Frameworks */,
 				97C146EC1CF9000F007C117D /* Resources */,
@@ -333,6 +334,20 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "/bin/sh \"$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend.sh\" build";
+		};
+		CAA2EA2F1A170B7F00E1D7C6 /* Select Firebase Config */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Select Firebase Config";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+				shellScript = "SOURCE_PLIST=\"${PROJECT_DIR}/Runner/GoogleService-Info.${FIREBASE_CONFIG_SUFFIX}.plist\"; TARGET_PLIST=\"${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.app/GoogleService-Info.plist\"; if [ -f \"${SOURCE_PLIST}\" ]; then cp \"${SOURCE_PLIST}\" \"${TARGET_PLIST}\"; echo \"Copied Firebase config from ${SOURCE_PLIST} to ${TARGET_PLIST}\"; else echo \"Missing Firebase config plist: ${SOURCE_PLIST}\"; exit 1; fi; SOURCE_INFO=\"${PROJECT_DIR}/Runner/Info.${FIREBASE_CONFIG_SUFFIX}.plist\"; TARGET_INFO=\"${PROJECT_DIR}/Runner/Info.plist\"; if [ -f \"${SOURCE_INFO}\" ]; then cp \"${SOURCE_INFO}\" \"${TARGET_INFO}\"; echo \"Updated Info.plist from ${SOURCE_INFO}\"; else echo \"Missing Info plist: ${SOURCE_INFO}\"; exit 1; fi";
 		};
 		B05CC8827170005BDC3DEC94 /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -509,7 +524,8 @@
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
 				DEVELOPMENT_TEAM = 3U525G584M;
 				ENABLE_BITCODE = NO;
-				INFOPLIST_FILE = Runner/Info.plist;
+					FIREBASE_CONFIG_SUFFIX = prod;
+					INFOPLIST_FILE = Runner/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -696,7 +712,8 @@
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
 				DEVELOPMENT_TEAM = 3U525G584M;
 				ENABLE_BITCODE = NO;
-				INFOPLIST_FILE = Runner/Info.plist;
+					FIREBASE_CONFIG_SUFFIX = dev;
+					INFOPLIST_FILE = Runner/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -723,7 +740,8 @@
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
 				DEVELOPMENT_TEAM = 3U525G584M;
 				ENABLE_BITCODE = NO;
-				INFOPLIST_FILE = Runner/Info.plist;
+					FIREBASE_CONFIG_SUFFIX = prod;
+					INFOPLIST_FILE = Runner/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

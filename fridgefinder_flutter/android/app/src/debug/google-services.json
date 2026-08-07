@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "284914819627",
+    "firebase_url": "https://fridgefinder-app-dev-default-rtdb.firebaseio.com",
+    "project_id": "fridgefinder-app-dev",
+    "storage_bucket": "fridgefinder-app-dev.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:284914819627:android:9ba615d2307067a90a006e",
+        "android_client_info": {
+          "package_name": "com.fridgefinder.fridgefinderapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBxyghMo-Ar_RzxK41l7cM6VjtkJjBn5dg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

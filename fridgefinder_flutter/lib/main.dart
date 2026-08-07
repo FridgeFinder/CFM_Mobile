@@ -15,7 +15,14 @@ import 'src/core/utils/app_logger.dart';
 /// Top-level function for handling background messages (must be top-level)
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp();
+  try {
+    await Firebase.initializeApp();
+  } on FirebaseException catch (e) {
+    if (e.code != 'duplicate-app') {
+      rethrow;
+    }
+    logger.i('Background isolate reusing existing Firebase default app');
+  }
   logger.i('Handling background message: ${message.messageId}');
 
   // Background messages are handled automatically by FCM
@@ -34,7 +41,9 @@ void main() async {
     await dotenv.load(fileName: '.env');
     logger.i('Environment variables loaded successfully');
   } catch (e) {
-    logger.w('Failed to load .env file: $e. Continuing without environment variables.');
+    logger.w(
+      'Failed to load .env file: $e. Continuing without environment variables.',
+    );
   }
 
   // Initialize Hive BEFORE Firebase so we can read persisted environment
@@ -72,9 +81,23 @@ void main() async {
 
 Future<void> _initializeFirebaseForEnvironment(FirebaseOptions options) async {
   if (Firebase.apps.isEmpty) {
-    await Firebase.initializeApp(options: options);
-    logger.i('Initialized Firebase app for project: ${options.projectId}');
-    return;
+    try {
+      await Firebase.initializeApp(options: options);
+      logger.i('Initialized Firebase app for project: ${options.projectId}');
+      return;
+    } on FirebaseException catch (e) {
+      if (e.code != 'duplicate-app') {
+        rethrow;
+      }
+
+      // Some iOS startup paths can pre-create [DEFAULT] before Flutter sees it.
+      // Continue below to validate project/appId and switch if needed.
+      final existing = Firebase.app();
+      logger.w(
+        'Firebase [DEFAULT] already existed during init '
+        '(project: ${existing.options.projectId}); validating environment.',
+      );
+    }
   }
 
   final existingApp = Firebase.app();

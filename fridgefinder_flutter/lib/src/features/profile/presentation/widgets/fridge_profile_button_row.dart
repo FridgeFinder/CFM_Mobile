@@ -169,14 +169,17 @@ class FridgeProfileButtonRow extends ConsumerWidget {
 
       if (!context.mounted) return;
 
-      await showDialog(
+      final didFollow = await showDialog<bool>(
         context: context,
         builder: (dialogContext) => NotificationPreferencesDialog.subscribe(
           fridgeId: fridge.id,
-          isVolunteer: userProfileAsync.isVolunteer,
           existingPreferences: subscriptionAsync?.notificationPreferences,
         ),
       );
+
+      if (didFollow == true && context.mounted) {
+        _refreshSubscriptionState(ref);
+      }
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -235,7 +238,7 @@ class FridgeProfileButtonRow extends ConsumerWidget {
 
       if (!context.mounted || subscriptionAsync == null) return;
 
-      await showDialog(
+      final didUpdate = await showDialog<bool>(
         context: context,
         builder: (dialogContext) => NotificationPreferencesDialog.edit(
           fridgeId: fridge.id,
@@ -243,6 +246,10 @@ class FridgeProfileButtonRow extends ConsumerWidget {
           initialPreferences: subscriptionAsync.notificationPreferences,
         ),
       );
+
+      if (didUpdate == true && context.mounted) {
+        _refreshSubscriptionState(ref);
+      }
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -250,6 +257,12 @@ class FridgeProfileButtonRow extends ConsumerWidget {
         );
       }
     }
+  }
+
+  void _refreshSubscriptionState(WidgetRef ref) {
+    ref.invalidate(subscribedFridgesProvider);
+    ref.invalidate(isFridgeSubscribedProvider(fridge.id));
+    ref.invalidate(fridgeSubscriptionPreferencesProvider(fridge.id));
   }
 
   Future<void> _openDirections(BuildContext context) async {

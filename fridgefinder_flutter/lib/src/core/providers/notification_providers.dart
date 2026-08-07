@@ -3,7 +3,6 @@ import '../services/fcm_service.dart';
 import '../services/device_id_service.dart';
 import '../services/geofencing_service.dart';
 import 'auth_provider.dart';
-import 'database_provider.dart';
 import '../../features/map/data/repositories/fridge_repository.dart';
 
 part 'notification_providers.g.dart';
@@ -12,8 +11,8 @@ part 'notification_providers.g.dart';
 @riverpod
 FCMService fcmService(Ref ref) {
   final service = FCMService(
+    authRepository: ref.watch(authRepositoryProvider),
     deviceIdService: DeviceIdService(),
-    database: DatabaseProvider.databaseRef,
   );
 
   // Dispose FCM service when provider is disposed (fixes no-dispose bug)
@@ -45,7 +44,10 @@ FCMService fcmService(Ref ref) {
 @riverpod
 GeofencingService geofencingService(Ref ref) {
   final fridgeRepository = ref.watch(fridgeRepositoryProvider);
-  final service = GeofencingService(fridgeRepository: fridgeRepository);
+  final service = GeofencingService(
+    authRepository: ref.watch(authRepositoryProvider),
+    fridgeRepository: fridgeRepository,
+  );
 
   // Start/stop monitoring based on auth and settings
   ref.listen(userProfileProvider, (previous, next) async {

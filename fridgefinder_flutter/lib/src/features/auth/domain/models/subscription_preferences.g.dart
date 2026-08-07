@@ -11,6 +11,9 @@ _SubscriptionPreferences _$SubscriptionPreferencesFromJson(
 ) => _SubscriptionPreferences(
   fridgeId: json['fridgeId'] as String,
   subscribedAt: DateTime.parse(json['subscribedAt'] as String),
+  updatedAt: json['updatedAt'] == null
+      ? null
+      : DateTime.parse(json['updatedAt'] as String),
   notificationPreferences: json['notificationPreferences'] == null
       ? const NotificationPreferences()
       : NotificationPreferences.fromJson(
@@ -23,27 +26,66 @@ Map<String, dynamic> _$SubscriptionPreferencesToJson(
 ) => <String, dynamic>{
   'fridgeId': instance.fridgeId,
   'subscribedAt': instance.subscribedAt.toIso8601String(),
+  'updatedAt': instance.updatedAt?.toIso8601String(),
   'notificationPreferences': instance.notificationPreferences.toJson(),
 };
 
 _NotificationPreferences _$NotificationPreferencesFromJson(
   Map<String, dynamic> json,
 ) => _NotificationPreferences(
-  updatedWithFood: json['updatedWithFood'] as bool? ?? false,
-  runningLow: json['runningLow'] as bool? ?? false,
-  empty: json['empty'] as bool? ?? false,
-  needsCleaning: json['needsCleaning'] as bool? ?? false,
-  needsServicing: json['needsServicing'] as bool? ?? false,
-  routineValidation: json['routineValidation'] as bool? ?? false,
+  contactTypePreferences: json['contactTypePreferences'] == null
+      ? const ContactTypePreferences()
+      : ContactTypePreferences.fromJson(
+          json['contactTypePreferences'] as Map<String, dynamic>,
+        ),
 );
 
 Map<String, dynamic> _$NotificationPreferencesToJson(
   _NotificationPreferences instance,
 ) => <String, dynamic>{
-  'updatedWithFood': instance.updatedWithFood,
-  'runningLow': instance.runningLow,
-  'empty': instance.empty,
-  'needsCleaning': instance.needsCleaning,
-  'needsServicing': instance.needsServicing,
-  'routineValidation': instance.routineValidation,
+  'contactTypePreferences': instance.contactTypePreferences.toJson(),
+};
+
+_ContactTypePreferences _$ContactTypePreferencesFromJson(
+  Map<String, dynamic> json,
+) => _ContactTypePreferences(
+  email: json['email'] == null
+      ? const FridgeNotificationFlags()
+      : FridgeNotificationFlags.fromJson(json['email'] as Map<String, dynamic>),
+  device: json['device'] == null
+      ? const FridgeNotificationFlags()
+      : FridgeNotificationFlags.fromJson(
+          json['device'] as Map<String, dynamic>,
+        ),
+);
+
+Map<String, dynamic> _$ContactTypePreferencesToJson(
+  _ContactTypePreferences instance,
+) => <String, dynamic>{
+  'email': instance.email.toJson(),
+  'device': instance.device.toJson(),
+};
+
+_FridgeNotificationFlags _$FridgeNotificationFlagsFromJson(
+  Map<String, dynamic> json,
+) => _FridgeNotificationFlags(
+  good: json['good'] as bool? ?? true,
+  dirty: json['dirty'] as bool? ?? false,
+  outOfOrder: json['outOfOrder'] as bool? ?? false,
+  notAtLocation: json['notAtLocation'] as bool? ?? true,
+  ghost: json['ghost'] as bool? ?? true,
+  noFood: json['noFood'] as bool? ?? false,
+  hasFood: json['hasFood'] as bool? ?? false,
+);
+
+Map<String, dynamic> _$FridgeNotificationFlagsToJson(
+  _FridgeNotificationFlags instance,
+) => <String, dynamic>{
+  'good': instance.good,
+  'dirty': instance.dirty,
+  'outOfOrder': instance.outOfOrder,
+  'notAtLocation': instance.notAtLocation,
+  'ghost': instance.ghost,
+  'noFood': instance.noFood,
+  'hasFood': instance.hasFood,
 };

@@ -13,6 +13,29 @@ import '../fixtures/fridge_fixtures.dart';
 import '../helpers/test_helpers.dart';
 import '../test_helpers.dart';
 
+NotificationPreferences legacyNotificationPreferences({
+  bool updatedWithFood = false,
+  bool runningLow = false,
+  bool empty = false,
+  bool needsCleaning = false,
+  bool needsServicing = false,
+  bool routineValidation = false,
+}) {
+  final flags = FridgeNotificationFlags(
+    hasFood: updatedWithFood,
+    noFood: runningLow || empty,
+    dirty: needsCleaning,
+    outOfOrder: needsServicing,
+  );
+
+  return NotificationPreferences(
+    contactTypePreferences: ContactTypePreferences(
+      email: flags,
+      device: flags,
+    ),
+  );
+}
+
 /// Mock User for tests
 class TestUser implements firebase_auth.User {
   @override
@@ -83,9 +106,9 @@ Widget createAccountTestApp({
     mockProfile = UserProfile(
       userId: authenticatedUser.uid,
       username: authenticatedUser.email?.split('@').first ?? 'TestUser',
-      isVolunteer: volunteerPoints > 0,
+      userType: volunteerPoints > 0 ? UserType.volunteer : UserType.neighbor,
       points: volunteerPoints,
-      zipCode: '94107',
+      zipcode: '94107',
       createdAt: DateTime.now(),
     );
   }
@@ -318,7 +341,7 @@ void main() {
           SubscriptionPreferences(
             fridgeId: FridgeFixtures.verifiedFridgeWithFood.id,
             subscribedAt: DateTime.now(),
-            notificationPreferences: const NotificationPreferences(
+            notificationPreferences: legacyNotificationPreferences(
               updatedWithFood: true,
               runningLow: true,
             ),

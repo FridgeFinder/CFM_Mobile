@@ -3,6 +3,15 @@
 default_platform(:android)
 
 platform :android do
+
+  def validated_app_env(default_value)
+    app_env = (ENV["APP_ENV"] || default_value).strip
+    unless ["dev", "prod"].include?(app_env)
+      UI.user_error!("APP_ENV must be 'dev' or 'prod' (got: #{app_env})")
+    end
+    app_env
+  end
+
   desc "Generate screenshots for Play Store"
   lane :screenshots do
     # Build the app for screenshots
@@ -19,8 +28,10 @@ platform :android do
 
   desc "Upload existing APK to Firebase App Distribution"
   lane :beta do
+    app_env = validated_app_env("dev")
+
     # Build APK for direct distribution
-    sh("cd .. && flutter build apk --release")
+    sh("cd .. && flutter build apk --release --dart-define=APP_ENV=#{app_env}")
 
     # Upload to Firebase App Distribution
     firebase_app_distribution(
@@ -34,6 +45,9 @@ platform :android do
 
   desc "Upload existing AAB to Google Play closed testing"
   lane :playstore_beta do
+    app_env = validated_app_env("prod")
+    sh("cd .. && APP_ENV=#{app_env} ./scripts/require_prod_env.sh")
+
     # Upload to Google Play Console - Internal Testing Track
     upload_to_play_store(
       aab: "../build/app/outputs/bundle/release/app-release.aab",
@@ -47,11 +61,14 @@ platform :android do
 
   desc "Build and upload to Google Play Console"
   lane :release do
+    app_env = validated_app_env("prod")
+    sh("cd .. && APP_ENV=#{app_env} ./scripts/require_prod_env.sh")
+
     # Ensure we're on the correct branch/tag
     # ensure_git_status_clean
 
     # Build the app bundle using Flutter
-    sh("cd .. && flutter build appbundle --release")
+    sh("cd .. && flutter build appbundle --release --dart-define=APP_ENV=#{app_env}")
 
     # Upload to Google Play Console
     upload_to_play_store(

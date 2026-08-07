@@ -52,7 +52,7 @@ final class SubscribedFridgesProvider
   }
 }
 
-String _$subscribedFridgesHash() => r'c364744d6684523641f0ca19978dee8ec1c942b1';
+String _$subscribedFridgesHash() => r'7eb8e64945d48c96ad4c349786e95d636219f55e';
 
 /// Provider for checking if a fridge is subscribed
 
@@ -251,7 +251,7 @@ final class SubscriptionManagerProvider
 }
 
 String _$subscriptionManagerHash() =>
-    r'7ea9e3f970a1b81864fc31d7d42e0d3b54ab513d';
+    r'3231db0dbb505b1fa4a84b2a1cebe3d7413e6140';
 
 /// Notifier for managing subscriptions
 
