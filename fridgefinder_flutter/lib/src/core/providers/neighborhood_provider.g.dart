@@ -125,7 +125,7 @@ final class FridgeNeighborhoodProvider
 }
 
 String _$fridgeNeighborhoodHash() =>
-    r'c9965c065d6c423e274104f22a4e036ce4ed899d';
+    r'95d629d4864ab4b81bd8c870956a28df67bafcf9';
 
 /// Resolves a neighborhood label for the given [fridgeId].
 ///

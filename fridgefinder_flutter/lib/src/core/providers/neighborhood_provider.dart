@@ -16,8 +16,8 @@ NeighborhoodService neighborhoodService(Ref ref) {
 /// [NeighborhoodService] which checks Hive cache → MapTiler API → fallback.
 @riverpod
 Future<String> fridgeNeighborhood(Ref ref, String fridgeId) async {
+  final service = ref.read(neighborhoodServiceProvider);
   final fridge = await ref.watch(singleFridgeProvider(fridgeId).future);
-  final service = ref.watch(neighborhoodServiceProvider);
 
   return service.getNeighborhood(
     fridgeId: fridge.id,

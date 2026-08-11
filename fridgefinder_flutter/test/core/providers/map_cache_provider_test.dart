@@ -29,7 +29,9 @@ void main() {
       );
 
       // Provider is now async, so we need to wait for it
-      final cachedTileProviderAsync = await container.read(cachedTileProviderProvider.future);
+      final cachedTileProviderAsync = await container.read(
+        cachedTileProviderProvider.future,
+      );
 
       expect(cachedTileProviderAsync, isA<CachedTileProvider>());
       container.dispose();
@@ -46,7 +48,9 @@ void main() {
 
       // Provider now uses HiveCacheStore for persistent tile caching in production
       // In tests, we use MemCacheStore to avoid platform channel dependencies
-      final cachedTileProvider = await container.read(cachedTileProviderProvider.future);
+      final cachedTileProvider = await container.read(
+        cachedTileProviderProvider.future,
+      );
 
       // Verify it's a CachedTileProvider
       expect(cachedTileProvider, isA<CachedTileProvider>());
@@ -67,7 +71,9 @@ void main() {
       );
 
       // Should be able to watch the async provider
-      final cachedTileProvider = await container.read(cachedTileProviderProvider.future);
+      final cachedTileProvider = await container.read(
+        cachedTileProviderProvider.future,
+      );
 
       expect(cachedTileProvider, isA<CachedTileProvider>());
       container.dispose();
@@ -99,7 +105,9 @@ void main() {
         ],
       );
 
-      final cachedTileProvider = await container.read(cachedTileProviderProvider.future);
+      final cachedTileProvider = await container.read(
+        cachedTileProviderProvider.future,
+      );
       expect(cachedTileProvider, isNotNull);
 
       // Dispose container

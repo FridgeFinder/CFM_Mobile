@@ -15,8 +15,9 @@ class _MockMapFilter extends MapFilter {
 
 void main() {
   group('FilterStatusIndicator', () {
-    testWidgets('uses Semantics liveRegion for screen reader announcements',
-        (WidgetTester tester) async {
+    testWidgets('uses Semantics liveRegion for screen reader announcements', (
+      WidgetTester tester,
+    ) async {
       final activeFilterState = MapFilterState(
         selectedConditions: {FilterCondition.full},
         searchQuery: '',
@@ -27,13 +28,13 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            mapFilterProvider.overrideWith(() => _MockMapFilter(activeFilterState)),
+            mapFilterProvider.overrideWith(
+              () => _MockMapFilter(activeFilterState),
+            ),
           ],
           child: MaterialApp(
             home: Scaffold(
-              body: Stack(
-                children: const [FilterStatusIndicator()],
-              ),
+              body: Stack(children: const [FilterStatusIndicator()]),
             ),
           ),
         ),
@@ -42,8 +43,7 @@ void main() {
 
       // Find the Semantics widget with liveRegion
       final semanticsFinder = find.byWidgetPredicate(
-        (widget) =>
-            widget is Semantics && widget.properties.liveRegion == true,
+        (widget) => widget is Semantics && widget.properties.liveRegion == true,
       );
       expect(semanticsFinder, findsOneWidget);
 
@@ -52,8 +52,9 @@ void main() {
       expect(semantics.properties.label, contains('Active filter'));
     });
 
-    testWidgets('hidden when filter state is default',
-        (WidgetTester tester) async {
+    testWidgets('hidden when filter state is default', (
+      WidgetTester tester,
+    ) async {
       const defaultFilterState = MapFilterState(
         selectedConditions: <FilterCondition>{},
         searchQuery: '',
@@ -64,13 +65,13 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            mapFilterProvider.overrideWith(() => _MockMapFilter(defaultFilterState)),
+            mapFilterProvider.overrideWith(
+              () => _MockMapFilter(defaultFilterState),
+            ),
           ],
           child: MaterialApp(
             home: Scaffold(
-              body: Stack(
-                children: const [FilterStatusIndicator()],
-              ),
+              body: Stack(children: const [FilterStatusIndicator()]),
             ),
           ),
         ),
@@ -79,8 +80,7 @@ void main() {
 
       // Should not find any Semantics with liveRegion since indicator is hidden
       final semanticsFinder = find.byWidgetPredicate(
-        (widget) =>
-            widget is Semantics && widget.properties.liveRegion == true,
+        (widget) => widget is Semantics && widget.properties.liveRegion == true,
       );
       expect(semanticsFinder, findsNothing);
     });

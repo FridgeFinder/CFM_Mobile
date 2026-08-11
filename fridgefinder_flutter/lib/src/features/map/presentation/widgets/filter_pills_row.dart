@@ -5,7 +5,7 @@ import '../controllers/filter_condition.dart';
 import '../controllers/map_filter_controller.dart';
 import 'filter_pill_button.dart';
 import '../../../../core/providers/auth_provider.dart';
-import '../../../../core/providers/subscriptions_provider.dart';
+import '../../../../core/providers/followed_fridges_provider.dart';
 
 /// Reusable horizontal scrollable row of filter pills
 /// Used in both map view and list view
@@ -16,12 +16,12 @@ class FilterPillsRow extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final filterStateAsync = ref.watch(mapFilterProvider);
     final isAuthenticated = ref.watch(isAuthenticatedProvider);
-    final subscriptionsAsync = ref.watch(subscribedFridgesProvider);
+    final followedFridgesAsync = ref.watch(followedFridgesProvider);
 
     return filterStateAsync.when(
       data: (state) {
-        // Check if user has subscriptions
-        final hasSubscriptions = subscriptionsAsync.when(
+        // Check if the user follows any fridges
+        final hasFollowedFridges = followedFridgesAsync.when(
           data: (subs) => subs.isNotEmpty,
           loading: () => false,
           error: (_, _) => false,
@@ -38,11 +38,11 @@ class FilterPillsRow extends ConsumerWidget {
               padding: EdgeInsets.symmetric(horizontal: M3ESpacing.sm),
               child: Row(
                 children: [
-                  // Subscribed pill - FIRST position, only show if authenticated and has subscriptions
-                  if (isAuthenticated && hasSubscriptions)
+                  // Following pill - FIRST position, only show if authenticated and following fridges
+                  if (isAuthenticated && hasFollowedFridges)
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: M3ESpacing.xxs),
-                      child: _buildSubscribedPill(
+                      child: _buildFollowingPill(
                         context: context,
                         isSelected: state.followingOnly,
                         onPressed: () {
@@ -95,20 +95,20 @@ class FilterPillsRow extends ConsumerWidget {
     );
   }
 
-  Widget _buildSubscribedPill({
+  Widget _buildFollowingPill({
     required BuildContext context,
     required bool isSelected,
     required VoidCallback onPressed,
   }) {
     // Use the M3E FilterChipM3E component for consistency and vibrant styling
-    // Green color matches subscribed markers and full status
+    // Green color matches followed markers and full status
     return FilterChipM3E(
       label: 'Following',
       selected: isSelected,
       icon: Icons.favorite,
       color: const Color(
         0xFFFFD700,
-      ), // Shimmering gold - matches subscribed markers
+      ), // Shimmering gold - matches followed markers
       onSelected: (_) => onPressed(),
     );
   }

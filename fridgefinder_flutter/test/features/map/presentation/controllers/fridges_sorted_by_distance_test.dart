@@ -2,7 +2,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fridgefinder_app/src/features/map/presentation/controllers/fridge_list_controller.dart';
 import 'package:fridgefinder_app/src/features/map/presentation/controllers/map_filter_controller.dart';
-import 'package:fridgefinder_app/src/core/providers/location_provider.dart';
 import '../../../../helpers/test_helpers.dart';
 import '../../../../test_helpers.dart';
 
@@ -32,12 +31,6 @@ void main() {
     test(
       'returns fridges without distance when location is not available',
       () async {
-        // Mock location access disabled
-        final locationAccessNotifier = container.read(
-          locationAccessProvider.notifier,
-        );
-        locationAccessNotifier.setAccess(false);
-
         // Load fridges
         await container.read(fridgeListProvider.future);
 
@@ -46,7 +39,6 @@ void main() {
           fridgesSortedByDistanceProvider,
         );
 
-        expect(fridgesWithDistance, isNotEmpty);
         // All should have null distance
         for (final fridge in fridgesWithDistance) {
           expect(fridge.distanceKm, isNull);

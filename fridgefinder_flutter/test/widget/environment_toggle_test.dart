@@ -7,9 +7,7 @@ void main() {
   group('Environment toggle', () {
     Widget buildTestWidget(ApiEnvironment currentEnv) {
       return ProviderScope(
-        overrides: [
-          environmentProvider.overrideWithValue(currentEnv),
-        ],
+        overrides: [environmentProvider.overrideWithValue(currentEnv)],
         child: MaterialApp(
           home: Consumer(
             builder: (context, ref, _) {

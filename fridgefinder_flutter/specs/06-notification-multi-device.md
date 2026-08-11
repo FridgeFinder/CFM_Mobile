@@ -35,14 +35,14 @@ Support multiple FCM tokens per user for multi-device notification delivery.
 
 **Token Add Flow (login/refresh):**
 - On login or token refresh, add current device's token to the list
-- Use Firebase Realtime Database transaction or set operation
+- Use backend API token upsert endpoint
 - Deduplicate: check if token already exists before adding
-- Database operation: `users/{userId}/fcmTokens` -> add token to list
+- Backend operation: add token to user's registered device tokens
 
 **Token Remove Flow (logout):**
 - On logout, remove ONLY the current device's token from the list
 - Don't clear the entire list (other devices should keep their tokens)
-- Database operation: Find and remove specific token from the list
+- Backend operation: remove only the current device token
 
 **Token Refresh Handling:**
 - When a token refreshes (new token replaces old on same device):
@@ -55,9 +55,9 @@ Support multiple FCM tokens per user for multi-device notification delivery.
 - Each token gets its own FCM message
 - Handle stale tokens (FCM returns error for invalid tokens - remove them from list)
 
-**ARCHITECTURAL RECOMMENDATION:** Use a Map, not a List, for token storage. Store as `fcmTokens: { "device_hash": "token_string" }` in Firebase RTDB. Benefits: (1) Per-device writes are atomic without transactions — each device writes to its own child key. (2) Firebase RTDB handles concurrent writes to different child keys correctly. (3) No read-modify-write race condition. (4) Easy to remove a specific device's token by key. The device hash can be derived from a combination of platform + device ID or generated on first launch and cached in SharedPreferences.
+**ARCHITECTURAL RECOMMENDATION:** Use a backend-owned device token map keyed by a stable device identifier. Benefits: (1) Per-device writes are atomic. (2) No client-side read-modify-write race condition. (3) Easy to remove a specific device token by key on logout.
 
-**CRITICAL:** `updateUserProfile()` at `auth_repository.dart` line 251 uses `userRef.update(profile.toJson())` which is a shallow merge. This writes ALL profile fields, creating a race condition when two devices call it simultaneously. For token operations, use targeted field updates: `userRef.child('fcmTokens').child(deviceHash).set(token)` instead of writing the entire profile.
+**CRITICAL:** `updateUserProfile()` at `auth_repository.dart` line 251 updates broad profile fields. For token operations, prefer dedicated token endpoints so multi-device writes do not race with unrelated profile updates.
 
 **Migration:**
 - On first app launch after update, check for old `fcmToken` field
@@ -89,10 +89,10 @@ Support multiple FCM tokens per user for multi-device notification delivery.
 ## Architectural Issues
 
 ### FCMService never disposed by its provider
-`notification_providers.dart` creates `FCMService` but never calls `dispose()`. No `ref.onDispose(() => service.dispose())` exists. The `WidgetsBindingObserver` remains registered and stream subscriptions (`_tokenSubscription`, `_messageSubscription`, `_settingsSubscription`) leak. FIX: Add `ref.onDispose()` callback in the provider to call `service.dispose()`.
+`notification_providers.dart` creates `FCMService` but never calls `dispose()`. No `ref.onDispose(() => service.dispose())` exists. The `WidgetsBindingObserver` remains registered and stream follows (`_tokenSubscription`, `_messageSubscription`, `_settingsSubscription`) leak. FIX: Add `ref.onDispose()` callback in the provider to call `service.dispose()`.
 
 ### `onTokenRefresh` stale closure risk
-The `onTokenRefresh` listener at line 104 is guarded by `_tokenSubscription ??=`. If a user signs out (which does NOT cancel `_tokenSubscription`) and signs back in, `initialize()` runs again but `_tokenSubscription` is non-null. The old subscription holds stale closure references and may save a new device's token under the previous user's record. FIX: Cancel `_tokenSubscription` in `deleteToken()` and set it to null.
+The `onTokenRefresh` listener at line 104 is guarded by `_tokenSubscription ??=`. If a user signs out (which does NOT cancel `_tokenSubscription`) and signs back in, `initialize()` runs again but `_tokenSubscription` is non-null. The old follow holds stale closure references and may save a new device's token under the previous user's record. FIX: Cancel `_tokenSubscription` in `deleteToken()` and set it to null.
 
 ### `notification_providers.dart` calls `initialize()` on every auth change
 `ref.listen(authUserProvider, ...)` at line 15 calls `service.initialize()` every time auth state emits (including token refreshes). Operations like `_verifyTokenSaved()` make unnecessary database reads on each emission. FIX: Add an `_isInitialized` flag to skip redundant initialization.
@@ -106,14 +106,7 @@ This spec covers the FCM token storage architecture change. The actual notificat
 
 ## Regression & Integration Notes
 
-### Data model migration - CRITICAL:
-- Existing users have `fcmToken: "token_string"` (single string) in Firebase
-- Changing to `fcmTokens: ["token1", "token2"]` will break `fromJson` deserialization for existing users
-- **Migration strategy options:**
-  - Option A: Support BOTH fields. Read old `fcmToken` on login, migrate to `fcmTokens`, delete old field
-  - Option B: Add custom `fromJson` logic that handles both String and List types
-  - Option C: Run a one-time Cloud Function to migrate all existing records
-- **Recommended:** Option A (client-side migration on login) - simplest, no backend deployment needed
+
 
 ### Token refresh - Old token tracking:
 - `fcm_service.dart` line 104: `onTokenRefresh` listener saves new token but doesn't remove old
@@ -121,11 +114,8 @@ This spec covers the FCM token storage architecture change. The actual notificat
 - Flow: Store current token -> on refresh, remove old from list, add new to list, update local cache
 
 ### Backend coordination required:
-- `functions/index.js` reads `userData.subscribedFridges` and sends notifications
-- The notification-sending Cloud Functions need to iterate over `fcmTokens` list instead of single `fcmToken`
-- If mobile ships before backend update: multi-device tokens saved but only one gets notified (backend reads first/last)
-- **Recommendation:** Ship backend changes first or simultaneously
-- CONFIRMED: 6 Cloud Functions in `functions/index.js` reference `subscribedFridges` and `fcmToken`. Specifically: line 41 (`userData.fcmToken` check), line 62 (`token: userData.fcmToken` for FCM message), line 104 (removes invalid token). ALL must be updated to iterate `fcmTokens` Map. If mobile ships first, only one device gets notified (Cloud Functions read single `fcmToken`).
+- Notification/follow state is API-backed and API-owned.
+- Mobile should not depend on Firebase Database or Cloud Functions for follow state or alert routing.
 
 ### Sign-out token removal:
 - Current `deleteToken()` in `fcm_service.dart` (lines 469-476) calls `_messaging.deleteToken()` (Firebase SDK)

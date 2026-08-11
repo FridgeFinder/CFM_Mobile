@@ -6,14 +6,8 @@ import 'package:fridgefinder_app/src/features/profile/presentation/widgets/statu
 import '../../../../fixtures/fridge_fixtures.dart';
 
 /// Helper to pump StatusUpdateScreen inside a Navigator (needed for pop tests).
-Widget _buildTestApp({
-  required StatusUpdateScreen screen,
-}) {
-  return ProviderScope(
-    child: MaterialApp(
-      home: screen,
-    ),
-  );
+Widget _buildTestApp({required StatusUpdateScreen screen}) {
+  return ProviderScope(child: MaterialApp(home: screen));
 }
 
 void main() {
@@ -21,13 +15,16 @@ void main() {
   // Cycle 4: Full Page Wrapper
   // ---------------------------------------------------------------------------
   group('StatusUpdateScreen layout', () {
-    testWidgets('renders Scaffold with AppBar titled "Report Status Update"',
-        (tester) async {
-      await tester.pumpWidget(_buildTestApp(
-        screen: StatusUpdateScreen(
-          fridge: FridgeFixtures.verifiedFridgeWithFood,
+    testWidgets('renders Scaffold with AppBar titled "Report Status Update"', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _buildTestApp(
+          screen: StatusUpdateScreen(
+            fridge: FridgeFixtures.verifiedFridgeWithFood,
+          ),
         ),
-      ));
+      );
       await tester.pumpAndSettle();
 
       expect(find.byType(Scaffold), findsWidgets);
@@ -43,23 +40,28 @@ void main() {
     });
 
     testWidgets('contains StatusUpdateForm', (tester) async {
-      await tester.pumpWidget(_buildTestApp(
-        screen: StatusUpdateScreen(
-          fridge: FridgeFixtures.verifiedFridgeWithFood,
+      await tester.pumpWidget(
+        _buildTestApp(
+          screen: StatusUpdateScreen(
+            fridge: FridgeFixtures.verifiedFridgeWithFood,
+          ),
         ),
-      ));
+      );
       await tester.pumpAndSettle();
 
       expect(find.byType(StatusUpdateForm), findsOneWidget);
     });
 
-    testWidgets('body wrapped in GestureDetector for keyboard dismissal',
-        (tester) async {
-      await tester.pumpWidget(_buildTestApp(
-        screen: StatusUpdateScreen(
-          fridge: FridgeFixtures.verifiedFridgeWithFood,
+    testWidgets('body wrapped in GestureDetector for keyboard dismissal', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _buildTestApp(
+          screen: StatusUpdateScreen(
+            fridge: FridgeFixtures.verifiedFridgeWithFood,
+          ),
         ),
-      ));
+      );
       await tester.pumpAndSettle();
 
       // The GestureDetector should be an ancestor of the StatusUpdateForm
@@ -78,11 +80,13 @@ void main() {
   // ---------------------------------------------------------------------------
   group('PopScope unsaved changes', () {
     testWidgets('PopScope canPop=true when no data entered', (tester) async {
-      await tester.pumpWidget(_buildTestApp(
-        screen: StatusUpdateScreen(
-          fridge: FridgeFixtures.verifiedFridgeWithFood,
+      await tester.pumpWidget(
+        _buildTestApp(
+          screen: StatusUpdateScreen(
+            fridge: FridgeFixtures.verifiedFridgeWithFood,
+          ),
         ),
-      ));
+      );
       await tester.pumpAndSettle();
 
       final popScopeFinder = find.byWidgetPredicate((w) => w is PopScope);
@@ -91,13 +95,16 @@ void main() {
       expect(popScope.canPop, isTrue);
     });
 
-    testWidgets('PopScope canPop=false after selecting a condition',
-        (tester) async {
-      await tester.pumpWidget(_buildTestApp(
-        screen: StatusUpdateScreen(
-          fridge: FridgeFixtures.verifiedFridgeWithFood,
+    testWidgets('PopScope canPop=false after selecting a condition', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _buildTestApp(
+          screen: StatusUpdateScreen(
+            fridge: FridgeFixtures.verifiedFridgeWithFood,
+          ),
         ),
-      ));
+      );
       await tester.pumpAndSettle();
 
       // Select a condition
@@ -110,8 +117,9 @@ void main() {
       expect(popScope.canPop, isFalse);
     });
 
-    testWidgets('back with unsaved data shows discard confirmation dialog',
-        (tester) async {
+    testWidgets('back with unsaved data shows discard confirmation dialog', (
+      tester,
+    ) async {
       // Wrap in a Navigator so we can test pop behavior
       await tester.pumpWidget(
         ProviderScope(

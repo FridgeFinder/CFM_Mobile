@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fridgefinder_app/src/features/auth/presentation/widgets/edit_notification_preferences_dialog.dart';
-import 'package:fridgefinder_app/src/features/auth/domain/models/subscription_preferences.dart';
+import 'package:fridgefinder_app/src/features/auth/domain/models/fridge_notification_preferences.dart';
 
 void main() {
   group('NotificationPreferencesDialog', () {
@@ -41,9 +41,7 @@ void main() {
         ProviderScope(
           child: MaterialApp(
             home: Scaffold(
-              body: NotificationPreferencesDialog.subscribe(
-                fridgeId: 'fridge-2',
-              ),
+              body: NotificationPreferencesDialog.follow(fridgeId: 'fridge-2'),
             ),
           ),
         ),

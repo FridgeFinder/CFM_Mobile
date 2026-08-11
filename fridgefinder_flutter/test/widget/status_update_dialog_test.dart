@@ -7,7 +7,9 @@ import 'package:fridgefinder_app/src/features/profile/presentation/widgets/statu
 
 /// Test to reproduce and fix the RenderBox layout error
 void main() {
-  testWidgets('StatusUpdateForm in Dialog renders without layout errors', (WidgetTester tester) async {
+  testWidgets('StatusUpdateForm in Dialog renders without layout errors', (
+    WidgetTester tester,
+  ) async {
     final testFridge = FridgeFixtures.verifiedFridgeWithFood;
 
     // Build the exact dialog structure from the app
@@ -64,6 +66,8 @@ void main() {
     expect(find.text('Report Status Update'), findsOneWidget);
     expect(find.text('Fridge Condition'), findsOneWidget);
 
-    debugPrint('✅ Test passed - StatusUpdateForm dialog rendered without RenderBox layout errors');
+    debugPrint(
+      '✅ Test passed - StatusUpdateForm dialog rendered without RenderBox layout errors',
+    );
   });
 }

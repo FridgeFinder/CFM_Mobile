@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:firebase_core/firebase_core.dart';
 import '../../features/auth/data/repositories/auth_repository.dart';
 import '../../features/auth/domain/models/user_profile.dart';
 import 'dio_provider.dart';
@@ -31,6 +32,11 @@ AuthRepository authRepository(Ref ref) {
 /// Provider for current Firebase Auth user
 @riverpod
 Stream<firebase_auth.User?> authUser(Ref ref) {
+  if (Firebase.apps.isEmpty) {
+    logger.d('[AuthProvider] Firebase not initialized, returning logged-out auth state');
+    return Stream<firebase_auth.User?>.value(null);
+  }
+
   final repository = ref.watch(authRepositoryProvider);
   logger.d('[AuthProvider] Setting up auth state stream');
   return repository.authStateChanges.map((user) {

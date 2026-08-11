@@ -34,7 +34,7 @@ void main() {
     test('prod rewardsApiBaseUrl is production rewards API', () {
       expect(
         ApiEnvironment.prod.rewardsApiBaseUrl,
-        'https://user-rewards-api-prod.communityfridgefinder.com',
+        'https://user-rewards-api-prod.communityfridgefinder.com/v1',
       );
     });
 
@@ -55,21 +55,7 @@ void main() {
     test('dev rewardsApiBaseUrl is development rewards API', () {
       expect(
         ApiEnvironment.dev.rewardsApiBaseUrl,
-        'https://user-rewards-api-dev.communityfridgefinder.com',
-      );
-    });
-
-    test('prod databaseUrl is production RTDB', () {
-      expect(
-        ApiEnvironment.prod.databaseUrl,
-        'https://fridgefinder-app-default-rtdb.firebaseio.com/',
-      );
-    });
-
-    test('dev databaseUrl is development RTDB', () {
-      expect(
-        ApiEnvironment.dev.databaseUrl,
-        'https://fridgefinder-app-dev-default-rtdb.firebaseio.com/',
+        'https://user-rewards-api-dev.communityfridgefinder.com/v1',
       );
     });
   });

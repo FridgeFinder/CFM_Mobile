@@ -40,18 +40,20 @@ void main() {
       expect(storedId, equals(deviceId));
     });
 
-    test('subsequent launch returns stored value without generating new',
-        () async {
-      // Pre-populate Hive with a known ID
-      final box = await Hive.openBox<String>('device_settings');
-      await box.put('device_id', 'ios_existingdeviceid1');
-      await box.close();
+    test(
+      'subsequent launch returns stored value without generating new',
+      () async {
+        // Pre-populate Hive with a known ID
+        final box = await Hive.openBox<String>('device_settings');
+        await box.put('device_id', 'ios_existingdeviceid1');
+        await box.close();
 
-      // Create a fresh service instance (no in-memory cache)
-      final service = DeviceIdService();
-      final deviceId = await service.getDeviceId();
-      expect(deviceId, equals('ios_existingdeviceid1'));
-    });
+        // Create a fresh service instance (no in-memory cache)
+        final service = DeviceIdService();
+        final deviceId = await service.getDeviceId();
+        expect(deviceId, equals('ios_existingdeviceid1'));
+      },
+    );
 
     test('device ID has correct platform prefix format', () async {
       final service = DeviceIdService();

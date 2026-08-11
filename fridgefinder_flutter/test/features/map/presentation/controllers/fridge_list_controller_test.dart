@@ -27,7 +27,10 @@ void main() {
         final fridges = await fridgesFuture;
 
         expect(fridges, isNotEmpty);
-        expect(fridges.length, equals(5)); // All fridges including ghosts (filtering is downstream)
+        expect(
+          fridges.length,
+          equals(5),
+        ); // All fridges including ghosts (filtering is downstream)
         expect(fridges[0].name, equals('Living Gallery'));
       });
 

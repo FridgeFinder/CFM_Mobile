@@ -68,7 +68,10 @@ Dio createTestDio() {
 
 /// Get base provider overrides for testing (dio, environment, etc.)
 /// Returns a list that can be spread into ProviderScope.overrides
-List<dynamic> getBaseTestOverrides({FridgeRepository? fridgeRepository, Dio? dio}) {
+List<dynamic> getBaseTestOverrides({
+  FridgeRepository? fridgeRepository,
+  Dio? dio,
+}) {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   final repository = fridgeRepository ?? MockFridgeRepository();

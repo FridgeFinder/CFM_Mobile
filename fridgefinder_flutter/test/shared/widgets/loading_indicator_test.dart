@@ -5,9 +5,7 @@ import 'package:design_system/design_system.dart';
 
 void main() {
   group('LoadingIndicator Widget Tests', () {
-    testWidgets('displays loading indicator M3E', (
-      WidgetTester tester,
-    ) async {
+    testWidgets('displays loading indicator M3E', (WidgetTester tester) async {
       await tester.pumpWidget(
         const MaterialApp(home: Scaffold(body: LoadingIndicator())),
       );

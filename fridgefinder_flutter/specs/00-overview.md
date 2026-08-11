@@ -31,7 +31,7 @@ Before implementing individual specs, these architectural changes should be done
 
 1. **Decompose `fridge_profile_sheet.dart`** (1257 lines) into 6-7 smaller `ConsumerWidget`s — every GPS update currently rebuilds the entire sheet
 2. **Fix condition display bug**: `fridge_profile_sheet.dart:598` uses `condition.value` (raw enum) instead of `statusText` — affects Specs 01 and 04
-3. **Add Firebase mocking to test infrastructure** — subscription/FCM/auth tests are currently structural smoke tests that accept any error
+3. **Add Firebase mocking to test infrastructure** — follow/FCM/auth tests are currently structural smoke tests that accept any error
 4. **Fix `MockFridgeRepository`** to filter ghost fridges (matching production behavior)
 
 ## Recommended Implementation Order
@@ -70,7 +70,7 @@ These items from the feedback require team discussion before implementation:
 - [ ] Points system redesign
 
 ## Cross-Cutting Concerns
-- **Terminology:** "Subscribe" -> "Follow" across entire codebase (Spec 01)
+- **Terminology:** "Follow" -> "Follow" across entire codebase (Spec 01)
 - **Condition Labels:** "Dirty" -> "Needs Cleaning" everywhere (Specs 01, 04)
 - **Dark Mode:** Fix hardcoded `Colors.black` for "Not at Location" (Spec 02)
 - **Design System:** All changes must use M3E components, spacing, typography, colors. 6+ raw Flutter buttons, 6+ hardcoded colors, 15+ hardcoded pixel sizes need M3E replacements across modified files

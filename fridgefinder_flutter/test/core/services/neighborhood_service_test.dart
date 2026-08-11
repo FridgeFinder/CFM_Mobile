@@ -77,14 +77,16 @@ void main() {
   });
 
   test('calls API on cache miss and caches result', () async {
-    final adapter = MockAdapter(responseData: {
-      'features': [
-        {
-          'text': 'Williamsburg',
-          'place_type': ['neighbourhood'],
-        },
-      ],
-    });
+    final adapter = MockAdapter(
+      responseData: {
+        'features': [
+          {
+            'text': 'Williamsburg',
+            'place_type': ['neighbourhood'],
+          },
+        ],
+      },
+    );
 
     final service = NeighborhoodService(
       dio: createDio(adapter),
@@ -152,9 +154,9 @@ void main() {
   });
 
   test('falls back when features array is empty', () async {
-    final adapter = MockAdapter(responseData: {
-      'features': <Map<String, dynamic>>[],
-    });
+    final adapter = MockAdapter(
+      responseData: {'features': <Map<String, dynamic>>[]},
+    );
 
     final service = NeighborhoodService(
       dio: createDio(adapter),
@@ -172,26 +174,28 @@ void main() {
   });
 
   test('prefers neighbourhood over joint_municipality', () async {
-    final adapter = MockAdapter(responseData: {
-      'features': [
-        {
-          'text': 'Eastern Parkway',
-          'place_type': ['address'],
-        },
-        {
-          'text': 'Brooklyn',
-          'place_type': ['joint_municipality'],
-        },
-        {
-          'text': 'Crown Heights',
-          'place_type': ['neighbourhood'],
-        },
-        {
-          'text': 'New York',
-          'place_type': ['region'],
-        },
-      ],
-    });
+    final adapter = MockAdapter(
+      responseData: {
+        'features': [
+          {
+            'text': 'Eastern Parkway',
+            'place_type': ['address'],
+          },
+          {
+            'text': 'Brooklyn',
+            'place_type': ['joint_municipality'],
+          },
+          {
+            'text': 'Crown Heights',
+            'place_type': ['neighbourhood'],
+          },
+          {
+            'text': 'New York',
+            'place_type': ['region'],
+          },
+        ],
+      },
+    );
 
     final service = NeighborhoodService(
       dio: createDio(adapter),
@@ -208,22 +212,24 @@ void main() {
   });
 
   test('picks joint_municipality when no neighbourhood exists', () async {
-    final adapter = MockAdapter(responseData: {
-      'features': [
-        {
-          'text': 'Eastern Parkway',
-          'place_type': ['address'],
-        },
-        {
-          'text': 'Brooklyn',
-          'place_type': ['joint_municipality'],
-        },
-        {
-          'text': 'New York',
-          'place_type': ['region'],
-        },
-      ],
-    });
+    final adapter = MockAdapter(
+      responseData: {
+        'features': [
+          {
+            'text': 'Eastern Parkway',
+            'place_type': ['address'],
+          },
+          {
+            'text': 'Brooklyn',
+            'place_type': ['joint_municipality'],
+          },
+          {
+            'text': 'New York',
+            'place_type': ['region'],
+          },
+        ],
+      },
+    );
 
     final service = NeighborhoodService(
       dio: createDio(adapter),

@@ -35,7 +35,7 @@ FCMService fcmService(Ref ref) {
       loading: () {},
       error: (error, stackTrace) {},
     );
-  });
+  }, fireImmediately: true);
 
   return service;
 }

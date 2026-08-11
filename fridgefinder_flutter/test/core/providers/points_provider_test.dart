@@ -64,9 +64,7 @@ void main() {
           currentAuthUserProvider.overrideWith(
             (ref) => const AsyncValue.data(null),
           ),
-          userProfileProvider.overrideWith(
-            (ref) => Future.value(profile),
-          ),
+          userProfileProvider.overrideWith((ref) => Future.value(profile)),
           userRewardsRepositoryProvider.overrideWithValue(repository),
         ],
       );

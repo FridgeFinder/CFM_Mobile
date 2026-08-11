@@ -18,21 +18,17 @@ void main() {
       WidgetTester tester,
     ) async {
       await tester.pumpWidget(
-        ProviderScope(
-          child: MaterialApp(
-            home: MyFridgesScreen(),
-          ),
-        ),
+        ProviderScope(child: MaterialApp(home: MyFridgesScreen())),
       );
 
       await tester.pumpAndSettle();
 
       // Should show sign-in prompt
       expect(
-        find.textContaining('subscribe to specific fridges'),
-        findsWidgets,
+        find.textContaining('Follow specific fridges'),
+        findsOneWidget,
       );
-      expect(find.text('Sign In'), findsWidgets);
+      expect(find.text('Sign In'), findsOneWidget);
     });
 
     testWidgets('displays subscribed fridges when authenticated', (
@@ -41,18 +37,14 @@ void main() {
       // Note: This test requires Firebase setup and authenticated user
       // For now, we verify the widget structure
       await tester.pumpWidget(
-        ProviderScope(
-          child: MaterialApp(
-            home: MyFridgesScreen(),
-          ),
-        ),
+        ProviderScope(child: MaterialApp(home: MyFridgesScreen())),
       );
 
       await tester.pumpAndSettle();
 
       // Widget should render without errors
       expect(find.byType(MyFridgesScreen), findsOneWidget);
+      expect(find.text('Sign In'), findsOneWidget);
     });
   });
 }
-

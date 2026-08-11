@@ -20,11 +20,7 @@ void main() {
     ) async {
       await tester.pumpWidget(
         ProviderScope(
-          child: MaterialApp(
-            home: Scaffold(
-              body: SignInWidget(),
-            ),
-          ),
+          child: MaterialApp(home: Scaffold(body: SignInWidget())),
         ),
       );
 
@@ -40,11 +36,7 @@ void main() {
     ) async {
       await tester.pumpWidget(
         ProviderScope(
-          child: MaterialApp(
-            home: Scaffold(
-              body: SignInWidget(),
-            ),
-          ),
+          child: MaterialApp(home: Scaffold(body: SignInWidget())),
         ),
       );
 
@@ -60,11 +52,7 @@ void main() {
     ) async {
       await tester.pumpWidget(
         ProviderScope(
-          child: MaterialApp(
-            home: Scaffold(
-              body: SignInWidget(),
-            ),
-          ),
+          child: MaterialApp(home: Scaffold(body: SignInWidget())),
         ),
       );
 
@@ -85,9 +73,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           child: MaterialApp(
-            home: Scaffold(
-              body: SingleChildScrollView(child: SignInWidget()),
-            ),
+            home: Scaffold(body: SingleChildScrollView(child: SignInWidget())),
           ),
         ),
       );
@@ -109,11 +95,7 @@ void main() {
     ) async {
       await tester.pumpWidget(
         ProviderScope(
-          child: MaterialApp(
-            home: Scaffold(
-              body: SignInWidget(),
-            ),
-          ),
+          child: MaterialApp(home: Scaffold(body: SignInWidget())),
         ),
       );
 
@@ -149,4 +131,3 @@ void main() {
     });
   });
 }
-

@@ -125,7 +125,9 @@ void main() {
 
       expect(db.removeCalls.length, equals(1));
       expect(
-          db.removeCalls.first, equals('users/$testUid/fcmTokens/$testDeviceId'));
+        db.removeCalls.first,
+        equals('users/$testUid/fcmTokens/$testDeviceId'),
+      );
       // Other device's token should still be accessible
       expect(db.exists('users/$testUid/fcmTokens/android_otherdevice'), isTrue);
     });
@@ -159,7 +161,9 @@ void main() {
       db.remove('users/$testUid/fcmToken');
 
       expect(
-          db.get('users/$testUid/fcmTokens/$testDeviceId'), equals('old-token-123'));
+        db.get('users/$testUid/fcmTokens/$testDeviceId'),
+        equals('old-token-123'),
+      );
     });
 
     test('deletes old fcmToken field after copying', () {
@@ -213,12 +217,13 @@ void main() {
       db.set('users/$testUid/fcmTokens/$testDeviceId', 'token-v2');
 
       expect(
-          db.get('users/$testUid/fcmTokens/$testDeviceId'), equals('token-v2'));
+        db.get('users/$testUid/fcmTokens/$testDeviceId'),
+        equals('token-v2'),
+      );
       // Both writes went to the same path
       expect(
         db.setCalls
-            .where(
-                (p) => p == 'users/$testUid/fcmTokens/$testDeviceId')
+            .where((p) => p == 'users/$testUid/fcmTokens/$testDeviceId')
             .length,
         equals(2),
       );

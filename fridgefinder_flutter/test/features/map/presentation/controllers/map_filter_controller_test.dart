@@ -40,7 +40,10 @@ void main() {
         );
 
         expect(updated.selectedConditions, contains(FilterCondition.full));
-        expect(initial.selectedConditions.isEmpty, isTrue); // Original unchanged
+        expect(
+          initial.selectedConditions.isEmpty,
+          isTrue,
+        ); // Original unchanged
       });
 
       test('creates new state with updated search query', () {
@@ -97,8 +100,14 @@ void main() {
         );
 
         expect(state.deselectedConditions.length, equals(4));
-        expect(state.deselectedConditions, contains(FilterCondition.needsCleaning));
-        expect(state.deselectedConditions, contains(FilterCondition.notAtLocation));
+        expect(
+          state.deselectedConditions,
+          contains(FilterCondition.needsCleaning),
+        );
+        expect(
+          state.deselectedConditions,
+          contains(FilterCondition.notAtLocation),
+        );
       });
     });
 

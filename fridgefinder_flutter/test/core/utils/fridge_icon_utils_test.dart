@@ -12,15 +12,15 @@ void main() {
       });
 
       test('itemsFew (1-50%) returns pink color', () {
-        expect(FridgeIconUtils.colorFromFoodLevel[1], const Color(0xFFFFD4FF));
+        expect(FridgeIconUtils.colorFromFoodLevel[1], const Color(0xFFFF6B9D));
       });
 
       test('itemsMany (50-75%) returns yellow color', () {
-        expect(FridgeIconUtils.colorFromFoodLevel[2], const Color(0xFFFFE55C));
+        expect(FridgeIconUtils.colorFromFoodLevel[2], const Color(0xFFFFB300));
       });
 
       test('itemsFull (75%+) returns green color', () {
-        expect(FridgeIconUtils.colorFromFoodLevel[3], const Color(0xFF97ED7D));
+        expect(FridgeIconUtils.colorFromFoodLevel[3], const Color(0xFF5FD65F));
       });
     });
 
@@ -262,19 +262,19 @@ void main() {
     group('Status Color Mapping', () {
       test('good condition returns green color', () {
         final color = FridgeIconUtils.getStatusColor(FridgeCondition.good);
-        expect(color, Colors.green);
+        expect(color, const Color(0xFF5FD65F));
       });
 
       test('dirty condition returns orange color', () {
         final color = FridgeIconUtils.getStatusColor(FridgeCondition.dirty);
-        expect(color, Colors.orange);
+        expect(color, const Color(0xFFFF7043));
       });
 
-      test('out of order condition returns red color', () {
+      test('out of order condition returns orange color', () {
         final color = FridgeIconUtils.getStatusColor(
           FridgeCondition.outOfOrder,
         );
-        expect(color, Colors.red);
+        expect(color, const Color(0xFFFF7043));
       });
 
       test('ghost condition returns purple color', () {

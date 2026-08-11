@@ -44,7 +44,8 @@ void main() {
 
       test('full does not match fridge with food < 75%', () {
         final fridge = FridgeFixtures.verifiedFridgeWithFood.copyWith(
-          latestFridgeReport: FridgeFixtures.verifiedFridgeWithFood
+          latestFridgeReport: FridgeFixtures
+              .verifiedFridgeWithFood
               .latestFridgeReport!
               .copyWith(foodPercentage: 0.7),
         );
@@ -55,7 +56,8 @@ void main() {
     group('Matching Many Items Condition (50-74%)', () {
       test('manyItems matches fridge with 50-74% food', () {
         final fridge = FridgeFixtures.verifiedFridgeWithFood.copyWith(
-          latestFridgeReport: FridgeFixtures.verifiedFridgeWithFood
+          latestFridgeReport: FridgeFixtures
+              .verifiedFridgeWithFood
               .latestFridgeReport!
               .copyWith(foodPercentage: 0.6),
         );
@@ -64,7 +66,8 @@ void main() {
 
       test('manyItems does not match fridge with food < 50%', () {
         final fridge = FridgeFixtures.verifiedFridgeWithFood.copyWith(
-          latestFridgeReport: FridgeFixtures.verifiedFridgeWithFood
+          latestFridgeReport: FridgeFixtures
+              .verifiedFridgeWithFood
               .latestFridgeReport!
               .copyWith(foodPercentage: 0.4),
         );
@@ -75,7 +78,8 @@ void main() {
     group('Matching Few Items Condition (1-49%)', () {
       test('fewItems matches fridge with 1-49% food', () {
         final fridge = FridgeFixtures.verifiedFridgeWithFood.copyWith(
-          latestFridgeReport: FridgeFixtures.verifiedFridgeWithFood
+          latestFridgeReport: FridgeFixtures
+              .verifiedFridgeWithFood
               .latestFridgeReport!
               .copyWith(foodPercentage: 0.3),
         );
@@ -84,7 +88,8 @@ void main() {
 
       test('fewItems does not match empty fridge', () {
         final fridge = FridgeFixtures.verifiedFridgeWithFood.copyWith(
-          latestFridgeReport: FridgeFixtures.verifiedFridgeWithFood
+          latestFridgeReport: FridgeFixtures
+              .verifiedFridgeWithFood
               .latestFridgeReport!
               .copyWith(foodPercentage: 0.0),
         );
@@ -95,7 +100,8 @@ void main() {
     group('Matching Empty Condition (0%)', () {
       test('empty matches fridge with food == 0', () {
         final fridge = FridgeFixtures.verifiedFridgeWithFood.copyWith(
-          latestFridgeReport: FridgeFixtures.verifiedFridgeWithFood
+          latestFridgeReport: FridgeFixtures
+              .verifiedFridgeWithFood
               .latestFridgeReport!
               .copyWith(foodPercentage: 0.0),
         );
@@ -120,8 +126,9 @@ void main() {
 
       test('needsCleaning does not match good condition', () {
         expect(
-          FilterCondition.needsCleaning
-              .matches(FridgeFixtures.verifiedFridgeWithFood),
+          FilterCondition.needsCleaning.matches(
+            FridgeFixtures.verifiedFridgeWithFood,
+          ),
           isFalse,
         );
       });
@@ -130,16 +137,18 @@ void main() {
     group('Matching Needs Servicing Condition', () {
       test('needsServicing matches fridge with out of order condition', () {
         expect(
-          FilterCondition.needsServicing
-              .matches(FridgeFixtures.fridgeOutOfOrder),
+          FilterCondition.needsServicing.matches(
+            FridgeFixtures.fridgeOutOfOrder,
+          ),
           isTrue,
         );
       });
 
       test('needsServicing does not match good condition', () {
         expect(
-          FilterCondition.needsServicing
-              .matches(FridgeFixtures.verifiedFridgeWithFood),
+          FilterCondition.needsServicing.matches(
+            FridgeFixtures.verifiedFridgeWithFood,
+          ),
           isFalse,
         );
       });
@@ -148,16 +157,18 @@ void main() {
     group('Matching Not at Location Condition', () {
       test('notAtLocation matches fridge with not at location condition', () {
         expect(
-          FilterCondition.notAtLocation
-              .matches(FridgeFixtures.notAtLocationFridge),
+          FilterCondition.notAtLocation.matches(
+            FridgeFixtures.notAtLocationFridge,
+          ),
           isTrue,
         );
       });
 
       test('notAtLocation does not match good condition', () {
         expect(
-          FilterCondition.notAtLocation
-              .matches(FridgeFixtures.verifiedFridgeWithFood),
+          FilterCondition.notAtLocation.matches(
+            FridgeFixtures.verifiedFridgeWithFood,
+          ),
           isFalse,
         );
       });
@@ -166,7 +177,8 @@ void main() {
     group('Food Level Boundaries', () {
       test('handles food level at exactly 0 (empty)', () {
         final fridge = FridgeFixtures.verifiedFridgeWithFood.copyWith(
-          latestFridgeReport: FridgeFixtures.verifiedFridgeWithFood
+          latestFridgeReport: FridgeFixtures
+              .verifiedFridgeWithFood
               .latestFridgeReport!
               .copyWith(foodPercentage: 0.0),
         );
@@ -176,7 +188,8 @@ void main() {
 
       test('handles food level at 50% boundary (many items)', () {
         final fridge = FridgeFixtures.verifiedFridgeWithFood.copyWith(
-          latestFridgeReport: FridgeFixtures.verifiedFridgeWithFood
+          latestFridgeReport: FridgeFixtures
+              .verifiedFridgeWithFood
               .latestFridgeReport!
               .copyWith(foodPercentage: 0.5),
         );
@@ -187,7 +200,8 @@ void main() {
 
       test('handles food level at 75% boundary (full)', () {
         final fridge = FridgeFixtures.verifiedFridgeWithFood.copyWith(
-          latestFridgeReport: FridgeFixtures.verifiedFridgeWithFood
+          latestFridgeReport: FridgeFixtures
+              .verifiedFridgeWithFood
               .latestFridgeReport!
               .copyWith(foodPercentage: 0.75),
         );

@@ -1,16 +1,11 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Configuration for Firebase Emulator Suite
 class FirebaseEmulatorConfig {
   static const String authEmulatorHost = '127.0.0.1';
   static const int authEmulatorPort = 9099;
-  static const String databaseEmulatorHost = '127.0.0.1';
-  static const int databaseEmulatorPort = 9000;
-  static const String functionsEmulatorHost = '127.0.0.1';
-  static const int functionsEmulatorPort = 5001;
 
   // Static flag to ensure Firebase is only initialized once
   static bool _isInitialized = false;
@@ -49,7 +44,6 @@ Future<void> initializeFirebaseEmulator() async {
         appId: '1:123456789:android:test',
         messagingSenderId: '123456789',
         projectId: 'test-project',
-        databaseURL: 'http://127.0.0.1:9000/?ns=test-project',
       ),
     );
   }
@@ -59,16 +53,6 @@ Future<void> initializeFirebaseEmulator() async {
     await FirebaseAuth.instance.useAuthEmulator(
       FirebaseEmulatorConfig.authEmulatorHost,
       FirebaseEmulatorConfig.authEmulatorPort,
-    );
-  } catch (e) {
-    // Already connected to emulator, ignore
-  }
-
-  // Connect to Realtime Database Emulator
-  try {
-    FirebaseDatabase.instance.useDatabaseEmulator(
-      FirebaseEmulatorConfig.databaseEmulatorHost,
-      FirebaseEmulatorConfig.databaseEmulatorPort,
     );
   } catch (e) {
     // Already connected to emulator, ignore
@@ -84,10 +68,6 @@ Future<void> cleanupFirebaseEmulator() async {
   try {
     // Sign out any authenticated users
     await FirebaseAuth.instance.signOut();
-
-    // Clear Realtime Database data
-    final database = FirebaseDatabase.instance;
-    await database.ref().remove();
   } catch (e) {
     // Ignore errors during cleanup
   }
@@ -120,34 +100,6 @@ Future<User> createTestUser({
     final credential = await auth.signInAnonymously();
     return credential.user!;
   }
-}
-
-/// Create test data in the Realtime Database
-/// Useful for seeding data before tests
-Future<void> createTestDatabaseData({
-  required String path,
-  required Map<String, dynamic> data,
-}) async {
-  final database = FirebaseDatabase.instance;
-  await database.ref(path).set(data);
-}
-
-/// Get data from the Realtime Database for assertions
-/// Useful for verifying database writes in tests
-Future<Map<String, dynamic>?> getTestDatabaseData(String path) async {
-  final database = FirebaseDatabase.instance;
-  final snapshot = await database.ref(path).get();
-
-  if (!snapshot.exists) {
-    return null;
-  }
-
-  final value = snapshot.value;
-  if (value is Map) {
-    return Map<String, dynamic>.from(value as Map<Object?, Object?>);
-  }
-
-  return null;
 }
 
 /// Helper to sign in a test user with email

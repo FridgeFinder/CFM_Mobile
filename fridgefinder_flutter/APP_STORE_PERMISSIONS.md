@@ -20,15 +20,14 @@ This document explains the permissions required by FridgeFinder for iOS App Revi
 - **Smart notifications**: Uses Firebase Cloud Messaging for reliable delivery even when app is closed
 
 **How It's Used:**
-1. Permission is requested **only** for volunteer users when they subscribe to their first fridge and opt into geofencing
-2. Non-volunteer users (food finders) never see geofencing prompts or options
-3. User sees a clear dialog explaining the feature before permission is requested
-4. Volunteers can enable/disable geofencing at any time in their profile settings
-5. Location data is used only for geofence triggers and is never stored, tracked, or shared
-6. **Proximity detection for ALL fridges** in the system (not just subscribed), helping volunteers discover nearby needs
-7. Notifications include distance in feet and point rewards for specific actions (cleaning: 20-50 points, stocking: 30-60 points, routine updates: 10 points)
-8. **Once-per-day notification limit:** Each fridge can trigger maximum one notification per day per notification type (prevents spam)
-9. Notification history tracked both client-side and in Firebase backend for reliable enforcement
+1. Permission is requested **only** for users when they follow their first fridge and opt into geofencing
+2. User sees a clear dialog explaining the feature before permission is requested
+3. Volunteers can enable/disable geofencing at any time in their profile settings
+4. Location data is used only for geofence triggers and is never stored, tracked, or shared
+5. **Proximity detection for ALL fridges** in the system (not just followed fridges), helping volunteers discover nearby needs
+6. Notifications include distance in feet and point rewards for specific actions (cleaning: 20-50 points, stocking: 30-60 points, routine updates: 10 points)
+7. **Once-per-day notification limit:** Each fridge can trigger maximum one notification per day per notification type (prevents spam)
+8. Notification history tracked both client-side and in Firebase backend for reliable enforcement
 
 **User Control:**
 - Optional feature - users can decline geofencing and still use all other app features
@@ -87,12 +86,12 @@ Same rationale as iOS - enables geofencing notifications for volunteer coordinat
 ### Android: POST_NOTIFICATIONS (Android 13+)
 
 **Why This Permission Is Needed:**
-- Send alerts when subscribed fridges need restocking or maintenance
+- Send alerts when followed fridges need restocking or maintenance
 - Notify when fridges near user are updated (if geofencing enabled)
 - Community announcements about fridge status changes
 
 **User Control:**
-- Requested on first subscription
+- Requested on first follow
 - Can be disabled in system settings
 - Frequency controlled by user preferences in app
 
@@ -128,7 +127,7 @@ FridgeFinder is committed to user privacy:
 
 **Setup:**
 1. Sign up and create a profile **AS A VOLUNTEER** (important: check the volunteer checkbox during signup)
-2. Subscribe to your first fridge
+2. Followed your first fridge
 3. When prompted, agree to enable geofencing (non-volunteers will NOT see this prompt)
 4. Approve "Always Allow" location permission when system dialog appears
 5. Check Profile > Settings to see geofencing toggle is enabled (only visible for volunteers)
@@ -147,22 +146,22 @@ FridgeFinder is committed to user privacy:
 
 **Testing Non-Volunteer Experience:**
 1. Sign up as a regular user (do NOT check volunteer box)
-2. Subscribe to fridges
+2. Follow fridges
 3. Verify that geofencing is NEVER mentioned or prompted
 4. Verify Profile > Settings does NOT show geofencing toggle
 5. Regular users only need "While Using" location for map features
 
 **Backend Integration:**
-- Geofencing notifications sent via Firebase Cloud Function (`sendGeofencingNotification`)
-- Production Firebase project used for all authentication and messaging
+- Geofencing notifications are delivered by backend API services via FCM
+- Production Firebase project is used for authentication and messaging
 - Fridge data API uses dev environment by default (can be switched in settings)
 - Daily notification limits enforced both client-side and server-side
-- Notification history stored in Firebase at `users/{userId}/geofencing/lastNotifications`
+- Notification history is maintained by backend services
 - Automatic cleanup of notification records older than 7 days
 
 **Privacy Note:**
 - Notification history only tracks **dates** of notifications sent, not location data
-- No user location is ever stored in the database
+- No user location is ever stored in backend user records
 - Location is only used in real-time for proximity detection
 
 Note: Geofencing can be disabled at any time from Profile > Settings (volunteers only) without affecting other app functionality.

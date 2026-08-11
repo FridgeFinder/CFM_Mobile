@@ -139,7 +139,10 @@ void main() {
       expect((color!.r * 255.0).round() & 0xff, 33); // RGB(33, 150, 243)
       expect((color.g * 255.0).round() & 0xff, 150);
       expect((color.b * 255.0).round() & 0xff, 243);
-      expect((color.a * 255.0).round() & 0xff, lessThan(255)); // Has transparency
+      expect(
+        (color.a * 255.0).round() & 0xff,
+        lessThan(255),
+      ); // Has transparency
     });
 
     testWidgets('uses dark theme colors when isDarkMode is true', (

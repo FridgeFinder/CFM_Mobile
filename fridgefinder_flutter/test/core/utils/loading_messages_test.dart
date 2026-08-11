@@ -39,7 +39,7 @@ void main() {
           messages.add(getRandomLoadingMessage());
         }
 
-        // With 15 possible messages and 50 calls, we should get multiple unique messages
+        // With 14 possible messages and 50 calls, we should get multiple unique messages
         expect(
           messages.length,
           greaterThanOrEqualTo(3),
@@ -153,14 +153,14 @@ void main() {
 
       test('distribution is reasonably uniform', () {
         // Check that messages are distributed somewhat uniformly
-        // Generate 1500 messages (100 per expected message)
+        // Generate 1400 messages (100 per expected message)
         final messageCounts = <String, int>{};
-        for (var i = 0; i < 1500; i++) {
+        for (var i = 0; i < 1400; i++) {
           final message = getRandomLoadingMessage();
           messageCounts[message] = (messageCounts[message] ?? 0) + 1;
         }
 
-        // With 15 messages and 1500 calls, we expect ~100 per message
+        // With 14 messages and 1400 calls, we expect ~100 per message
         // Allow for variance: minimum 50, maximum 150
         for (final entry in messageCounts.entries) {
           expect(
@@ -177,11 +177,11 @@ void main() {
           );
         }
 
-        // Verify we got all 15 expected messages
+        // Verify we got all 14 expected messages
         expect(
           messageCounts.length,
-          equals(15),
-          reason: 'Should have all 15 different messages',
+          equals(14),
+          reason: 'Should have all 14 different messages',
         );
       });
     });

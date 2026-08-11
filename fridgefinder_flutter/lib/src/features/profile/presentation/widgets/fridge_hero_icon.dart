@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:design_system/design_system.dart';
 import '../../../map/domain/models/fridge_domain.dart';
-import '../../../../core/providers/subscriptions_provider.dart';
+import '../../../../core/providers/followed_fridges_provider.dart';
 import '../../../../core/utils/fridge_icon_utils.dart';
 
 /// Hero icon widget with animated glow for followed fridges.
-/// Only watches `isFridgeSubscribedProvider` — does NOT rebuild on GPS updates.
+/// Only watches `isFridgeFollowedProvider` — does NOT rebuild on GPS updates.
 class FridgeHeroIcon extends ConsumerStatefulWidget {
   final FridgeDomain fridge;
 
@@ -41,17 +41,12 @@ class _FridgeHeroIconState extends ConsumerState<FridgeHeroIcon>
 
   @override
   Widget build(BuildContext context) {
-    final isSubscribedAsync = ref.watch(
-      isFridgeSubscribedProvider(widget.fridge.id),
-    );
-    final isSubscribed = isSubscribedAsync.whenOrNull(
-      data: (subscribed) => subscribed,
-    ) ?? false;
+    final isFollowed = ref.watch(isFridgeFollowedProvider(widget.fridge.id));
 
-    // Start/stop glow based on subscription
-    if (isSubscribed && !_glowController.isAnimating) {
+    // Start/stop glow based on follow state.
+    if (isFollowed && !_glowController.isAnimating) {
       _glowController.repeat(reverse: true);
-    } else if (!isSubscribed && _glowController.isAnimating) {
+    } else if (!isFollowed && _glowController.isAnimating) {
       _glowController.stop();
       _glowController.value = 0.0;
     }
@@ -62,7 +57,7 @@ class _FridgeHeroIconState extends ConsumerState<FridgeHeroIcon>
         return Container(
           width: 48,
           height: 48,
-          decoration: isSubscribed
+            decoration: isFollowed
               ? BoxDecoration(
                   shape: BoxShape.circle,
                   boxShadow: [

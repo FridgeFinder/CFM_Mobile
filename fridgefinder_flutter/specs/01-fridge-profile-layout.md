@@ -26,7 +26,7 @@ The file is 1257 lines with a ~765-line `build` method. Every provider change re
 - `FridgeActionButtons`
 
 ### Fix perpetual animation controller
-`_glowController` at lines 59-62 uses `..repeat(reverse: true)` running continuously even when the fridge is not subscribed. Start the animation only when subscription state is confirmed; stop when not subscribed. Move to a separate `FridgeHeroIcon` widget.
+`_glowController` at lines 59-62 uses `..repeat(reverse: true)` running continuously even when the fridge is not followed. Start the animation only when follow state is confirmed; stop when not followed. Move to a separate `FridgeHeroIcon` widget.
 
 ### Remove fragile route detection pattern
 Lines 88-106 add `addPostFrameCallback` inside `build()` to detect route changes. Every rebuild adds a new callback. Use a `RouteObserver` or `GoRouterState` listener in `initState`/`dispose` instead.
@@ -85,16 +85,16 @@ Lines 353-356 (`EdgeInsets.symmetric(horizontal: 16, vertical: 10)`), 634/671/68
 
 ### Current State
 - **File:** `fridge_profile_sheet.dart` (lines 328-502, 802-838)
-- Button layout when subscribed (top): `[Edit Alerts]` `[Unsubscribe]` (side by side)
-- Button layout when not subscribed (top): `[Subscribe]` (full width, gold)
+- Button layout when followed (top): `[Edit Alerts]` `[Unfollow]` (side by side)
+- Button layout when not followed (top): `[Follow]` (full width, gold)
 - Bottom buttons (in order): `[Report Status Update]`, `[Get Directions]`, `[Share]`
 
 ### Target State
 
 **Terminology Change:**
-- "Subscribe" -> "Follow"
-- "Unsubscribe" -> "Unfollow"
-- Reasoning: "Subscribe" implies paid membership, "Follow" is more intuitive
+- "Follow" -> "Follow"
+- "Unfollow" -> "Unfollow"
+- Reasoning: "Follow" implies paid membership, "Follow" is more intuitive
 
 **Button Row (below photo):**
 1. **Button 1:** `[Follow]` / `[Unfollow]` - Consolidate follow action with alert editing
@@ -111,14 +111,13 @@ Lines 353-356 (`EdgeInsets.symmetric(horizontal: 16, vertical: 10)`), 634/671/68
 - The standalone "Get Directions" button at the bottom (since it's now in the button row)
 
 ### Implementation Notes
-- Rename all instances of "Subscribe"/"Unsubscribe" to "Follow"/"Unfollow" across codebase
-- Update `M3EColors.subscription` references to conceptually be "follow" color (keep gold #FFD700)
-- Search for "subscribe", "Subscribe", "unsubscribe", "Unsubscribe" strings in UI text
-- Update `edit_notification_preferences_dialog.dart` dialog title from "Subscribe to Fridge" to "Follow Fridge"
-- Update filter pill label from "Subscribed" to "Following"
+- Rename all instances of "Follow"/"Unfollow" to "Follow"/"Unfollow" across codebase
+- Update `M3EColors.follow` references to conceptually be "follow" color (keep gold #FFD700)
+- Search for "follow", "Follow", "unfollow", "Unfollow" strings in UI text
+- Update `edit_notification_preferences_dialog.dart` dialog title from "Follow to Fridge" to "Follow Fridge"
+- Update filter pill label from "Following" to "Following"
 - Test button row at minimum 320dp width. With 48dp horizontal padding + 12dp gap, each button gets ~130dp. Consider `FittedBox(fit: BoxFit.scaleDown)` for button labels or `M3ELayout.isCompact()` check to switch to vertical stack on narrow screens.
-- DO NOT rename Hive storage key `subscribed_only` to `following_only`. Only rename Dart field/variable names. The Hive key is an implementation detail that preserves user preferences. Renaming it silently resets filter preferences for all existing users.
-- Fix unsubscribe dialog at lines 1216-1254: Replace raw `AlertDialog` with `DialogM3E.showConfirmation(isDestructive: true)`. Replace `TextStyle(color: Colors.red)` at line 1249 with `colorScheme.error`.
+- Fix unfollow dialog at lines 1216-1254: Replace raw `AlertDialog` with `DialogM3E.showConfirmation(isDestructive: true)`. Replace `TextStyle(color: Colors.red)` at line 1249 with `colorScheme.error`.
 
 ---
 
@@ -196,13 +195,12 @@ Lines 353-356 (`EdgeInsets.symmetric(horizontal: 16, vertical: 10)`), 634/671/68
 
 ## Regression & Integration Notes
 
-### Subscribe -> Follow Rename: CRITICAL DATABASE WARNING
-- **DO NOT rename Firebase database paths.** The path `users/{userId}/subscribedFridges` and the serialization key `subscribedAt` in `subscription_preferences.dart` MUST stay as-is to avoid breaking existing user data.
-- Only rename **UI-facing text** (30+ instances across 9 files) and **variable/method names** (25+ instances across 5 files).
-- Keep `SubscriptionPreferences` class name and `subscription_preferences.dart` filename for now (database serialization depends on them).
-- The Hive storage key `subscribed_only` in `map_filter_controller.dart` line 42 can optionally change but will reset existing users' filter preferences.
+### API-First Migration Note
+- Legacy Firebase Database path guidance is obsolete.
+- Follow/alert state is now sourced from notification APIs only.
+- Keep naming and behavior aligned with API terminology: follow, unfollow, and edit alerts.
 
-### Full list of UI text files requiring Subscribe->Follow rename:
+### Full list of UI text files requiring Follow->Follow rename:
 1. `fridge_profile_sheet.dart` - lines 369, 445, 487, 1061, 1115, 1120, 1180, 1219, 1221, 1236, 1248
 2. `edit_notification_preferences_dialog.dart` - lines 164, 370, 485
 3. `filter_pills_row.dart` - line 101
@@ -214,7 +212,7 @@ Lines 353-356 (`EdgeInsets.symmetric(horizontal: 16, vertical: 10)`), 634/671/68
 9. `test_notification_screen.dart` - lines 221, 406, 444, 450, 578
 
 ### Color constant rename:
-- `M3EColors.subscription` in `packages/design_system/lib/theme/colors.dart` line 228 -> consider renaming to `M3EColors.follow` or adding alias
+- `M3EColors.follow` in `packages/design_system/lib/theme/colors.dart` line 228 -> consider renaming to `M3EColors.follow` or adding alias
 
 ### Condition label consistency:
 - `filter_condition.dart` line 31 already returns `'Needs Cleaning'` for dirty filter label
@@ -227,9 +225,6 @@ Lines 353-356 (`EdgeInsets.symmetric(horizontal: 16, vertical: 10)`), 634/671/68
 - This getter is on a domain model and CANNOT access `BuildContext`
 - Solution: Move color determination to a UI-layer utility that accepts isDarkMode, OR use a color that works in both modes (e.g. `Colors.grey`)
 
-### Hive storage key preservation:
-Do NOT rename the Hive key `subscribed_only` at `map_filter_controller.dart` line 42. Only rename the Dart property `subscribedOnly` to `followingOnly` in `MapFilterState`. The storage key is internal and renaming it resets preferences for existing users.
-
 ### Sign-out dialog context bug (relates to Spec 05):
 The sign-out dialog at lines 1116-1173 uses `Navigator.of(context).pop()` where `context` is the profile screen's context, not the dialog's context. This pops the wrong route, causing a black screen. Fix: Use `Builder` to capture dialog context, or restructure dialog to use builder pattern.
 
@@ -240,7 +235,6 @@ The `ref.watch(userLocationProvider)` at line 83 causes the entire 1257-line she
 
 ## Required Tests
 
-- **P0:** Verify Firebase path `subscribedFridges` is unchanged after rename (mock Firebase, call `subscribeToFridge()`, assert write path)
 - **P0:** Verify `FridgeDomain.statusText` returns "Needs Cleaning" for dirty condition (not "Dirty")
 - **P1:** Verify "Follow" text appears in all 30+ UI locations (widget tests per file)
 - **P1:** Verify all condition labels match between form, profile display, and filter pills
@@ -249,16 +243,16 @@ The `ref.watch(userLocationProvider)` at line 83 causes the entire 1257-line she
 ---
 
 ## Files to Modify
-1. `lib/src/features/profile/presentation/fridge_profile_sheet.dart` - Main layout changes + all Subscribe->Follow text
+1. `lib/src/features/profile/presentation/fridge_profile_sheet.dart` - Main layout changes + all Follow->Follow text
 2. `lib/src/features/map/domain/models/fridge_domain.dart` - Condition display text (statusText getter line 252: "Dirty"->"Needs Cleaning")
-3. `lib/src/features/auth/presentation/widgets/edit_notification_preferences_dialog.dart` - Subscribe->Follow rename (lines 164, 370, 485)
-4. `lib/src/features/map/presentation/widgets/filter_pills_row.dart` - "Subscribed"->"Following" (line 101)
-5. `lib/src/features/map/presentation/widgets/filter_status_indicator.dart` - "subscribed"->"followed" (line 26)
+3. `lib/src/features/auth/presentation/widgets/edit_notification_preferences_dialog.dart` - Follow->Follow rename (lines 164, 370, 485)
+4. `lib/src/features/map/presentation/widgets/filter_pills_row.dart` - "Following"->"Following" (line 101)
+5. `lib/src/features/map/presentation/widgets/filter_status_indicator.dart` - "followed"->"followed" (line 26)
 6. `lib/src/common_widgets/bottom_nav_bar.dart` - tooltip text (line 43)
-7. `lib/src/features/auth/presentation/screens/my_fridges_screen.dart` - all Subscribe text (5 instances)
-8. `lib/src/features/profile/presentation/profile_screen.dart` - Subscribe text (4 instances)
+7. `lib/src/features/auth/presentation/screens/my_fridges_screen.dart` - all Follow text (5 instances)
+8. `lib/src/features/profile/presentation/profile_screen.dart` - Follow text (4 instances)
 9. `packages/design_system/lib/theme/colors.dart` - Color constant name (line 228)
-10. `lib/src/core/providers/subscriptions_provider.dart` - Variable/method naming (internal consistency)
+10. `lib/src/core/providers/followed_fridges_provider.dart` - Variable/method naming (internal consistency)
 11. `lib/src/features/map/presentation/controllers/map_filter_controller.dart` - `subscribedOnly`->`followingOnly`
 
 ## Design System Compliance

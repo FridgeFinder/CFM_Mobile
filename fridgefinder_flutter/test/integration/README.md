@@ -7,7 +7,7 @@ End-to-end integration tests for the FridgeFinder Flutter app.
 | Category | File | Tests | Status |
 |----------|------|-------|--------|
 | Sign-Up | `signup_integration_test.dart` | 22 | ✅ |
-| Subscriptions | `subscribe_variations_test.dart` | 25 | ✅ |
+| Follows | `subscribe_variations_test.dart` | 25 | ✅ |
 | Notifications | `notification_variations_test.dart` | 30 | ✅ |
 | Geofencing | `geofencing_variations_test.dart` | 25 | ✅ |
 | Status Reports | `status_report_variations_test.dart` | 20 | ✅ |
@@ -48,10 +48,10 @@ Tests user authentication flows:
 - ✅ Username uniqueness
 
 ### subscribe_variations_test.dart
-Tests subscription management:
-- First subscription flow (SUB-001 to SUB-002E)
+Tests follow management:
+- First follow flow (SUB-001 to SUB-002E)
 - Permission handling (SUB-003 to SUB-005)
-- Multiple subscriptions (SUB-006 to SUB-010)
+- Multiple follows (SUB-006 to SUB-010)
 - Notification preferences (SUB-011 to SUB-017)
 - Edge cases (SUB-018 to SUB-025)
 
@@ -59,7 +59,7 @@ Tests subscription management:
 - ✅ Permission request timing
 - ✅ FCM token management
 - ✅ Notification preferences
-- ✅ Subscribe/unsubscribe flows
+- ✅ Follow/unfollow flows
 - ✅ Network error handling
 
 ### notification_variations_test.dart

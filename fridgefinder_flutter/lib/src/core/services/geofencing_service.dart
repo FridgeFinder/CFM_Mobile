@@ -133,7 +133,7 @@ class GeofencingService {
       // Get all fridges
       final fridges = await _fridgeRepository.getFridges();
 
-      // Check proximity to ALL fridges (not just subscribed ones)
+      // Check proximity to ALL fridges (not just followed ones)
       for (final fridge in fridges) {
         // Calculate distance to this fridge
         final distance = Geolocator.distanceBetween(

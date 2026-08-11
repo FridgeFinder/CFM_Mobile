@@ -1,16 +1,15 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'subscription_preferences.dart';
+part of 'fridge_notification_preferences.dart';
 
 // **************************************************************************
 // JsonSerializableGenerator
 // **************************************************************************
 
-_SubscriptionPreferences _$SubscriptionPreferencesFromJson(
+_FridgeNotificationPreferences _$FridgeNotificationPreferencesFromJson(
   Map<String, dynamic> json,
-) => _SubscriptionPreferences(
+) => _FridgeNotificationPreferences(
   fridgeId: json['fridgeId'] as String,
-  subscribedAt: DateTime.parse(json['subscribedAt'] as String),
   updatedAt: json['updatedAt'] == null
       ? null
       : DateTime.parse(json['updatedAt'] as String),
@@ -21,11 +20,10 @@ _SubscriptionPreferences _$SubscriptionPreferencesFromJson(
         ),
 );
 
-Map<String, dynamic> _$SubscriptionPreferencesToJson(
-  _SubscriptionPreferences instance,
+Map<String, dynamic> _$FridgeNotificationPreferencesToJson(
+  _FridgeNotificationPreferences instance,
 ) => <String, dynamic>{
   'fridgeId': instance.fridgeId,
-  'subscribedAt': instance.subscribedAt.toIso8601String(),
   'updatedAt': instance.updatedAt?.toIso8601String(),
   'notificationPreferences': instance.notificationPreferences.toJson(),
 };

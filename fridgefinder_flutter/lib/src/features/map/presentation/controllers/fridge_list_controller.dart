@@ -8,10 +8,11 @@ import 'package:latlong2/latlong.dart';
 import '../../data/repositories/fridge_repository.dart';
 import '../../domain/models/fridge_domain.dart';
 import '../../../../core/providers/location_provider.dart';
-import '../../../../core/providers/subscriptions_provider.dart';
+import '../../../../core/providers/followed_fridges_provider.dart';
 import '../../../../core/utils/app_logger.dart';
 import '../../../../core/utils/distance_calculator.dart' as distance_utils;
 import '../../../../core/utils/fuzzy_search.dart';
+import '../../../../core/utils/fridge_id_utils.dart';
 import 'map_filter_controller.dart'; // Provides mapFilterProvider
 
 part 'fridge_list_controller.g.dart';
@@ -323,13 +324,13 @@ List<FridgeWithDistance> fridgesSortedByDistance(Ref ref) {
       [];
 }
 
-/// Provider for filtered fridges based on map filter state (pill filters + subscribed filter + fuzzy search)
-/// Applies pill condition filters first, then subscribed filter, then fuzzy search on remaining fridges
+/// Provider for filtered fridges based on map filter state (pill filters + followed filter + fuzzy search)
+/// Applies pill condition filters first, then followed filter, then fuzzy search on remaining fridges
 @riverpod
 List<FridgeDomain> mapFilteredFridges(Ref ref) {
   final fridgesAsync = ref.watch(fridgeListProvider);
   final filterStateAsync = ref.watch(mapFilterProvider);
-  final subscriptionsAsync = ref.watch(subscribedFridgesProvider);
+  final followedFridgesAsync = ref.watch(followedFridgesProvider);
 
   return filterStateAsync.whenOrNull(
         data: (filterState) {
@@ -353,14 +354,19 @@ List<FridgeDomain> mapFilteredFridges(Ref ref) {
                           });
                         }).toList();
 
-                  // Then apply subscribed filter if active
+                  // Then apply followed filter if active
                   if (filterState.followingOnly) {
-                    final subscribedFridgeIds = subscriptionsAsync.whenOrNull(
-                      data: (subs) => subs.map((s) => s.fridgeId).toSet(),
+                    final followedFridgeIds = followedFridgesAsync.whenOrNull(
+                      data: (subs) => subs
+                          .map((s) => normalizeFridgeId(s.fridgeId))
+                          .where((id) => id.isNotEmpty)
+                          .toSet(),
                     ) ?? <String>{};
 
                     filtered = filtered.where((fridge) {
-                      return subscribedFridgeIds.contains(fridge.id);
+                      return followedFridgeIds.contains(
+                        normalizeFridgeId(fridge.id),
+                      );
                     }).toList();
                   }
 

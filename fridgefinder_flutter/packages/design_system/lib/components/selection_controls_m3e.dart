@@ -838,7 +838,6 @@ class _RangeSliderM3EState extends State<RangeSliderM3E>
     final colorScheme = Theme.of(context).colorScheme;
     final activeColor = widget.activeColor ?? colorScheme.primary;
     final inactiveColor = widget.inactiveColor ?? colorScheme.surfaceContainerHighest;
-    final thumbColor = widget.thumbColor ?? colorScheme.primary;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

@@ -31,16 +31,18 @@ void main() {
   }
 
   group('ProfileScreen Structure Tests', () {
-    testWidgets('ProfileScreen widget is created successfully',
-        (WidgetTester tester) async {
+    testWidgets('ProfileScreen widget is created successfully', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(buildProfileScreenTestApp());
 
       // Verify the widget tree renders without errors
       expect(find.byType(ProfileScreen), findsOneWidget);
     });
 
-    testWidgets('ProfileScreen has SingleChildScrollView for scrollability',
-        (WidgetTester tester) async {
+    testWidgets('ProfileScreen has SingleChildScrollView for scrollability', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(buildProfileScreenTestApp());
 
       await tester.pump();
@@ -49,8 +51,9 @@ void main() {
       expect(find.byType(SingleChildScrollView), findsOneWidget);
     });
 
-    testWidgets('ProfileScreen uses M3E spacing and components',
-        (WidgetTester tester) async {
+    testWidgets('ProfileScreen uses M3E spacing and components', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         buildProfileScreenTestApp(theme: ThemeData(useMaterial3: true)),
       );
@@ -62,8 +65,9 @@ void main() {
       expect(find.byType(Padding), findsWidgets);
     });
 
-    testWidgets('ProfileScreen displays correctly with Material3 theme',
-        (WidgetTester tester) async {
+    testWidgets('ProfileScreen displays correctly with Material3 theme', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         buildProfileScreenTestApp(
           theme: ThemeData(
@@ -80,8 +84,9 @@ void main() {
       expect(find.byType(ProfileScreen), findsOneWidget);
     });
 
-    testWidgets('SwitchM3E widget structure is correct',
-        (WidgetTester tester) async {
+    testWidgets('SwitchM3E widget structure is correct', (
+      WidgetTester tester,
+    ) async {
       bool testValue = false;
 
       await tester.pumpWidget(
@@ -103,8 +108,9 @@ void main() {
       expect(find.byType(SwitchM3E), findsOneWidget);
     });
 
-    testWidgets('SegmentedButtonM3E widget structure is correct',
-        (WidgetTester tester) async {
+    testWidgets('SegmentedButtonM3E widget structure is correct', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -112,14 +118,8 @@ void main() {
               showSelectedIcon: false,
               emptySelectionAllowed: false,
               segments: const [
-                ButtonSegment(
-                  value: 'option1',
-                  label: Text('Option 1'),
-                ),
-                ButtonSegment(
-                  value: 'option2',
-                  label: Text('Option 2'),
-                ),
+                ButtonSegment(value: 'option1', label: Text('Option 1')),
+                ButtonSegment(value: 'option2', label: Text('Option 2')),
               ],
               selected: const {'option1'},
               onSelectionChanged: (Set<String> selected) {},
@@ -136,8 +136,9 @@ void main() {
       expect(find.text('Option 2'), findsOneWidget);
     });
 
-    testWidgets('LoadingIndicatorM3E displays with message',
-        (WidgetTester tester) async {
+    testWidgets('LoadingIndicatorM3E displays with message', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
@@ -153,14 +154,11 @@ void main() {
       expect(find.text('Test loading message'), findsOneWidget);
     });
 
-    testWidgets('LoadingIndicatorM3E displays without message',
-        (WidgetTester tester) async {
+    testWidgets('LoadingIndicatorM3E displays without message', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: LoadingIndicatorM3E(),
-          ),
-        ),
+        const MaterialApp(home: Scaffold(body: LoadingIndicatorM3E())),
       );
 
       await tester.pump();
@@ -169,14 +167,12 @@ void main() {
       expect(find.byType(LoadingIndicatorM3E), findsOneWidget);
     });
 
-    testWidgets('CardM3E renders with child content', (WidgetTester tester) async {
+    testWidgets('CardM3E renders with child content', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: CardM3E(
-              child: const Text('Card content'),
-            ),
-          ),
+          home: Scaffold(body: CardM3E(child: const Text('Card content'))),
         ),
       );
 
@@ -187,8 +183,9 @@ void main() {
       expect(find.text('Card content'), findsOneWidget);
     });
 
-    testWidgets('FilledButtonM3E renders with icon and text',
-        (WidgetTester tester) async {
+    testWidgets('FilledButtonM3E renders with icon and text', (
+      WidgetTester tester,
+    ) async {
       bool pressed = false;
 
       await tester.pumpWidget(
@@ -218,8 +215,9 @@ void main() {
       expect(pressed, isTrue);
     });
 
-    testWidgets('OutlinedButtonM3E renders with icon and text',
-        (WidgetTester tester) async {
+    testWidgets('OutlinedButtonM3E renders with icon and text', (
+      WidgetTester tester,
+    ) async {
       bool pressed = false;
 
       await tester.pumpWidget(
@@ -249,8 +247,9 @@ void main() {
       expect(pressed, isTrue);
     });
 
-    testWidgets('CircularProgressIndicatorM3E renders with different sizes',
-        (WidgetTester tester) async {
+    testWidgets('CircularProgressIndicatorM3E renders with different sizes', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
@@ -271,8 +270,9 @@ void main() {
       expect(find.byType(CircularProgressIndicatorM3E), findsNWidgets(3));
     });
 
-    testWidgets('M3E typography styles are applied correctly',
-        (WidgetTester tester) async {
+    testWidgets('M3E typography styles are applied correctly', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(

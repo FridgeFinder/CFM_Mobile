@@ -56,76 +56,77 @@ Widget _buildTileLayerSelector() {
 void main() {
   group('Map Tile Layer Selection', () {
     testWidgets(
-        'selects VectorTileLayer when vectorTileStyleProvider resolves successfully',
-        (tester) async {
-      final mockStyle = _createMockStyle();
+      'selects VectorTileLayer when vectorTileStyleProvider resolves successfully',
+      (tester) async {
+        final mockStyle = _createMockStyle();
 
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            vectorTileStyleProvider.overrideWith((ref) async => mockStyle),
-          ],
-          child: _buildTileLayerSelector(),
-        ),
-      );
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              vectorTileStyleProvider.overrideWith((ref) async => mockStyle),
+            ],
+            child: _buildTileLayerSelector(),
+          ),
+        );
 
-      // Initially loading → shows raster fallback
-      expect(find.text('raster_fallback_loading'), findsOneWidget);
+        // Initially loading → shows raster fallback
+        expect(find.text('raster_fallback_loading'), findsOneWidget);
 
-      // Wait for async provider to resolve
-      await tester.pumpAndSettle();
+        // Wait for async provider to resolve
+        await tester.pumpAndSettle();
 
-      // After resolution → shows vector tile layer
-      expect(find.text('vector_tile_layer'), findsOneWidget);
-    });
+        // After resolution → shows vector tile layer
+        expect(find.text('vector_tile_layer'), findsOneWidget);
+      },
+    );
 
     test(
-        'AsyncValue.when() maps error to raster fallback (mirrors Consumer logic)',
-        () {
-      // Verify that the .when() branching used in map_screen.dart's Consumer
-      // correctly selects the error branch for raster fallback.
-      // The provider error state is tested in vector_tile_style_provider_test.dart.
-      const AsyncValue<Style> errorState = AsyncValue.error(
-        'Protomaps API key not configured',
-        StackTrace.empty,
-      );
+      'AsyncValue.when() maps error to raster fallback (mirrors Consumer logic)',
+      () {
+        // Verify that the .when() branching used in map_screen.dart's Consumer
+        // correctly selects the error branch for raster fallback.
+        // The provider error state is tested in vector_tile_style_provider_test.dart.
+        const AsyncValue<Style> errorState = AsyncValue.error(
+          'Protomaps API key not configured',
+          StackTrace.empty,
+        );
 
-      final result = errorState.when(
-        data: (_) => 'vector_tile_layer',
-        loading: () => 'raster_fallback_loading',
-        error: (_, _) => 'raster_fallback_error',
-      );
+        final result = errorState.when(
+          data: (_) => 'vector_tile_layer',
+          loading: () => 'raster_fallback_loading',
+          error: (_, _) => 'raster_fallback_error',
+        );
 
-      expect(result, 'raster_fallback_error');
-    });
+        expect(result, 'raster_fallback_error');
+      },
+    );
 
     testWidgets(
-        'shows raster TileLayer while vectorTileStyleProvider is loading',
-        (tester) async {
-      // Use a Completer that won't resolve during initial pump
-      final completer = Completer<Style>();
+      'shows raster TileLayer while vectorTileStyleProvider is loading',
+      (tester) async {
+        // Use a Completer that won't resolve during initial pump
+        final completer = Completer<Style>();
 
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            vectorTileStyleProvider.overrideWith(
-              (ref) => completer.future,
-            ),
-          ],
-          child: _buildTileLayerSelector(),
-        ),
-      );
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              vectorTileStyleProvider.overrideWith((ref) => completer.future),
+            ],
+            child: _buildTileLayerSelector(),
+          ),
+        );
 
-      // Pump once to build - provider is still loading
-      await tester.pump();
+        // Pump once to build - provider is still loading
+        await tester.pump();
 
-      // Should show raster fallback while loading
-      expect(find.text('raster_fallback_loading'), findsOneWidget);
-      expect(find.text('vector_tile_layer'), findsNothing);
+        // Should show raster fallback while loading
+        expect(find.text('raster_fallback_loading'), findsOneWidget);
+        expect(find.text('vector_tile_layer'), findsNothing);
 
-      // Complete the future to clean up
-      completer.complete(_createMockStyle());
-      await tester.pumpAndSettle();
-    });
+        // Complete the future to clean up
+        completer.complete(_createMockStyle());
+        await tester.pumpAndSettle();
+      },
+    );
   });
 }

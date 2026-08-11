@@ -20,7 +20,7 @@ abstract class MapFilterState with _$MapFilterState {
     @Default(false) bool includeGhosts,
   }) = _MapFilterState;
 
-  /// Check if filter state is at default (no conditions selected, no search, no subscribed filter)
+  /// Check if filter state is at default (no conditions selected, no search, no followed filter)
   /// Default state shows everything
   bool get isDefault {
     return selectedConditions.isEmpty && searchQuery.isEmpty && !followingOnly && !includeGhosts;
@@ -40,7 +40,7 @@ class MapFilter extends _$MapFilter {
   static const String _boxName = 'map_filter_state';
   static const String _conditionsKey = 'selected_conditions';
   static const String _searchKey = 'search_query';
-  static const String _followingOnlyKey = 'subscribed_only';
+  static const String _followingOnlyKey = 'followingOnly';
   static const String _includeGhostsKey = 'include_ghosts';
   static const String _versionKey = 'storage_version';
   static const int _currentVersion = 4; // v4: added includeGhosts, stopped persisting searchQuery
@@ -99,7 +99,7 @@ class MapFilter extends _$MapFilter {
       // Clean up any stale searchQuery from prior versions
       await box.delete(_searchKey);
 
-      // Load subscribed only filter
+      // Load followed only filter
       final followingOnly = box.get(_followingOnlyKey, defaultValue: false) as bool;
 
       // Load include ghosts filter
@@ -220,7 +220,7 @@ class MapFilter extends _$MapFilter {
     await _saveToStorage(newState);
   }
 
-  /// Toggle subscribed only filter
+  /// Toggle followed only filter
   Future<void> toggleFollowingOnly() async {
     final currentState = state.whenOrNull(data: (d) => d);
     if (currentState == null) return;
