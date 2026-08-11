@@ -8,22 +8,20 @@ import 'package:design_system/design_system.dart';
 /// These tests verify the UI structure without requiring full provider mocking
 void main() {
   group('MyFridgesScreen Loading States Structure', () {
-    testWidgets('MyFridgesScreen widget is created successfully',
-        (WidgetTester tester) async {
+    testWidgets('MyFridgesScreen widget is created successfully', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(
-            home: MyFridgesScreen(),
-          ),
-        ),
+        const ProviderScope(child: MaterialApp(home: MyFridgesScreen())),
       );
 
       // Verify the widget tree renders without errors
       expect(find.byType(MyFridgesScreen), findsOneWidget);
     });
 
-    testWidgets('LoadingIndicatorM3E renders correctly',
-        (WidgetTester tester) async {
+    testWidgets('LoadingIndicatorM3E renders correctly', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
@@ -39,21 +37,16 @@ void main() {
       expect(find.text('Loading fridges...'), findsOneWidget);
     });
 
-    testWidgets('LoadingIndicatorM3E with random message',
-        (WidgetTester tester) async {
+    testWidgets('LoadingIndicatorM3E with random message', (
+      WidgetTester tester,
+    ) async {
       // Test that LoadingIndicatorM3E accepts any message
-      const testMessages = [
-        'Defrosting...',
-        'Chilling...',
-        'Loading...',
-      ];
+      const testMessages = ['Defrosting...', 'Chilling...', 'Loading...'];
 
       for (final message in testMessages) {
         await tester.pumpWidget(
           MaterialApp(
-            home: Scaffold(
-              body: LoadingIndicatorM3E(message: message),
-            ),
+            home: Scaffold(body: LoadingIndicatorM3E(message: message)),
           ),
         );
 
@@ -67,13 +60,12 @@ void main() {
       }
     });
 
-    testWidgets('LoadingIndicatorM3E displays centered',
-        (WidgetTester tester) async {
+    testWidgets('LoadingIndicatorM3E displays centered', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: LoadingIndicatorM3E(message: 'Test'),
-          ),
+          home: Scaffold(body: LoadingIndicatorM3E(message: 'Test')),
         ),
       );
 
@@ -84,8 +76,9 @@ void main() {
       expect(find.byType(LoadingIndicatorM3E), findsOneWidget);
     });
 
-    testWidgets('Empty state icon and text render correctly',
-        (WidgetTester tester) async {
+    testWidgets('Empty state icon and text render correctly', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -95,11 +88,7 @@ void main() {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
-                      Icons.favorite_border,
-                      size: 64,
-                      color: Colors.grey,
-                    ),
+                    Icon(Icons.favorite_border, size: 64, color: Colors.grey),
                     M3ESpacing.verticalXL,
                     Text(
                       'No Subscribed Fridges',
@@ -120,8 +109,9 @@ void main() {
       expect(find.text('No Subscribed Fridges'), findsOneWidget);
     });
 
-    testWidgets('Card and ListTile structure for fridge items',
-        (WidgetTester tester) async {
+    testWidgets('Card and ListTile structure for fridge items', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -166,9 +156,7 @@ void main() {
               itemBuilder: (context, index) {
                 return Card(
                   margin: const EdgeInsets.only(bottom: 12),
-                  child: ListTile(
-                    title: Text('Fridge $index'),
-                  ),
+                  child: ListTile(title: Text('Fridge $index')),
                 );
               },
             ),
@@ -185,8 +173,9 @@ void main() {
       expect(listView.padding, equals(const EdgeInsets.all(16)));
     });
 
-    testWidgets('Error view structure with retry button',
-        (WidgetTester tester) async {
+    testWidgets('Error view structure with retry button', (
+      WidgetTester tester,
+    ) async {
       bool retryPressed = false;
 
       await tester.pumpWidget(
@@ -227,8 +216,9 @@ void main() {
       expect(retryPressed, isTrue);
     });
 
-    testWidgets('Sign-in prompt structure when not authenticated',
-        (WidgetTester tester) async {
+    testWidgets('Sign-in prompt structure when not authenticated', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -238,10 +228,7 @@ void main() {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(
-                      Icons.favorite_border,
-                      size: 64,
-                    ),
+                    const Icon(Icons.favorite_border, size: 64),
                     M3ESpacing.verticalXL,
                     Text(
                       'Subscribe to specific fridges to receive updates on food availability or when fridges need re-stocking or cleaning.',
@@ -267,14 +254,17 @@ void main() {
       // Verify sign-in prompt elements
       expect(find.byIcon(Icons.favorite_border), findsOneWidget);
       expect(
-          find.text(
-              'Subscribe to specific fridges to receive updates on food availability or when fridges need re-stocking or cleaning.'),
-          findsOneWidget);
+        find.text(
+          'Subscribe to specific fridges to receive updates on food availability or when fridges need re-stocking or cleaning.',
+        ),
+        findsOneWidget,
+      );
       expect(find.text('Sign In'), findsOneWidget);
     });
 
-    testWidgets('Multiple fridge cards render in list',
-        (WidgetTester tester) async {
+    testWidgets('Multiple fridge cards render in list', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -324,8 +314,9 @@ void main() {
       expect(card.margin, equals(const EdgeInsets.only(bottom: 12)));
     });
 
-    testWidgets('FilledButtonM3E with icon renders correctly',
-        (WidgetTester tester) async {
+    testWidgets('FilledButtonM3E with icon renders correctly', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -345,8 +336,9 @@ void main() {
       expect(find.text('Browse Fridges'), findsOneWidget);
     });
 
-    testWidgets('M3E spacing constants are consistent',
-        (WidgetTester tester) async {
+    testWidgets('M3E spacing constants are consistent', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(

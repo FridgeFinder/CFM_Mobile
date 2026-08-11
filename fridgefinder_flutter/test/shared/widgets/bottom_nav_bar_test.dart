@@ -1,6 +1,7 @@
+import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:fridgefinder_app/src/common_widgets/bottom_nav_bar.dart';
 import '../../helpers/test_helpers.dart';
 
@@ -28,7 +29,7 @@ void main() {
 
       expect(find.text('Map'), findsOneWidget);
       expect(find.text('List'), findsOneWidget);
-      // Favorites was removed - will be added in v1.1
+      expect(find.text('My Fridges'), findsOneWidget);
       expect(find.text('Profile'), findsOneWidget);
     });
 
@@ -45,9 +46,9 @@ void main() {
       );
 
       expect(find.byIcon(Icons.map), findsOneWidget);
-      expect(find.byIcon(Icons.list), findsOneWidget);
-      // Favorites icon was removed - will be added in v1.1
-      expect(find.byIcon(Icons.person), findsOneWidget);
+      expect(find.byIcon(Icons.list_outlined), findsOneWidget);
+      expect(find.byIcon(Icons.favorite_outline), findsOneWidget);
+      expect(find.byIcon(Icons.person_outline), findsOneWidget);
     });
 
     testWidgets('highlights correct item for / route', (
@@ -64,12 +65,12 @@ void main() {
         ),
       );
 
-      final navBar = find.byType(BottomNavigationBar);
+      final navBar = find.byType(NavigationBarEnhancedM3E);
       expect(navBar, findsOneWidget);
 
       final bottomNavBar =
-          navBar.evaluate().single.widget as BottomNavigationBar;
-      expect(bottomNavBar.currentIndex, 0);
+          navBar.evaluate().single.widget as NavigationBarEnhancedM3E;
+      expect(bottomNavBar.selectedIndex, 0);
     });
 
     testWidgets('highlights correct item for /list route', (
@@ -86,31 +87,30 @@ void main() {
         ),
       );
 
-      final navBar = find.byType(BottomNavigationBar);
+      final navBar = find.byType(NavigationBarEnhancedM3E);
       final bottomNavBar =
-          navBar.evaluate().single.widget as BottomNavigationBar;
-      expect(bottomNavBar.currentIndex, 1);
+          navBar.evaluate().single.widget as NavigationBarEnhancedM3E;
+      expect(bottomNavBar.selectedIndex, 1);
     });
 
-    testWidgets('highlights correct item for /favorites route', (
+    testWidgets('highlights correct item for /my-fridges route', (
       WidgetTester tester,
     ) async {
       await tester.pumpWidget(
         const ProviderScope(
           child: MaterialApp(
             home: Scaffold(
-              bottomNavigationBar: AppBottomNavBar(currentRoute: '/favorites'),
+              bottomNavigationBar: AppBottomNavBar(currentRoute: '/my-fridges'),
               body: SizedBox(),
             ),
           ),
         ),
       );
 
-      final navBar = find.byType(BottomNavigationBar);
+      final navBar = find.byType(NavigationBarEnhancedM3E);
       final bottomNavBar =
-          navBar.evaluate().single.widget as BottomNavigationBar;
-      // Favorites route no longer exists - should default to index 0 (Map)
-      expect(bottomNavBar.currentIndex, 0);
+          navBar.evaluate().single.widget as NavigationBarEnhancedM3E;
+      expect(bottomNavBar.selectedIndex, 2);
     });
 
     testWidgets('highlights correct item for /profile route', (
@@ -127,11 +127,10 @@ void main() {
         ),
       );
 
-      final navBar = find.byType(BottomNavigationBar);
+      final navBar = find.byType(NavigationBarEnhancedM3E);
       final bottomNavBar =
-          navBar.evaluate().single.widget as BottomNavigationBar;
-      // Profile is now index 2 (Map=0, List=1, Profile=2) since Favorites was removed
-      expect(bottomNavBar.currentIndex, 2);
+          navBar.evaluate().single.widget as NavigationBarEnhancedM3E;
+      expect(bottomNavBar.selectedIndex, 3);
     });
 
     testWidgets('defaults to Map (index 0) for unknown route', (
@@ -148,13 +147,13 @@ void main() {
         ),
       );
 
-      final navBar = find.byType(BottomNavigationBar);
+      final navBar = find.byType(NavigationBarEnhancedM3E);
       final bottomNavBar =
-          navBar.evaluate().single.widget as BottomNavigationBar;
-      expect(bottomNavBar.currentIndex, 0);
+          navBar.evaluate().single.widget as NavigationBarEnhancedM3E;
+      expect(bottomNavBar.selectedIndex, 0);
     });
 
-    testWidgets('shows BottomNavigationBar', (WidgetTester tester) async {
+    testWidgets('shows NavigationBarEnhancedM3E', (WidgetTester tester) async {
       await tester.pumpWidget(
         const ProviderScope(
           child: MaterialApp(
@@ -166,7 +165,7 @@ void main() {
         ),
       );
 
-      expect(find.byType(BottomNavigationBar), findsOneWidget);
+      expect(find.byType(NavigationBarEnhancedM3E), findsOneWidget);
     });
   });
 }

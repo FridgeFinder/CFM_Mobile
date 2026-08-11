@@ -28,15 +28,13 @@ enum ApiEnvironment {
     'https://api-dev.communityfridgefinder.com/v1',
     'https://users-api-dev.communityfridgefinder.com/v1',
     'https://notifications-api-dev.communityfridgefinder.com/v1',
-    'https://user-rewards-api-dev.communityfridgefinder.com',
-    'https://fridgefinder-app-dev-default-rtdb.firebaseio.com/',
+    'https://user-rewards-api-dev.communityfridgefinder.com/v1',
   ),
   prod(
     'https://api-prod.communityfridgefinder.com/v1',
     'https://users-api-prod.communityfridgefinder.com/v1',
     'https://notifications-api-prod.communityfridgefinder.com/v1',
-    'https://user-rewards-api-prod.communityfridgefinder.com',
-    'https://fridgefinder-app-default-rtdb.firebaseio.com/',
+    'https://user-rewards-api-prod.communityfridgefinder.com/v1',
   );
 
   const ApiEnvironment(
@@ -44,22 +42,20 @@ enum ApiEnvironment {
     this.usersApiBaseUrl,
     this.notificationsApiBaseUrl,
     this.rewardsApiBaseUrl,
-    this.databaseUrl,
   );
   final String fridgeApiBaseUrl;
   final String usersApiBaseUrl;
   final String notificationsApiBaseUrl;
   final String rewardsApiBaseUrl;
-  final String databaseUrl;
 }
 
 /// Reads the startup environment before Riverpod initializes.
 /// Priority:
 /// 1) APP_ENV dart-define override (dev|prod)
 /// 2) persisted environment from app settings (dev|prod)
-/// 3) default to dev
+/// 3) default to prod
 ///
-/// This avoids silently booting the app into prod because of an old persisted
+/// This avoids silently booting the app into dev because of an old persisted
 /// value from a previous run.
 Future<ApiEnvironment> loadPersistedEnvironment() async {
   final override = _parseEnvironmentOverride(_appEnvOverride);
@@ -80,13 +76,13 @@ Future<ApiEnvironment> loadPersistedEnvironment() async {
     // Fall through to dev default if persistence cannot be read.
   }
 
-  return ApiEnvironment.dev;
+  return ApiEnvironment.prod;
 }
 
 /// Notifier to manage API environment selection with persistence
 @riverpod
 class Environment extends _$Environment {
-  static ApiEnvironment _bootstrapEnvironment = ApiEnvironment.dev;
+  static ApiEnvironment _bootstrapEnvironment = ApiEnvironment.prod;
 
   /// Set the bootstrap environment before Riverpod initializes.
   /// Called from main.dart after loadPersistedEnvironment().

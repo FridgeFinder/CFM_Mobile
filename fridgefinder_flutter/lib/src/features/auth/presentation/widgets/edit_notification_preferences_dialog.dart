@@ -2,14 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:design_system/design_system.dart';
-import '../../domain/models/subscription_preferences.dart';
+import '../../domain/models/fridge_notification_preferences.dart';
 import '../../../../core/providers/notification_providers.dart';
-import '../../../../core/providers/subscriptions_provider.dart';
-import '../../../../core/utils/app_logger.dart';
+import '../../../../core/providers/followed_fridges_provider.dart';
 
-enum NotificationPreferencesMode { subscribe, edit }
+enum NotificationPreferencesMode { follow, edit }
 
-/// Consolidated dialog for notification preferences (both subscribe and edit)
+/// Consolidated dialog for notification preferences (both follow and edit)
 /// Uses toggle-based UI with icons and switches for better UX
 class NotificationPreferencesDialog extends ConsumerStatefulWidget {
   final NotificationPreferencesMode mode;
@@ -25,15 +24,15 @@ class NotificationPreferencesDialog extends ConsumerStatefulWidget {
     required this.initialPreferences,
   });
 
-  /// Factory constructor for subscribe mode
-  factory NotificationPreferencesDialog.subscribe({
+  /// Factory constructor for follow mode
+  factory NotificationPreferencesDialog.follow({
     required String fridgeId,
     NotificationPreferences? existingPreferences,
   }) {
     final preferences = existingPreferences ?? const NotificationPreferences();
 
     return NotificationPreferencesDialog(
-      mode: NotificationPreferencesMode.subscribe,
+      mode: NotificationPreferencesMode.follow,
       fridgeId: fridgeId,
       initialPreferences: preferences,
     );
@@ -75,7 +74,7 @@ class _NotificationPreferencesDialogState
     if (widget.mode == NotificationPreferencesMode.edit) {
       await _handleEditMode();
     } else {
-      await _handleSubscribeMode();
+      await _handleFollowMode();
     }
   }
 
@@ -106,7 +105,7 @@ class _NotificationPreferencesDialogState
 
     setState(() => _isLoading = true);
     try {
-      final manager = ref.read(subscriptionManagerProvider.notifier);
+      final manager = ref.read(followManagerProvider.notifier);
       await manager.unfollowFridge(widget.fridgeId);
       if (mounted) {
         setState(() => _isLoading = false);
@@ -130,7 +129,7 @@ class _NotificationPreferencesDialogState
       await _ensureNotificationsEnabledPrompt();
       if (!mounted) return;
 
-      await ref.read(subscriptionManagerProvider.notifier).updateNotificationPreferences(
+      await ref.read(followManagerProvider.notifier).updateNotificationPreferences(
             widget.fridgeId,
             _preferences,
           );
@@ -159,13 +158,13 @@ class _NotificationPreferencesDialogState
     }
   }
 
-  Future<void> _handleSubscribeMode() async {
+  Future<void> _handleFollowMode() async {
     try {
       await _ensureNotificationsEnabledPrompt();
       if (!mounted) return;
 
-      // Subscribe to fridge
-      final manager = ref.read(subscriptionManagerProvider.notifier);
+      // Follow to fridge
+      final manager = ref.read(followManagerProvider.notifier);
       await manager.followFridge(widget.fridgeId, _preferences);
 
       if (mounted) {
@@ -197,7 +196,6 @@ class _NotificationPreferencesDialogState
     }
 
     final enabledAfterPrompt = await fcmService.setDeviceNotificationsEnabled(true);
-    logger.i('Device notification state after prompt: $enabledAfterPrompt');
 
     if (!mounted) return;
 

@@ -3,7 +3,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../../core/exceptions/app_exception.dart';
 import '../../../../core/providers/dio_provider.dart';
-import '../../domain/models/subscription_preferences.dart';
+import '../../domain/models/fridge_notification_preferences.dart';
 
 part 'notifications_repository.g.dart';
 
@@ -12,7 +12,7 @@ class NotificationsRepository {
 
   final Dio _dio;
 
-  Future<List<SubscriptionPreferences>> getAllForUser(String userId) async {
+  Future<List<FridgeNotificationPreferences>> getAllForUser(String userId) async {
     try {
       final response = await _dio.get('/users/$userId/fridge-notifications');
       final notifications = _extractNotificationsList(response.data);
@@ -22,16 +22,21 @@ class NotificationsRepository {
           .map(_fromApi)
           .toList();
     } on DioException catch (e) {
+      if (e.response?.statusCode == 404) {
+        return const <FridgeNotificationPreferences>[];
+      }
       throw _handleDioError(e, 'Failed to load fridge notifications');
     }
   }
 
-  Future<SubscriptionPreferences?> getForFridge({
+  Future<FridgeNotificationPreferences?> getForFridge({
     required String userId,
     required String fridgeId,
   }) async {
     try {
-      final response = await _dio.get('/users/$userId/fridge-notifications/$fridgeId');
+      final response = await _dio.get(
+        '/users/$userId/fridge-notifications/$fridgeId',
+      );
       final data = _extractSingleNotification(response.data);
       if (data == null) return null;
       return _fromApi(data);
@@ -43,19 +48,23 @@ class NotificationsRepository {
     }
   }
 
-  Future<SubscriptionPreferences> followFridge({
+  Future<FridgeNotificationPreferences> followFridge({
     required String userId,
     required String fridgeId,
     required NotificationPreferences preferences,
   }) async {
     try {
+      final payload = _toApiInput(preferences);
       final response = await _dio.post(
         '/users/$userId/fridge-notifications/$fridgeId',
-        data: _toApiInput(preferences),
+        data: payload,
       );
       final data = _extractSingleNotification(response.data);
       if (data == null) {
-        throw ServerException('Unexpected response creating fridge notification');
+        return FridgeNotificationPreferences(
+          fridgeId: fridgeId,
+          notificationPreferences: preferences,
+        );
       }
       return _fromApi(data);
     } on DioException catch (e) {
@@ -63,23 +72,30 @@ class NotificationsRepository {
     }
   }
 
-  Future<SubscriptionPreferences> updatePreferences({
+  Future<FridgeNotificationPreferences> updatePreferences({
     required String userId,
     required String fridgeId,
     required NotificationPreferences preferences,
   }) async {
     try {
+      final payload = _toApiInput(preferences);
       final response = await _dio.patch(
         '/users/$userId/fridge-notifications/$fridgeId',
-        data: _toApiInput(preferences),
+        data: payload,
       );
       final data = _extractSingleNotification(response.data);
       if (data == null) {
-        throw ServerException('Unexpected response updating fridge notification');
+        return FridgeNotificationPreferences(
+          fridgeId: fridgeId,
+          notificationPreferences: preferences,
+        );
       }
       return _fromApi(data);
     } on DioException catch (e) {
-      throw _handleDioError(e, 'Failed to update fridge notification preferences');
+      throw _handleDioError(
+        e,
+        'Failed to update fridge notification preferences',
+      );
     }
   }
 
@@ -94,24 +110,23 @@ class NotificationsRepository {
     }
   }
 
-  SubscriptionPreferences _fromApi(Map<String, dynamic> json) {
-    final contactType = json['contactTypePreferences'];
+  FridgeNotificationPreferences _fromApi(Map<String, dynamic> json) {
     final preferences = NotificationPreferences(
       contactTypePreferences: _parseContactTypePreferences(
-        contactType is Map<String, dynamic> ? contactType : const <String, dynamic>{},
+        _extractPreferencesPayload(json),
       ),
     );
 
-    return SubscriptionPreferences(
-      fridgeId: (json['fridgeId'] as String?) ?? '',
-      subscribedAt: DateTime.tryParse((json['createdAt'] as String?) ?? '') ??
-          DateTime.now(),
-      updatedAt: DateTime.tryParse((json['updatedAt'] as String?) ?? ''),
+    return FridgeNotificationPreferences(
+      fridgeId: _extractFridgeId(json),
+      updatedAt: _parseDateTime(_extractDateValue(json, 'updatedAt')),
       notificationPreferences: preferences,
     );
   }
 
-  ContactTypePreferences _parseContactTypePreferences(Map<String, dynamic> json) {
+  ContactTypePreferences _parseContactTypePreferences(
+    Map<String, dynamic> json,
+  ) {
     return ContactTypePreferences(
       email: _parseFlags(json['email']),
       device: _parseFlags(json['device']),
@@ -119,7 +134,9 @@ class NotificationsRepository {
   }
 
   FridgeNotificationFlags _parseFlags(Object? value) {
-    final json = value is Map<String, dynamic> ? value : const <String, dynamic>{};
+    final json = value is Map<String, dynamic>
+        ? value
+        : const <String, dynamic>{};
 
     return FridgeNotificationFlags(
       good: (json['good'] as bool?) ?? true,
@@ -139,6 +156,51 @@ class NotificationsRepository {
         'device': _flagsToJson(preferences.contactTypePreferences.device),
       },
     };
+  }
+
+  String _extractFridgeId(Map<String, dynamic> json) {
+    final value = json['fridgeId'];
+    if (value is String) {
+      final trimmed = value.trim();
+      if (trimmed.isNotEmpty) {
+        return trimmed;
+      }
+    }
+
+    final fridgeValue = json['fridge'];
+    if (fridgeValue is Map<String, dynamic>) {
+      final nestedId = _extractFridgeId(fridgeValue);
+      if (nestedId.isNotEmpty) {
+        return nestedId;
+      }
+    }
+
+    return '';
+  }
+
+  Map<String, dynamic> _extractPreferencesPayload(Map<String, dynamic> json) {
+    final direct = json['contactTypePreferences'];
+    if (direct is Map<String, dynamic>) {
+      return direct;
+    }
+
+    return const <String, dynamic>{};
+  }
+
+  String? _extractDateValue(Map<String, dynamic> json, String key) {
+    final direct = json[key];
+    if (direct is String && direct.isNotEmpty) {
+      return direct;
+    }
+
+    return null;
+  }
+
+  DateTime? _parseDateTime(String? value) {
+    if (value == null || value.isEmpty) {
+      return null;
+    }
+    return DateTime.tryParse(value);
   }
 
   Map<String, dynamic> _flagsToJson(FridgeNotificationFlags flags) {
@@ -193,59 +255,27 @@ class NotificationsRepository {
   }
 
   List<dynamic> _extractNotificationsList(dynamic data) {
-    if (data is List) return data;
     if (data is! Map<String, dynamic>) return const <dynamic>[];
 
-    if (data['notifications'] is List) return data['notifications'] as List;
-    if (data['fridgeNotifications'] is List) {
-      return data['fridgeNotifications'] as List;
-    }
-
-    if (data['data'] is List) return data['data'] as List;
-    if (data['data'] is Map<String, dynamic>) {
-      final nested = data['data'] as Map<String, dynamic>;
-      if (nested['notifications'] is List) return nested['notifications'] as List;
-      if (nested['fridgeNotifications'] is List) {
-        return nested['fridgeNotifications'] as List;
-      }
+    if (data['notifications'] is List) {
+      return data['notifications'] as List;
     }
 
     return const <dynamic>[];
   }
 
   Map<String, dynamic>? _extractSingleNotification(dynamic data) {
-    if (data is! Map<String, dynamic>) return null;
-
-    if (_looksLikeNotification(data)) return data;
-
-    if (data['notification'] is Map<String, dynamic>) {
-      return Map<String, dynamic>.from(data['notification'] as Map<String, dynamic>);
-    }
-    if (data['fridgeNotification'] is Map<String, dynamic>) {
-      return Map<String, dynamic>.from(
-        data['fridgeNotification'] as Map<String, dynamic>,
-      );
-    }
-    if (data['data'] is Map<String, dynamic>) {
-      final nested = data['data'] as Map<String, dynamic>;
-      if (_looksLikeNotification(nested)) return Map<String, dynamic>.from(nested);
-      if (nested['notification'] is Map<String, dynamic>) {
-        return Map<String, dynamic>.from(
-          nested['notification'] as Map<String, dynamic>,
-        );
-      }
-      if (nested['fridgeNotification'] is Map<String, dynamic>) {
-        return Map<String, dynamic>.from(
-          nested['fridgeNotification'] as Map<String, dynamic>,
-        );
-      }
+    if (data is Map<String, dynamic>) {
+      if (_looksLikeNotification(data)) return data;
     }
 
     return null;
   }
 
   bool _looksLikeNotification(Map<String, dynamic> json) {
-    return json.containsKey('fridgeId') || json.containsKey('contactTypePreferences');
+    return json.containsKey('fridgeId') ||
+        json.containsKey('userId') ||
+        json.containsKey('contactTypePreferences');
   }
 }
 

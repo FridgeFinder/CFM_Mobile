@@ -3,7 +3,7 @@
 // ignore_for_file: type=lint
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
-part of 'subscription_preferences.dart';
+part of 'fridge_notification_preferences.dart';
 
 // **************************************************************************
 // FreezedGenerator
@@ -13,42 +13,42 @@ part of 'subscription_preferences.dart';
 T _$identity<T>(T value) => value;
 
 /// @nodoc
-mixin _$SubscriptionPreferences {
+mixin _$FridgeNotificationPreferences {
 
- String get fridgeId; DateTime get subscribedAt; DateTime? get updatedAt; NotificationPreferences get notificationPreferences;
-/// Create a copy of SubscriptionPreferences
+ String get fridgeId; DateTime? get updatedAt; NotificationPreferences get notificationPreferences;
+/// Create a copy of FridgeNotificationPreferences
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
 @pragma('vm:prefer-inline')
-$SubscriptionPreferencesCopyWith<SubscriptionPreferences> get copyWith => _$SubscriptionPreferencesCopyWithImpl<SubscriptionPreferences>(this as SubscriptionPreferences, _$identity);
+$FridgeNotificationPreferencesCopyWith<FridgeNotificationPreferences> get copyWith => _$FridgeNotificationPreferencesCopyWithImpl<FridgeNotificationPreferences>(this as FridgeNotificationPreferences, _$identity);
 
-  /// Serializes this SubscriptionPreferences to a JSON map.
+  /// Serializes this FridgeNotificationPreferences to a JSON map.
   Map<String, dynamic> toJson();
 
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SubscriptionPreferences&&(identical(other.fridgeId, fridgeId) || other.fridgeId == fridgeId)&&(identical(other.subscribedAt, subscribedAt) || other.subscribedAt == subscribedAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.notificationPreferences, notificationPreferences) || other.notificationPreferences == notificationPreferences));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is FridgeNotificationPreferences&&(identical(other.fridgeId, fridgeId) || other.fridgeId == fridgeId)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.notificationPreferences, notificationPreferences) || other.notificationPreferences == notificationPreferences));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,fridgeId,subscribedAt,updatedAt,notificationPreferences);
+int get hashCode => Object.hash(runtimeType,fridgeId,updatedAt,notificationPreferences);
 
 @override
 String toString() {
-  return 'SubscriptionPreferences(fridgeId: $fridgeId, subscribedAt: $subscribedAt, updatedAt: $updatedAt, notificationPreferences: $notificationPreferences)';
+  return 'FridgeNotificationPreferences(fridgeId: $fridgeId, updatedAt: $updatedAt, notificationPreferences: $notificationPreferences)';
 }
 
 
 }
 
 /// @nodoc
-abstract mixin class $SubscriptionPreferencesCopyWith<$Res>  {
-  factory $SubscriptionPreferencesCopyWith(SubscriptionPreferences value, $Res Function(SubscriptionPreferences) _then) = _$SubscriptionPreferencesCopyWithImpl;
+abstract mixin class $FridgeNotificationPreferencesCopyWith<$Res>  {
+  factory $FridgeNotificationPreferencesCopyWith(FridgeNotificationPreferences value, $Res Function(FridgeNotificationPreferences) _then) = _$FridgeNotificationPreferencesCopyWithImpl;
 @useResult
 $Res call({
- String fridgeId, DateTime subscribedAt, DateTime? updatedAt, NotificationPreferences notificationPreferences
+ String fridgeId, DateTime? updatedAt, NotificationPreferences notificationPreferences
 });
 
 
@@ -56,25 +56,24 @@ $NotificationPreferencesCopyWith<$Res> get notificationPreferences;
 
 }
 /// @nodoc
-class _$SubscriptionPreferencesCopyWithImpl<$Res>
-    implements $SubscriptionPreferencesCopyWith<$Res> {
-  _$SubscriptionPreferencesCopyWithImpl(this._self, this._then);
+class _$FridgeNotificationPreferencesCopyWithImpl<$Res>
+    implements $FridgeNotificationPreferencesCopyWith<$Res> {
+  _$FridgeNotificationPreferencesCopyWithImpl(this._self, this._then);
 
-  final SubscriptionPreferences _self;
-  final $Res Function(SubscriptionPreferences) _then;
+  final FridgeNotificationPreferences _self;
+  final $Res Function(FridgeNotificationPreferences) _then;
 
-/// Create a copy of SubscriptionPreferences
+/// Create a copy of FridgeNotificationPreferences
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? fridgeId = null,Object? subscribedAt = null,Object? updatedAt = freezed,Object? notificationPreferences = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? fridgeId = null,Object? updatedAt = freezed,Object? notificationPreferences = null,}) {
   return _then(_self.copyWith(
 fridgeId: null == fridgeId ? _self.fridgeId : fridgeId // ignore: cast_nullable_to_non_nullable
-as String,subscribedAt: null == subscribedAt ? _self.subscribedAt : subscribedAt // ignore: cast_nullable_to_non_nullable
-as DateTime,updatedAt: freezed == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
+as String,updatedAt: freezed == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,notificationPreferences: null == notificationPreferences ? _self.notificationPreferences : notificationPreferences // ignore: cast_nullable_to_non_nullable
 as NotificationPreferences,
   ));
 }
-/// Create a copy of SubscriptionPreferences
+/// Create a copy of FridgeNotificationPreferences
 /// with the given fields replaced by the non-null parameter values.
 @override
 @pragma('vm:prefer-inline')
@@ -87,8 +86,8 @@ $NotificationPreferencesCopyWith<$Res> get notificationPreferences {
 }
 
 
-/// Adds pattern-matching-related methods to [SubscriptionPreferences].
-extension SubscriptionPreferencesPatterns on SubscriptionPreferences {
+/// Adds pattern-matching-related methods to [FridgeNotificationPreferences].
+extension FridgeNotificationPreferencesPatterns on FridgeNotificationPreferences {
 /// A variant of `map` that fallback to returning `orElse`.
 ///
 /// It is equivalent to doing:
@@ -101,10 +100,10 @@ extension SubscriptionPreferencesPatterns on SubscriptionPreferences {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _SubscriptionPreferences value)?  $default,{required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _FridgeNotificationPreferences value)?  $default,{required TResult orElse(),}){
 final _that = this;
 switch (_that) {
-case _SubscriptionPreferences() when $default != null:
+case _FridgeNotificationPreferences() when $default != null:
 return $default(_that);case _:
   return orElse();
 
@@ -123,10 +122,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _SubscriptionPreferences value)  $default,){
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _FridgeNotificationPreferences value)  $default,){
 final _that = this;
 switch (_that) {
-case _SubscriptionPreferences():
+case _FridgeNotificationPreferences():
 return $default(_that);case _:
   throw StateError('Unexpected subclass');
 
@@ -144,10 +143,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _SubscriptionPreferences value)?  $default,){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _FridgeNotificationPreferences value)?  $default,){
 final _that = this;
 switch (_that) {
-case _SubscriptionPreferences() when $default != null:
+case _FridgeNotificationPreferences() when $default != null:
 return $default(_that);case _:
   return null;
 
@@ -165,10 +164,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String fridgeId,  DateTime subscribedAt,  DateTime? updatedAt,  NotificationPreferences notificationPreferences)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String fridgeId,  DateTime? updatedAt,  NotificationPreferences notificationPreferences)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
-case _SubscriptionPreferences() when $default != null:
-return $default(_that.fridgeId,_that.subscribedAt,_that.updatedAt,_that.notificationPreferences);case _:
+case _FridgeNotificationPreferences() when $default != null:
+return $default(_that.fridgeId,_that.updatedAt,_that.notificationPreferences);case _:
   return orElse();
 
 }
@@ -186,10 +185,10 @@ return $default(_that.fridgeId,_that.subscribedAt,_that.updatedAt,_that.notifica
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String fridgeId,  DateTime subscribedAt,  DateTime? updatedAt,  NotificationPreferences notificationPreferences)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String fridgeId,  DateTime? updatedAt,  NotificationPreferences notificationPreferences)  $default,) {final _that = this;
 switch (_that) {
-case _SubscriptionPreferences():
-return $default(_that.fridgeId,_that.subscribedAt,_that.updatedAt,_that.notificationPreferences);case _:
+case _FridgeNotificationPreferences():
+return $default(_that.fridgeId,_that.updatedAt,_that.notificationPreferences);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -206,10 +205,10 @@ return $default(_that.fridgeId,_that.subscribedAt,_that.updatedAt,_that.notifica
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String fridgeId,  DateTime subscribedAt,  DateTime? updatedAt,  NotificationPreferences notificationPreferences)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String fridgeId,  DateTime? updatedAt,  NotificationPreferences notificationPreferences)?  $default,) {final _that = this;
 switch (_that) {
-case _SubscriptionPreferences() when $default != null:
-return $default(_that.fridgeId,_that.subscribedAt,_that.updatedAt,_that.notificationPreferences);case _:
+case _FridgeNotificationPreferences() when $default != null:
+return $default(_that.fridgeId,_that.updatedAt,_that.notificationPreferences);case _:
   return null;
 
 }
@@ -220,49 +219,48 @@ return $default(_that.fridgeId,_that.subscribedAt,_that.updatedAt,_that.notifica
 /// @nodoc
 @JsonSerializable()
 
-class _SubscriptionPreferences extends SubscriptionPreferences {
-  const _SubscriptionPreferences({required this.fridgeId, required this.subscribedAt, this.updatedAt, this.notificationPreferences = const NotificationPreferences()}): super._();
-  factory _SubscriptionPreferences.fromJson(Map<String, dynamic> json) => _$SubscriptionPreferencesFromJson(json);
+class _FridgeNotificationPreferences extends FridgeNotificationPreferences {
+  const _FridgeNotificationPreferences({required this.fridgeId, this.updatedAt, this.notificationPreferences = const NotificationPreferences()}): super._();
+  factory _FridgeNotificationPreferences.fromJson(Map<String, dynamic> json) => _$FridgeNotificationPreferencesFromJson(json);
 
 @override final  String fridgeId;
-@override final  DateTime subscribedAt;
 @override final  DateTime? updatedAt;
 @override@JsonKey() final  NotificationPreferences notificationPreferences;
 
-/// Create a copy of SubscriptionPreferences
+/// Create a copy of FridgeNotificationPreferences
 /// with the given fields replaced by the non-null parameter values.
 @override @JsonKey(includeFromJson: false, includeToJson: false)
 @pragma('vm:prefer-inline')
-_$SubscriptionPreferencesCopyWith<_SubscriptionPreferences> get copyWith => __$SubscriptionPreferencesCopyWithImpl<_SubscriptionPreferences>(this, _$identity);
+_$FridgeNotificationPreferencesCopyWith<_FridgeNotificationPreferences> get copyWith => __$FridgeNotificationPreferencesCopyWithImpl<_FridgeNotificationPreferences>(this, _$identity);
 
 @override
 Map<String, dynamic> toJson() {
-  return _$SubscriptionPreferencesToJson(this, );
+  return _$FridgeNotificationPreferencesToJson(this, );
 }
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SubscriptionPreferences&&(identical(other.fridgeId, fridgeId) || other.fridgeId == fridgeId)&&(identical(other.subscribedAt, subscribedAt) || other.subscribedAt == subscribedAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.notificationPreferences, notificationPreferences) || other.notificationPreferences == notificationPreferences));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _FridgeNotificationPreferences&&(identical(other.fridgeId, fridgeId) || other.fridgeId == fridgeId)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.notificationPreferences, notificationPreferences) || other.notificationPreferences == notificationPreferences));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,fridgeId,subscribedAt,updatedAt,notificationPreferences);
+int get hashCode => Object.hash(runtimeType,fridgeId,updatedAt,notificationPreferences);
 
 @override
 String toString() {
-  return 'SubscriptionPreferences(fridgeId: $fridgeId, subscribedAt: $subscribedAt, updatedAt: $updatedAt, notificationPreferences: $notificationPreferences)';
+  return 'FridgeNotificationPreferences(fridgeId: $fridgeId, updatedAt: $updatedAt, notificationPreferences: $notificationPreferences)';
 }
 
 
 }
 
 /// @nodoc
-abstract mixin class _$SubscriptionPreferencesCopyWith<$Res> implements $SubscriptionPreferencesCopyWith<$Res> {
-  factory _$SubscriptionPreferencesCopyWith(_SubscriptionPreferences value, $Res Function(_SubscriptionPreferences) _then) = __$SubscriptionPreferencesCopyWithImpl;
+abstract mixin class _$FridgeNotificationPreferencesCopyWith<$Res> implements $FridgeNotificationPreferencesCopyWith<$Res> {
+  factory _$FridgeNotificationPreferencesCopyWith(_FridgeNotificationPreferences value, $Res Function(_FridgeNotificationPreferences) _then) = __$FridgeNotificationPreferencesCopyWithImpl;
 @override @useResult
 $Res call({
- String fridgeId, DateTime subscribedAt, DateTime? updatedAt, NotificationPreferences notificationPreferences
+ String fridgeId, DateTime? updatedAt, NotificationPreferences notificationPreferences
 });
 
 
@@ -270,26 +268,25 @@ $Res call({
 
 }
 /// @nodoc
-class __$SubscriptionPreferencesCopyWithImpl<$Res>
-    implements _$SubscriptionPreferencesCopyWith<$Res> {
-  __$SubscriptionPreferencesCopyWithImpl(this._self, this._then);
+class __$FridgeNotificationPreferencesCopyWithImpl<$Res>
+    implements _$FridgeNotificationPreferencesCopyWith<$Res> {
+  __$FridgeNotificationPreferencesCopyWithImpl(this._self, this._then);
 
-  final _SubscriptionPreferences _self;
-  final $Res Function(_SubscriptionPreferences) _then;
+  final _FridgeNotificationPreferences _self;
+  final $Res Function(_FridgeNotificationPreferences) _then;
 
-/// Create a copy of SubscriptionPreferences
+/// Create a copy of FridgeNotificationPreferences
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? fridgeId = null,Object? subscribedAt = null,Object? updatedAt = freezed,Object? notificationPreferences = null,}) {
-  return _then(_SubscriptionPreferences(
+@override @pragma('vm:prefer-inline') $Res call({Object? fridgeId = null,Object? updatedAt = freezed,Object? notificationPreferences = null,}) {
+  return _then(_FridgeNotificationPreferences(
 fridgeId: null == fridgeId ? _self.fridgeId : fridgeId // ignore: cast_nullable_to_non_nullable
-as String,subscribedAt: null == subscribedAt ? _self.subscribedAt : subscribedAt // ignore: cast_nullable_to_non_nullable
-as DateTime,updatedAt: freezed == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
+as String,updatedAt: freezed == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,notificationPreferences: null == notificationPreferences ? _self.notificationPreferences : notificationPreferences // ignore: cast_nullable_to_non_nullable
 as NotificationPreferences,
   ));
 }
 
-/// Create a copy of SubscriptionPreferences
+/// Create a copy of FridgeNotificationPreferences
 /// with the given fields replaced by the non-null parameter values.
 @override
 @pragma('vm:prefer-inline')

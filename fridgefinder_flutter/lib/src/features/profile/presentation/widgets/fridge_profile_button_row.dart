@@ -4,12 +4,12 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:design_system/design_system.dart';
 import '../../../map/domain/models/fridge_domain.dart';
 import '../../../../core/providers/auth_provider.dart';
-import '../../../../core/providers/subscriptions_provider.dart';
+import '../../../../core/providers/followed_fridges_provider.dart';
 import '../../../auth/presentation/widgets/edit_notification_preferences_dialog.dart';
 import '../../../auth/presentation/widgets/sign_in_widget.dart';
 
 /// Follow/Unfollow + Directions button row.
-/// Watches `isFridgeSubscribedProvider` only.
+/// Watches `isFridgeFollowedProvider` only.
 class FridgeProfileButtonRow extends ConsumerWidget {
   final FridgeDomain fridge;
 
@@ -45,7 +45,7 @@ class FridgeProfileButtonRow extends ConsumerWidget {
     }
 
     final isAuthenticated = ref.watch(isAuthenticatedProvider);
-    final isSubscribedAsync = ref.watch(isFridgeSubscribedProvider(fridge.id));
+    final isFollowed = ref.watch(isFridgeFollowedProvider(fridge.id));
 
     if (!isAuthenticated) {
       return _buildButtonRow(
@@ -58,33 +58,24 @@ class FridgeProfileButtonRow extends ConsumerWidget {
       );
     }
 
-    return isSubscribedAsync.when(
-      loading: () => const SizedBox(
-        height: 40,
-        child: Center(child: CircularProgressIndicatorM3E.small(strokeWidth: 2)),
-      ),
-      error: (_, _) => const SizedBox(height: 40),
-      data: (isSubscribed) {
-        if (isSubscribed) {
-          return _buildButtonRow(
-            context: context,
-            followButton: _buildEditAlertsButton(
-              context: context,
-              onPressed: () => _showEditAlertsDialog(context, ref),
-            ),
-            directionsButton: _buildDirectionsButton(context),
-          );
-        }
-
-        return _buildButtonRow(
+    if (isFollowed) {
+      return _buildButtonRow(
+        context: context,
+        followButton: _buildEditAlertsButton(
           context: context,
-          followButton: _buildFollowButton(
-            context: context,
-            onPressed: () => _showFollowDialog(context, ref),
-          ),
-          directionsButton: _buildDirectionsButton(context),
-        );
-      },
+          onPressed: () => _showEditAlertsDialog(context, ref),
+        ),
+        directionsButton: _buildDirectionsButton(context),
+      );
+    }
+
+    return _buildButtonRow(
+      context: context,
+      followButton: _buildFollowButton(
+        context: context,
+        onPressed: () => _showFollowDialog(context, ref),
+      ),
+      directionsButton: _buildDirectionsButton(context),
     );
   }
 
@@ -163,22 +154,20 @@ class FridgeProfileButtonRow extends ConsumerWidget {
         return;
       }
 
-      final subscriptionAsync = await ref.read(
-        fridgeSubscriptionPreferencesProvider(fridge.id).future,
-      );
+      final alertPreferences = ref.read(fridgeAlertPreferencesProvider(fridge.id));
 
       if (!context.mounted) return;
 
       final didFollow = await showDialog<bool>(
         context: context,
-        builder: (dialogContext) => NotificationPreferencesDialog.subscribe(
+        builder: (dialogContext) => NotificationPreferencesDialog.follow(
           fridgeId: fridge.id,
-          existingPreferences: subscriptionAsync?.notificationPreferences,
+          existingPreferences: alertPreferences?.notificationPreferences,
         ),
       );
 
       if (didFollow == true && context.mounted) {
-        _refreshSubscriptionState(ref);
+        _refreshFollowState(ref);
       }
     } catch (e) {
       if (context.mounted) {
@@ -232,23 +221,21 @@ class FridgeProfileButtonRow extends ConsumerWidget {
 
   Future<void> _showEditAlertsDialog(BuildContext context, WidgetRef ref) async {
     try {
-      final subscriptionAsync = await ref.read(
-        fridgeSubscriptionPreferencesProvider(fridge.id).future,
-      );
+      final alertPreferences = ref.read(fridgeAlertPreferencesProvider(fridge.id));
 
-      if (!context.mounted || subscriptionAsync == null) return;
+      if (!context.mounted || alertPreferences == null) return;
 
       final didUpdate = await showDialog<bool>(
         context: context,
         builder: (dialogContext) => NotificationPreferencesDialog.edit(
           fridgeId: fridge.id,
           fridgeName: fridge.name,
-          initialPreferences: subscriptionAsync.notificationPreferences,
+          initialPreferences: alertPreferences.notificationPreferences,
         ),
       );
 
       if (didUpdate == true && context.mounted) {
-        _refreshSubscriptionState(ref);
+        _refreshFollowState(ref);
       }
     } catch (e) {
       if (context.mounted) {
@@ -259,10 +246,10 @@ class FridgeProfileButtonRow extends ConsumerWidget {
     }
   }
 
-  void _refreshSubscriptionState(WidgetRef ref) {
-    ref.invalidate(subscribedFridgesProvider);
-    ref.invalidate(isFridgeSubscribedProvider(fridge.id));
-    ref.invalidate(fridgeSubscriptionPreferencesProvider(fridge.id));
+  void _refreshFollowState(WidgetRef ref) {
+    ref.invalidate(followedFridgesProvider);
+    ref.invalidate(isFridgeFollowedProvider(fridge.id));
+    ref.invalidate(fridgeAlertPreferencesProvider(fridge.id));
   }
 
   Future<void> _openDirections(BuildContext context) async {

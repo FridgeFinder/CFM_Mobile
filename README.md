@@ -129,7 +129,7 @@ Run this after modifying any:
 The app uses a **dual environment configuration**:
 
 - **Fridge Data API:** DEV environment by default (`api-dev.communityfridgefinder.com`)
-- **Firebase Services:** Dev/Prod switchable (matches selected app environment)
+- **Auth/Messaging services:** Dev/Prod switchable (matches selected app environment)
 
 To switch environment (API + Firebase):
 
@@ -140,7 +140,7 @@ To switch environment (API + Firebase):
 
 This persists to local storage via Hive.
 
-**Note:** Firebase services (Auth, Messaging, Realtime Database, Cloud Functions, FCM) follow the selected environment after restart. See `ENVIRONMENT_CONFIGURATION.md` for details.
+**Note:** Auth and push-messaging services follow the selected environment after restart. The app's data source of truth is backend APIs.
 
 ### 4.1 Map Tile API Keys (Optional, Recommended)
 
@@ -599,10 +599,8 @@ Complete Firebase Authentication system with user profiles and account managemen
   - Profile creation flow for new users
 
 - **User Profiles:**
-  - Firebase Realtime Database integration
+  - API-backed profile retrieval and updates
   - Username generation with uniqueness checking
-  - Volunteer/non-volunteer role selection
-  - Zip code collection (volunteers only, for funding tracking)
   - User settings (notifications, geofencing, notification frequency)
 
 - **Account Management:**
@@ -612,23 +610,20 @@ Complete Firebase Authentication system with user profiles and account managemen
   - Session persistence across app launches
 
 - **Points System:**
-  - Automatic points awarding for volunteers
-  - +10 points for status reports
-  - +20 points for cleaning dirty fridges
-  - +30 points for stocking food
+  - Automatic points awarding for users
   - Real-time points display in profile
 
 **State Management:**
 
 - `authUserProvider` - Current Firebase user
-- `userProfileProvider` - User profile from database
+- `userProfileProvider` - User profile from API
 - `isAuthenticatedProvider` - Authentication state
 - `userPointsProvider` - Volunteer points tracking
 - `authRepositoryProvider` - Authentication operations
 
 ### 🔔 Push Notifications & Cloud Messaging
 
-**Path:** `lib/src/core/services/` and Cloud Functions
+**Path:** `lib/src/core/services/`
 
 Complete notification system with Firebase Cloud Messaging and geofencing.
 
@@ -636,15 +631,9 @@ Complete notification system with Firebase Cloud Messaging and geofencing.
 
 - **Firebase Cloud Messaging (FCM):**
   - Automatic token generation and registration
-  - Token saved to user profile in database
+  - Token saved via API-backed user-device endpoints
   - Token refresh handling
   - Foreground and background message handling
-
-- **Cloud Functions (Deployed):**
-  - `onFridgeStatusUpdate` - Sends notifications when fridge status changes
-  - `onUserSubscribe` - Handles new fridge subscriptions
-  - `checkRoutineValidation` - Daily scheduled check for fridges needing updates
-  - Notification batching based on user preferences
 
 - **Local Notifications:**
   - Notification display and interaction
@@ -657,44 +646,41 @@ Complete notification system with Firebase Cloud Messaging and geofencing.
   - Deep linking support
   - Provider-based navigation state
 
-- **Subscription Management:**
-  - Subscribe to individual fridges
-  - Custom notification preferences per subscription
+- **Follow & Alert Management:**
+  - Follow individual fridges
+  - Custom alert preferences per followed fridge
   - **Edit notification preferences** - Edit button in fridge profile for customizing which updates to receive
   - 6 configurable notification types per fridge
   - Different defaults for volunteers vs non-volunteers
-  - Permission requests on first subscription
-  - **Visual indicators** - Green glow on map markers and green icons in list view for subscribed fridges
+  - Permission requests on first follow
+  - **Visual indicators** - Green glow on map markers and green icons in list view for followed fridges
 
 **State Management:**
 
 - `fcmServiceProvider` - FCM service lifecycle
 - `notificationNavigationProvider` - Navigation from notifications
-- `subscriptionManagerProvider` - Fridge subscription management
-- `subscribedFridgesProvider` - List of user's subscriptions
+- `followManagerProvider` - Fridge follow management
+- `followedFridgesProvider` - List of user's followed fridges
 
 ### 📍 Geofencing & Location Services
 
-**Path:** `lib/src/core/services/geofencing_service.dart` + Cloud Functions
+**Path:** `lib/src/core/services/geofencing_service.dart`
 
 Production-grade background location monitoring with Firebase Cloud Messaging integration.
-
-**🎯 VOLUNTEER-ONLY FEATURE:** Geofencing is exclusively for volunteer users. Regular users (food finders) never see geofencing options or prompts and only need "While Using" location permission for map features.
 
 **Key Features:**
 
 - **Background Location Monitoring:**
-  - Automatic monitoring when enabled (volunteers only)
+  - Automatic monitoring when enabled
   - Battery-optimized location tracking (2-minute intervals)
   - 4-block radius geofencing (~400m)
-  - **Checks proximity to ALL fridges** (not just subscribed ones)
+  - **Checks proximity to ALL fridges** (not just followed ones)
   - Notifications sent for ANY nearby fridge needing attention
 
 - **Production FCM Integration:**
   - **Dual notification system:**
-    - Primary: FCM via Cloud Function (works when app is closed/killed)
+    - Primary: FCM routed by backend API services (works when app is closed/killed)
     - Fallback: Local notification (if FCM fails)
-  - Cloud Function: `sendGeofencingNotification`
   - User authentication and settings verification
   - Reliable delivery even in background
 
@@ -708,8 +694,7 @@ Production-grade background location monitoring with Firebase Cloud Messaging in
   - Notification history tracked both client-side and server-side
 
 - **Permission Management:**
-  - **Volunteer users:** Prompted for "Always Allow" permission on first subscription (opt-in)
-  - **Regular users:** Only need "While Using" permission (never prompted for background access)
+  - **Users:** Prompted for "Always Allow" permission on first follow (opt-in)
   - Hybrid Geolocator + permission_handler approach for iOS compatibility
   - Automatic upgrade prompt from "While Using" to "Always Allow"
   - Fallback "Open Settings" dialog with direct link when iOS blocks automatic upgrade
@@ -726,59 +711,14 @@ Production-grade background location monitoring with Firebase Cloud Messaging in
   - Separate tracking for each notification type (cleaning, stocking, routine)
   - Example: If you get a "cleaning" notification at 9 AM, you won't get another "cleaning" notification for that fridge until tomorrow
   - Different notification types can still trigger (e.g., "cleaning" in morning, "stocking" in evening if fridge becomes empty)
-  - History persists across app restarts and is synced to Firebase backend
+  - History persists across app restarts and is synchronized by backend services
   - Automatic cleanup of notification records older than 7 days
 
 **State Management:**
 
 - `geofencingServiceProvider` - Service lifecycle
 - User profile `settings.geofencingEnabled` - Toggle state
-- Cloud Function `sendGeofencingNotification` - Backend FCM delivery + daily limit enforcement
-- Firebase database path: `users/{userId}/geofencing/lastNotifications`
 
-### 🔐 Firebase Integration Architecture
-
-**Firebase Services:**
-
-- **Authentication:** User sign-in and account management
-- **Realtime Database:** User profiles, subscriptions, points
-- **Cloud Messaging:** Push notifications
-- **Cloud Functions:** Background processing and notifications
-
-**Database Structure:**
-
-```
-users/
-  {userId}/
-    userId: string
-    email: string
-    phoneNumber: string
-    username: string
-    isVolunteer: boolean
-    zipCode: string (if volunteer)
-    points: number
-    fcmToken: string
-    settings:
-      notificationsEnabled: boolean
-      geofencingEnabled: boolean
-      notificationFrequency: "immediate" | "daily" | "weekly"
-    subscribedFridges/
-      {fridgeId}/
-        notificationPreferences:
-          updatedWithFood: boolean
-          runningLow: boolean
-          empty: boolean
-          needsCleaning: boolean
-          needsServicing: boolean
-          routineValidation: boolean
-```
-
-**Testing:**
-
-- Firebase Emulator Suite configured
-- Auth, Database, and Functions emulators
-- Emulator test helpers in `test/helpers/firebase_emulator_helpers.dart`
-- Start emulators: `./start_emulators.sh`
 
 ### 🎯 Advanced Search (Coming Soon)
 
@@ -1334,7 +1274,7 @@ We welcome contributions! Here's how to contribute to FridgeFinder:
 
 ## Project Status
 
-### Current Implementation (v1.1.0 - Firebase Release)
+### Current Implementation (API-First)
 
 ✅ **Complete:**
 
@@ -1362,40 +1302,22 @@ We welcome contributions! Here's how to contribute to FridgeFinder:
 - ✅ **User Profiles & Points:**
   - Volunteer/non-volunteer role system
   - Username generation with uniqueness checking
-  - Points system (+10 reports, +20 cleaning, +30 stocking)
   - Profile display in sidebar and settings
-  - Zip code collection for volunteers
 
 - ✅ **Push Notifications:**
-  - Firebase Cloud Messaging integration
-  - FCM token management (auto-save to database)
   - Local notification display
   - Notification navigation to fridge details
-  - Background and foreground message handling
 
-- ✅ **Cloud Functions (Deployed):**
-  - `onFridgeStatusUpdate` - Status change notifications
-  - `onUserSubscribe` - Subscription handling
-  - `checkRoutineValidation` - Daily scheduled checks
-  - Node.js 20 runtime
-
-- ✅ **Subscription System:**
-  - Subscribe to individual fridges
+- ✅ **Fridge Notification System:**
+  - Follow individual fridges
   - Custom notification preferences per fridge
   - **Edit notification preferences** with dedicated dialog UI
-  - 6 toggleable notification types per subscription
-  - Permission requests on first subscription
+  - Permission requests on first follow
   - Notification and geofencing permission flows
-  - **Visual indicators** - Green glow on subscribed fridge markers and green icons in list view
-
-- ✅ **Geofencing:**
-  - Background location monitoring
-  - 2-block radius proximity notifications
-  - Battery-optimized tracking
-  - Permission management
+  - **Visual indicators** - Green glow on followed fridge markers and green icons in list view
 
 - ✅ **Firebase Emulator Suite:**
-  - Auth, Database, Functions emulators configured
+  - Auth emulators configured
   - Test helpers for local development
   - Automated setup script
 
@@ -1411,8 +1333,8 @@ We welcome contributions! Here's how to contribute to FridgeFinder:
 
 🚧 **In Development:**
 
-- Advanced search (structure ready)
-- Comprehensive test coverage for Firebase features
+- Expanded integration/regression coverage
+- Continued UX polish across map/profile flows
 
 ⏳ **Planned:**
 
@@ -1543,7 +1465,7 @@ Built with ❤️ by the Community Fridge Finder team and contributors.
   - Daily notification limit enforcement in backend
 
 - ✅ **Enhanced Geofencing Logic:**
-  - **Notifies for ALL fridges** within 400m radius (not just subscribed)
+  - **Notifies for ALL fridges** within 400m radius (not just followed)
   - **Personalized notification messages:**
     - Distance displayed in feet (converted from meters)
     - Point ranges shown (20-50, 30-60, or 10 points)
@@ -1596,12 +1518,6 @@ Built with ❤️ by the Community Fridge Finder team and contributors.
   - Proper separation of responsibilities: widget handles lifecycle, callback handles next action
   - No more empty navigation stack causing black screen
 
-- ✅ **Geofencing Permission Errors Fixed:**
-  - Added `ref.mounted` checks after all async operations in `subscriptionManagerProvider`
-  - Prevents "Cannot use Ref after disposed" errors during subscription flow
-  - Graceful exit when provider disposed during async gaps (permission requests, FCM token)
-  - Follows Riverpod best practices for async provider lifecycle management
-
 - ✅ **iOS Background Location Configuration:**
   - Added `location` to `UIBackgroundModes` in Info.plist
   - Required for geofencing to work when app is not in foreground
@@ -1611,7 +1527,7 @@ Built with ❤️ by the Community Fridge Finder team and contributors.
 
 - ✅ **Geofencing Now Volunteer-Only:**
   - **Regular users (food finders):** Never see geofencing prompts, only need "While Using" location
-  - **Volunteer users:** Opt-in geofencing on first subscription with clear explanation
+  - **Volunteer users:** Opt-in geofencing on first follow with clear explanation
   - Geofencing toggle only visible in Profile settings for volunteers
   - Reduces permission fatigue for users who just want to find food
   - Better App Store compliance - background location only requested when truly needed
@@ -1638,21 +1554,21 @@ Built with ❤️ by the Community Fridge Finder team and contributors.
   - Helper functions now include `isVolunteer` parameter
   - Test documentation reflects new permission flow
 
-### January 2025 - v1.1.2 (Subscribed Filter & UX Polish)
+### January 2025 - v1.1.2 (Follow Filter & UX Polish)
 
 #### ✨ New Features
 
-- ✅ **Subscribed Pill Filter:**
-  - New filter pill for showing only subscribed fridges
-  - Only visible when user is authenticated AND has subscriptions
+- ✅ **Follow Pill Filter:**
+  - New filter pill for showing only followed fridges
+  - Only visible when user is authenticated AND has followed fridges
   - Green transparent background (#4CAF50, 85% opacity) with white text/icon
   - Positioned first (leftmost) in filter pills row
   - Green glow when selected
   - Filter persists across app restarts (Hive storage)
   - Works seamlessly with other pill filters and search
 
-- ✅ **Enhanced Subscription Indicators:**
-  - Green pulsing glow on subscribed fridge icon in profile sheet
+- ✅ **Enhanced Follow Indicators:**
+  - Green pulsing glow on followed fridge icon in profile sheet
   - Consistent 1500ms animation cycle across all views
   - Matches map markers and list view indicators
 
@@ -1667,9 +1583,9 @@ Built with ❤️ by the Community Fridge Finder team and contributors.
   - Dialog now opens, edits, and submits successfully
 
 - ✅ **List View Filtering Fixed:**
-  - Added missing subscribed filter logic to list view
-  - Both map and list views now respect subscribed filter
-  - Filter order: pill conditions → subscribed → location → search
+  - Added missing follow filter logic to list view
+  - Both map and list views now respect follow filter
+  - Filter order: pill conditions → follow → location → search
 
 - ✅ **Profile Sheet Overflow Fixed:**
   - Replaced rigid `Row` with flexible `Wrap` widget
@@ -1680,9 +1596,7 @@ Built with ❤️ by the Community Fridge Finder team and contributors.
 #### 🎨 UX Improvements
 
 - ✅ **Compact Button Layout:**
-  - Edit and Unsubscribe buttons now stack vertically
   - Reduced button sizes (14px icons, 12px text, 28px height)
-  - Shortened "Unsubscribe" to "Unsub" for compact display
   - Better use of limited header space in profile sheet
 
 #### 🧪 Testing
@@ -1722,8 +1636,8 @@ Built with ❤️ by the Community Fridge Finder team and contributors.
 #### ✨ New Features
 
 - ✅ **Notification Preferences Editing:**
-  - Edit button added next to Unsubscribe in fridge profile
-  - Customize notifications per subscribed fridge
+  - Edit button added next to Unfollow in fridge profile
+  - Customize notifications per followed fridge
   - 6 toggleable notification types:
     - Updated with Food
     - Running Low
@@ -1733,13 +1647,6 @@ Built with ❤️ by the Community Fridge Finder team and contributors.
     - Routine Validation
   - Preferences persist to Firebase Realtime Database
   - Clean dialog UI with icons and descriptions
-
-- ✅ **Visual Indicators for Subscribed Fridges:**
-  - Green glowing effect on map markers for subscribed fridges
-  - Green icons in "My Fridges" list view
-  - Uses consistent green color (#4CAF50) across app
-  - Double-shadow effect for depth and visibility
-  - O(1) lookup performance with Set-based subscription checking
 
 #### 🧪 Testing
 
@@ -1758,46 +1665,6 @@ Built with ❤️ by the Community Fridge Finder team and contributors.
   - Fixed Navigator exception causing black screen after auth
   - Fixed sign-up form showing for existing users on re-sign-in
   - Proper provider invalidation on sign-out and account deletion
-
-- ✅ **User Profiles:**
-  - Complete user profile management in Firebase Realtime Database
-  - Username generation with uniqueness validation
-  - Volunteer role system with zip code collection
-  - Profile display in sidebar and settings page
-  - Fixed user info not displaying properly
-
-- ✅ **Points System:**
-  - Integrated with status report submission
-  - Automatic point awarding (+10 reports, +20 cleaning, +30 stocking)
-  - Real-time points display for volunteers
-  - Database tracking and persistence
-
-- ✅ **Push Notifications:**
-  - Firebase Cloud Messaging fully implemented
-  - FCM token management (auto-register, save, refresh)
-  - Local notification service with navigation
-  - Notification tap → fridge details navigation
-  - Background and foreground message handling
-
-- ✅ **Cloud Functions:**
-  - Deployed 3 functions to Firebase (Node.js 20)
-  - `onFridgeStatusUpdate` - Notifies subscribers of status changes
-  - `onUserSubscribe` - Handles new subscriptions
-  - `checkRoutineValidation` - Daily scheduled routine checks
-  - ESLint configuration and code quality
-
-- ✅ **Subscription System:**
-  - Subscribe to individual fridges
-  - Custom notification preferences per subscription
-  - Fixed subscribe dialog errors
-  - Fixed wrong checkbox defaults
-  - Permission requests on first subscription
-
-- ✅ **Geofencing:**
-  - Background location monitoring implemented
-  - Permission requests with user-friendly explanations
-  - 2-block radius proximity alerts
-  - Integration with notification preferences
 
 - ✅ **Testing Infrastructure:**
   - Firebase Emulator Suite configured (Auth, Database, Functions)

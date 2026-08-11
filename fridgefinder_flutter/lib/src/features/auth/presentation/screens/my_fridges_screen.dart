@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:design_system/design_system.dart';
 import '../../../../core/providers/auth_provider.dart';
-import '../../../../core/providers/subscriptions_provider.dart';
+import '../../../../core/providers/followed_fridges_provider.dart';
 import '../../../../core/utils/app_logger.dart';
+import '../../../../core/utils/fridge_id_utils.dart';
 import '../../../../core/utils/fridge_icon_utils.dart';
 import '../../../map/presentation/controllers/fridge_list_controller.dart';
 import '../../../map/presentation/widgets/fridge_marker.dart';
@@ -13,7 +15,7 @@ import '../widgets/sign_in_widget.dart';
 import '../../../../common_widgets/index.dart' as common_widgets;
 import '../../../../common_widgets/loading_messages.dart';
 
-/// My Fridges screen showing user's subscribed fridges
+/// My Fridges screen showing user's followed fridges
 class MyFridgesScreen extends ConsumerStatefulWidget {
   const MyFridgesScreen({super.key});
 
@@ -24,13 +26,14 @@ class MyFridgesScreen extends ConsumerStatefulWidget {
 class _MyFridgesScreenState extends ConsumerState<MyFridgesScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _listAnimationController;
+  Timer? _listAnimationDelayTimer;
 
   Future<void> _handlePullToRefresh() async {
-    ref.invalidate(subscribedFridgesProvider);
+    ref.invalidate(followedFridgesProvider);
     ref.invalidate(fridgeListProvider);
 
     await Future.wait([
-      ref.read(subscribedFridgesProvider.future),
+      ref.read(followedFridgesProvider.future),
       ref.read(fridgeListProvider.future),
     ]);
   }
@@ -66,7 +69,7 @@ class _MyFridgesScreenState extends ConsumerState<MyFridgesScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         // Add a small extra delay so the animation is visible
-        Future.delayed(const Duration(milliseconds: 150), () {
+        _listAnimationDelayTimer = Timer(const Duration(milliseconds: 150), () {
           if (mounted) {
             _listAnimationController.forward();
           }
@@ -77,6 +80,7 @@ class _MyFridgesScreenState extends ConsumerState<MyFridgesScreen>
 
   @override
   void dispose() {
+    _listAnimationDelayTimer?.cancel();
     _listAnimationController.dispose();
     super.dispose();
   }
@@ -84,11 +88,11 @@ class _MyFridgesScreenState extends ConsumerState<MyFridgesScreen>
   @override
   Widget build(BuildContext context) {
     final isAuthenticated = ref.watch(isAuthenticatedProvider);
-    final subscriptionsAsync = ref.watch(subscribedFridgesProvider);
+    final followedFridgesAsync = ref.watch(followedFridgesProvider);
     final fridgesAsync = ref.watch(fridgeListProvider);
 
-    final subscriptions = subscriptionsAsync.hasValue
-        ? subscriptionsAsync.value ?? const []
+    final followedFridgeNotifications = followedFridgesAsync.hasValue
+        ? followedFridgesAsync.value ?? const []
         : null;
     final allFridges = fridgesAsync.hasValue ? fridgesAsync.value ?? const [] : null;
 
@@ -140,7 +144,7 @@ class _MyFridgesScreenState extends ConsumerState<MyFridgesScreen>
       );
     }
 
-    if (subscriptions == null && subscriptionsAsync.isLoading) {
+    if (followedFridgeNotifications == null && followedFridgesAsync.isLoading) {
       return Scaffold(
         body: LoadingIndicatorM3E(
           message: getRandomLoadingMessage(),
@@ -148,17 +152,17 @@ class _MyFridgesScreenState extends ConsumerState<MyFridgesScreen>
       );
     }
 
-    if (subscriptions == null && subscriptionsAsync.hasError) {
-      logger.e('Error loading subscriptions: ${subscriptionsAsync.error}');
+    if (followedFridgeNotifications == null && followedFridgesAsync.hasError) {
+      logger.e('Error loading followed fridges: ${followedFridgesAsync.error}');
       return Scaffold(
         body: common_widgets.ErrorView(
           message: 'Failed to load your fridges',
-          onRetry: () => ref.refresh(subscribedFridgesProvider),
+          onRetry: () => ref.refresh(followedFridgesProvider),
         ),
       );
     }
 
-    if (subscriptions == null || subscriptions.isEmpty) {
+    if (followedFridgeNotifications == null || followedFridgeNotifications.isEmpty) {
       return Scaffold(
         body: _buildRefreshableEmptyState(
           context: context,
@@ -213,12 +217,15 @@ class _MyFridgesScreenState extends ConsumerState<MyFridgesScreen>
       );
     }
 
-    final subscribedFridgeIds = subscriptions.map((s) => s.fridgeId).toSet();
-    final subscribedFridges = (allFridges ?? const <dynamic>[])
-        .where((fridge) => subscribedFridgeIds.contains(fridge.id))
+    final followedFridgeIds = followedFridgeNotifications
+        .map((s) => normalizeFridgeId(s.fridgeId))
+        .where((id) => id.isNotEmpty)
+        .toSet();
+    final followedFridges = (allFridges ?? const <dynamic>[])
+      .where((fridge) => followedFridgeIds.contains(normalizeFridgeId(fridge.id)))
         .toList();
 
-    if (subscribedFridges.isEmpty) {
+    if (followedFridges.isEmpty) {
       return Scaffold(
         body: _buildRefreshableEmptyState(
           context: context,
@@ -261,9 +268,9 @@ class _MyFridgesScreenState extends ConsumerState<MyFridgesScreen>
               horizontal: M3ESpacing.md,
               vertical: M3ESpacing.sm,
             ),
-            itemCount: subscribedFridges.length,
+            itemCount: followedFridges.length,
             itemBuilder: (context, index) {
-              final fridge = subscribedFridges[index];
+              final fridge = followedFridges[index];
               final report = fridge.latestFridgeReport;
               final statusIcon = report != null
                   ? FridgeIconUtils.getStatusIcon(report.condition)
@@ -276,7 +283,7 @@ class _MyFridgesScreenState extends ConsumerState<MyFridgesScreen>
               return M3ETransitions.listItemEntrance(
                 animation: _listAnimationController,
                 index: index,
-                totalItems: subscribedFridges.length.clamp(0, 10),
+                totalItems: followedFridges.length.clamp(0, 10),
                 child: Padding(
                   padding: M3ESpacing.only(bottom: M3ESpacing.sm),
                   child: ListTileM3E(
@@ -299,7 +306,7 @@ class _MyFridgesScreenState extends ConsumerState<MyFridgesScreen>
                       ),
                       Icon(
                         Icons.favorite,
-                        color: FridgeMarker.subscribedGold,
+                        color: FridgeMarker.followedGold,
                         size: 20,
                       ),
                     ],

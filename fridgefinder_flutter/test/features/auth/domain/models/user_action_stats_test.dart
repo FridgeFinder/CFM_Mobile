@@ -18,6 +18,9 @@ void main() {
     expect(stats.fridgeReportCount, 2);
     expect(stats.cleanedCount, 1);
     expect(stats.repairedCount, 3);
-    expect(stats.lastUpdated.toUtc(), DateTime.parse('2026-07-29T12:00:00.000Z'));
+    expect(
+      stats.lastUpdated.toUtc(),
+      DateTime.parse('2026-07-29T12:00:00.000Z'),
+    );
   });
 }

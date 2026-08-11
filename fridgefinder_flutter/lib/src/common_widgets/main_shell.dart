@@ -10,7 +10,7 @@ import '../core/providers/auth_provider.dart';
 import '../core/providers/environment_provider.dart';
 import '../core/providers/notification_providers.dart';
 import '../core/providers/drawer_provider.dart';
-import '../core/providers/subscriptions_provider.dart';
+import '../core/providers/followed_fridges_provider.dart';
 import '../core/constants/app_constants.dart';
 import '../features/auth/presentation/widgets/sign_in_widget.dart';
 import '../features/map/presentation/controllers/fridge_list_controller.dart';
@@ -94,7 +94,7 @@ class _MainShellState extends ConsumerState<MainShell>
     if (state != AppLifecycleState.resumed) return;
 
     ref.invalidate(fridgeListProvider);
-    ref.invalidate(subscribedFridgesProvider);
+    ref.invalidate(followedFridgesProvider);
   }
 
   String _getTitleForRoute(String route) {
@@ -453,7 +453,7 @@ class _MainShellState extends ConsumerState<MainShell>
                                       // automatically — no need to invalidate it.
                                       // Only invalidate cached data providers.
                                       ref.invalidate(userProfileProvider);
-                                      ref.invalidate(subscribedFridgesProvider);
+                                      ref.invalidate(followedFridgesProvider);
 
                                       _toggleDrawer();
                                     } catch (e) {

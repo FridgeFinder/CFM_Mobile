@@ -35,49 +35,53 @@ void main() {
       );
     }
 
-    test('provider returns a non-null style object when overridden with mock',
-        () async {
-      final mockStyle = createMockStyle();
-      final container = ProviderContainer(
-        overrides: [
-          vectorTileStyleProvider.overrideWith((ref) async => mockStyle),
-        ],
-      );
-      addTearDown(container.dispose);
+    test(
+      'provider returns a non-null style object when overridden with mock',
+      () async {
+        final mockStyle = createMockStyle();
+        final container = ProviderContainer(
+          overrides: [
+            vectorTileStyleProvider.overrideWith((ref) async => mockStyle),
+          ],
+        );
+        addTearDown(container.dispose);
 
-      final style = await container.read(vectorTileStyleProvider.future);
-      expect(style, isNotNull);
-      expect(style, isA<Style>());
-    });
+        final style = await container.read(vectorTileStyleProvider.future);
+        expect(style, isNotNull);
+        expect(style, isA<Style>());
+      },
+    );
 
-    test('provider throws when API key is missing (override to throw)',
-        () async {
-      final container = ProviderContainer(
-        overrides: [
-          vectorTileStyleProvider.overrideWith(
-            (ref) async =>
-                throw Exception('Protomaps API key not configured'),
-          ),
-        ],
-      );
-      addTearDown(container.dispose);
+    test(
+      'provider throws when API key is missing (override to throw)',
+      () async {
+        final container = ProviderContainer(
+          overrides: [
+            vectorTileStyleProvider.overrideWith(
+              (ref) async =>
+                  throw Exception('Protomaps API key not configured'),
+            ),
+          ],
+        );
+        addTearDown(container.dispose);
 
-      // Listen to keep the provider alive during async resolution
-      AsyncValue<Style>? lastState;
-      final sub = container.listen(
-        vectorTileStyleProvider,
-        (prev, next) => lastState = next,
-      );
-      addTearDown(sub.close);
+        // Listen to keep the provider alive during async resolution
+        AsyncValue<Style>? lastState;
+        final sub = container.listen(
+          vectorTileStyleProvider,
+          (prev, next) => lastState = next,
+        );
+        addTearDown(sub.close);
 
-      // Trigger provider read and wait for microtask resolution
-      container.read(vectorTileStyleProvider);
-      await Future<void>.delayed(const Duration(milliseconds: 100));
+        // Trigger provider read and wait for microtask resolution
+        container.read(vectorTileStyleProvider);
+        await Future<void>.delayed(const Duration(milliseconds: 100));
 
-      expect(lastState, isNotNull);
-      expect(lastState!.hasError, isTrue);
-      expect(lastState!.error, isA<Exception>());
-    });
+        expect(lastState, isNotNull);
+        expect(lastState!.hasError, isTrue);
+        expect(lastState!.error, isA<Exception>());
+      },
+    );
 
     test('provider caches style instance across multiple reads', () async {
       final mockStyle = createMockStyle();

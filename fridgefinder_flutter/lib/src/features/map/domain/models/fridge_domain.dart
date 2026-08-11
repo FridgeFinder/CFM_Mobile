@@ -1,3 +1,5 @@
+// ignore_for_file: invalid_annotation_target
+
 import 'package:flutter/material.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
@@ -202,7 +204,6 @@ abstract class FridgeDomain with _$FridgeDomain {
     FridgeMaintainerDomain? maintainer,
     String? notes,
     String? photoUrl,
-    // ignore: invalid_annotation_target
     @JsonKey(name: 'last_edited')
     String? lastEdited, // Unix epoch timestamp as string
     FridgeReportDomain? latestFridgeReport,

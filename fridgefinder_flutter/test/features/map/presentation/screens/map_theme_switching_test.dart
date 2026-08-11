@@ -35,71 +35,74 @@ Style _createMockStyle() {
 void main() {
   group('Map Theme Switching', () {
     test(
-        'vectorTileStyleProvider rebuilds when app theme changes light→dark',
-        () async {
-      int buildCount = 0;
-      String? lastFlavor;
-      final mockStyle = _createMockStyle();
+      'vectorTileStyleProvider rebuilds when app theme changes light→dark',
+      () async {
+        int buildCount = 0;
+        String? lastFlavor;
+        final mockStyle = _createMockStyle();
 
-      final container = ProviderContainer(
-        overrides: [
-          appThemeModeProvider.overrideWithValue(AppThemeMode.light),
-          vectorTileStyleProvider.overrideWith((ref) async {
-            buildCount++;
-            final themeMode = ref.watch(appThemeModeProvider);
-            final isDark = themeMode == AppThemeMode.dark;
-            lastFlavor = isDark ? 'dark' : 'light';
-            return mockStyle;
-          }),
-        ],
-      );
-      addTearDown(container.dispose);
+        final container = ProviderContainer(
+          overrides: [
+            appThemeModeProvider.overrideWithValue(AppThemeMode.light),
+            vectorTileStyleProvider.overrideWith((ref) async {
+              buildCount++;
+              final themeMode = ref.watch(appThemeModeProvider);
+              final isDark = themeMode == AppThemeMode.dark;
+              lastFlavor = isDark ? 'dark' : 'light';
+              return mockStyle;
+            }),
+          ],
+        );
+        addTearDown(container.dispose);
 
-      // Initial read — light theme
-      await container.read(vectorTileStyleProvider.future);
-      expect(buildCount, 1);
-      expect(lastFlavor, 'light');
+        // Initial read — light theme
+        await container.read(vectorTileStyleProvider.future);
+        expect(buildCount, 1);
+        expect(lastFlavor, 'light');
 
-      // Switch to dark theme
-      // Use a new container since overrideWithValue is immutable
-      final darkContainer = ProviderContainer(
-        overrides: [
-          appThemeModeProvider.overrideWithValue(AppThemeMode.dark),
-          vectorTileStyleProvider.overrideWith((ref) async {
-            buildCount++;
-            final themeMode = ref.watch(appThemeModeProvider);
-            final isDark = themeMode == AppThemeMode.dark;
-            lastFlavor = isDark ? 'dark' : 'light';
-            return mockStyle;
-          }),
-        ],
-      );
-      addTearDown(darkContainer.dispose);
+        // Switch to dark theme
+        // Use a new container since overrideWithValue is immutable
+        final darkContainer = ProviderContainer(
+          overrides: [
+            appThemeModeProvider.overrideWithValue(AppThemeMode.dark),
+            vectorTileStyleProvider.overrideWith((ref) async {
+              buildCount++;
+              final themeMode = ref.watch(appThemeModeProvider);
+              final isDark = themeMode == AppThemeMode.dark;
+              lastFlavor = isDark ? 'dark' : 'light';
+              return mockStyle;
+            }),
+          ],
+        );
+        addTearDown(darkContainer.dispose);
 
-      await darkContainer.read(vectorTileStyleProvider.future);
-      expect(lastFlavor, 'dark');
-    });
+        await darkContainer.read(vectorTileStyleProvider.future);
+        expect(lastFlavor, 'dark');
+      },
+    );
 
-    test('map renders dark-themed vector tiles when app is in dark mode',
-        () async {
-      String? capturedFlavor;
-      final mockStyle = _createMockStyle();
+    test(
+      'map renders dark-themed vector tiles when app is in dark mode',
+      () async {
+        String? capturedFlavor;
+        final mockStyle = _createMockStyle();
 
-      final container = ProviderContainer(
-        overrides: [
-          appThemeModeProvider.overrideWithValue(AppThemeMode.dark),
-          vectorTileStyleProvider.overrideWith((ref) async {
-            final themeMode = ref.watch(appThemeModeProvider);
-            final isDark = themeMode == AppThemeMode.dark;
-            capturedFlavor = isDark ? 'dark' : 'light';
-            return mockStyle;
-          }),
-        ],
-      );
-      addTearDown(container.dispose);
+        final container = ProviderContainer(
+          overrides: [
+            appThemeModeProvider.overrideWithValue(AppThemeMode.dark),
+            vectorTileStyleProvider.overrideWith((ref) async {
+              final themeMode = ref.watch(appThemeModeProvider);
+              final isDark = themeMode == AppThemeMode.dark;
+              capturedFlavor = isDark ? 'dark' : 'light';
+              return mockStyle;
+            }),
+          ],
+        );
+        addTearDown(container.dispose);
 
-      await container.read(vectorTileStyleProvider.future);
-      expect(capturedFlavor, 'dark');
-    });
+        await container.read(vectorTileStyleProvider.future);
+        expect(capturedFlavor, 'dark');
+      },
+    );
   });
 }

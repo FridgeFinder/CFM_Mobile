@@ -211,7 +211,7 @@ Fix sign-out UX bugs, add cancel button to profile completion, and handle Google
 - For all SnackBar calls from within the bottom sheet or dialogs, use a root-level `ScaffoldMessenger` key OR dismiss the overlay first then show the SnackBar from the parent context. The `status_update_form.dart` conversion to a full page (Spec 04) fixes the form's SnackBar z-index, but the pattern should be audited in `fridge_profile_sheet.dart` lines 1060 and 1235-1237 as well.
 
 ### Sign-in widget context mismatch:
-- When `SignInWidget` is used inside `fridge_profile_sheet.dart` sign-in dialog (line 1103), the `onSignInSuccess` callback chains to `_showSubscribeDialog` using a potentially disposed dialog context. The sign-in -> subscribe flow should check `context.mounted` before opening follow-up dialogs.
+- When `SignInWidget` is used inside `fridge_profile_sheet.dart` sign-in dialog (line 1103), the `onSignInSuccess` callback chains to `_showSubscribeDialog` using a potentially disposed dialog context. The sign-in -> follow flow should check `context.mounted` before opening follow-up dialogs.
 
 ---
 

@@ -98,7 +98,7 @@ final class AuthUserProvider
   }
 }
 
-String _$authUserHash() => r'dcab000a047790ae422fec96858a0f4b887844a8';
+String _$authUserHash() => r'69cae50b31d80cc6f5ff44af3e87cc31fdd5ab57';
 
 /// Provider for current authenticated user (nullable)
 /// This watches the auth state stream and returns the current user
@@ -158,11 +158,15 @@ final class CurrentAuthUserProvider
 String _$currentAuthUserHash() => r'06969c84ef3be0f2a77accdf346ed15925c41135';
 
 /// Provider for user profile
+/// Returns cached data immediately, then refreshes from the API in the background.
+/// Re-builds only when the API response differs from the cached value.
 
 @ProviderFor(userProfile)
 const userProfileProvider = UserProfileProvider._();
 
 /// Provider for user profile
+/// Returns cached data immediately, then refreshes from the API in the background.
+/// Re-builds only when the API response differs from the cached value.
 
 final class UserProfileProvider
     extends
@@ -173,6 +177,8 @@ final class UserProfileProvider
         >
     with $FutureModifier<UserProfile?>, $FutureProvider<UserProfile?> {
   /// Provider for user profile
+  /// Returns cached data immediately, then refreshes from the API in the background.
+  /// Re-builds only when the API response differs from the cached value.
   const UserProfileProvider._()
     : super(
         from: null,
@@ -199,7 +205,7 @@ final class UserProfileProvider
   }
 }
 
-String _$userProfileHash() => r'3cb5884614cfbe2b599889b33c1441fc945390c9';
+String _$userProfileHash() => r'a9f9455fcf0f717fc74fbd866e4e1bb74f2c468e';
 
 /// Provider for checking if user is authenticated
 /// Watches the auth state stream to reactively update

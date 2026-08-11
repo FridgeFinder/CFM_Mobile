@@ -44,7 +44,7 @@ final class UserPointsProvider
   }
 }
 
-String _$userPointsHash() => r'41decca7c923d8f3aec0baff64c8f5692643036f';
+String _$userPointsHash() => r'bcc3e0648b5fb5547ac6bb2236f8611aa6974513';
 
 /// Notifier for managing points
 

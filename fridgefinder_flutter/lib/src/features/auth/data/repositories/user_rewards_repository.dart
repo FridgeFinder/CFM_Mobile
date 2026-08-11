@@ -13,7 +13,7 @@ class UserRewardsRepository {
 
   Future<UserActionStats?> getUserActionStats(String userId) async {
     try {
-      final response = await _dio.get('/v1/user-action-stats/$userId');
+      final response = await _dio.get('/user-action-stats/$userId');
       final data = _extractStatsPayload(response.data);
       if (data == null) return null;
       return UserActionStats.fromJson(data);

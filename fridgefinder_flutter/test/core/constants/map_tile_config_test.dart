@@ -103,8 +103,7 @@ void main() {
     group('resolve', () {
       test('returns protomaps source when PROTOMAPS_API_KEY is valid', () {
         dotenv.testLoad(
-          fileInput:
-              'PROTOMAPS_API_KEY=pmkey123\nMAPTILER_API_KEY=mtkey456',
+          fileInput: 'PROTOMAPS_API_KEY=pmkey123\nMAPTILER_API_KEY=mtkey456',
         );
         final config = MapTileConfig.resolve();
         expect(config.source, MapTileSource.protomaps);

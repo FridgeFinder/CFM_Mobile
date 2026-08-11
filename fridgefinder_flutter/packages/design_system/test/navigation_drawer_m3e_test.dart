@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:design_system/navigation/navigation_drawer_m3e.dart';
+import 'package:design_system/theme/spacing.dart';
 
 void main() {
   group('NavigationDrawerM3E Tests', () {
@@ -353,29 +354,18 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      // Find the drawer's column
-      final drawer = tester.widget<Drawer>(find.byType(Drawer));
-      final column = drawer.child as Column;
+      // Footer is wrapped as FadeTransition -> Padding -> footer
+      final footerPaddingFinder = find.ancestor(
+        of: find.text('Footer'),
+        matching: find.byType(Padding),
+      );
+      expect(footerPaddingFinder, findsWidgets);
 
-      // Footer should be wrapped in Padding with navigationDrawerPadding
-      // Look for Padding widgets in the column children
-      bool foundFooterPadding = false;
-      for (final child in column.children) {
-        if (child is Padding) {
-          final edgeInsets = child.padding as EdgeInsets;
-          // navigationDrawerPadding is typically 16dp or similar
-          if (edgeInsets.left >= 12.0 && edgeInsets.right >= 12.0) {
-            // Check if this padding contains the footer text
-            if (child.child.toString().contains('Footer')) {
-              foundFooterPadding = true;
-              break;
-            }
-          }
-        }
-      }
+      final footerPadding = tester.widgetList<Padding>(footerPaddingFinder).firstWhere(
+        (padding) => padding.child is Text && (padding.child as Text).data == 'Footer',
+      );
 
-      expect(foundFooterPadding, isTrue,
-          reason: 'Footer should have navigationDrawerPadding');
+      expect(footerPadding.padding, equals(M3ESpacing.navigationDrawerPadding));
     });
 
     testWidgets('drawer without footer does not have spacer',

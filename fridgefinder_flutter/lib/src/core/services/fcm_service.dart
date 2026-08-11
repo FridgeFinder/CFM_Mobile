@@ -27,7 +27,6 @@ class FCMService with WidgetsBindingObserver {
 
   StreamSubscription<String>? _tokenSubscription;
   StreamSubscription<RemoteMessage>? _messageSubscription;
-  StreamSubscription<NotificationSettings>? _settingsSubscription;
 
   // Track when we last verified the token to avoid excessive checks
   DateTime? _lastTokenVerification;
@@ -167,7 +166,7 @@ class FCMService with WidgetsBindingObserver {
   }
 
   /// Initialize FCM service (without requesting permissions)
-  /// Permissions should be requested when user subscribes to first fridge
+  /// Permissions should be requested when user follows their first fridge
   Future<void> initialize() async {
     if (_isInitialized) return;
 
@@ -282,7 +281,7 @@ class FCMService with WidgetsBindingObserver {
   }
 
   /// Request notification permissions and get FCM token
-  /// Should be called when user subscribes to their first fridge
+  /// Should be called when user follows their first fridge
   /// On iOS, handles APNS token availability gracefully
   Future<bool> requestPermissionsAndGetToken() async {
     try {
@@ -510,6 +509,53 @@ class FCMService with WidgetsBindingObserver {
         settings.authorizationStatus == AuthorizationStatus.provisional;
   }
 
+  /// Ensures a device row exists for the current user/installation.
+  ///
+  /// Returns true when a row exists (or was created), false when it cannot be
+  /// created yet (typically because an FCM token is not available yet).
+  Future<bool> _ensureDeviceRegistration({
+    required String userId,
+    required String installationId,
+  }) async {
+    final existing = await _authRepository.getUserDevice(
+      userId: userId,
+      installationId: installationId,
+    );
+    if (existing != null) {
+      return true;
+    }
+
+    String? token = _currentToken;
+    if (token == null || token.isEmpty) {
+      try {
+        token = await _messaging.getToken();
+      } catch (e) {
+        logger.w('Unable to fetch token while creating missing device row: $e');
+      }
+    }
+
+    if (token == null || token.isEmpty) {
+      logger.i('Device row missing and token unavailable; deferring registration.');
+      return false;
+    }
+
+    final platform = Platform.isIOS ? 'ios' : 'android';
+    logger.i(
+      'Registering missing user device via POST '
+      '/users/$userId/user-devices/$installationId '
+      '(platform: $platform)',
+    );
+    await _authRepository.registerUserDevice(
+      userId: userId,
+      installationId: installationId,
+      token: token,
+      platform: platform,
+    );
+    _currentToken = token;
+    logger.i('Registered missing device row for installation $installationId');
+    return true;
+  }
+
   /// Sync the current device's notification-enabled state to the Users API.
   Future<void> syncDeviceNotificationState({NotificationSettings? settings}) async {
     try {
@@ -517,8 +563,31 @@ class FCMService with WidgetsBindingObserver {
       if (currentUser == null) return;
 
       final resolvedSettings = settings ?? await _messaging.getNotificationSettings();
-      final enabled = _isNotificationsAuthorized(resolvedSettings);
+      final systemEnabled = _isNotificationsAuthorized(resolvedSettings);
       final deviceId = await _deviceIdService.getDeviceId();
+
+      final hasDeviceRow = await _ensureDeviceRegistration(
+        userId: currentUser.uid,
+        installationId: deviceId,
+      );
+      if (!hasDeviceRow) {
+        return;
+      }
+
+      // Preserve explicit app-level opt-out when OS permission is still granted.
+      // iOS permissions cannot be revoked programmatically, so a user disabling
+      // notifications in-app should continue to read as disabled.
+      bool enabled = systemEnabled;
+      if (systemEnabled) {
+        final device = await _authRepository.getUserDevice(
+          userId: currentUser.uid,
+          installationId: deviceId,
+        );
+        final backendFlag = device?['notificationsEnabled'];
+        if (backendFlag is bool && !backendFlag) {
+          enabled = false;
+        }
+      }
 
       await _authRepository.updateUserDevice(
         userId: currentUser.uid,
@@ -542,6 +611,12 @@ class FCMService with WidgetsBindingObserver {
       if (!systemEnabled) return false;
 
       final deviceId = await _deviceIdService.getDeviceId();
+      final hasDeviceRow = await _ensureDeviceRegistration(
+        userId: currentUser.uid,
+        installationId: deviceId,
+      );
+      if (!hasDeviceRow) return false;
+
       final device = await _authRepository.getUserDevice(
         userId: currentUser.uid,
         installationId: deviceId,
@@ -701,7 +776,6 @@ class FCMService with WidgetsBindingObserver {
   void dispose() {
     _tokenSubscription?.cancel();
     _messageSubscription?.cancel();
-    _settingsSubscription?.cancel();
     WidgetsBinding.instance.removeObserver(this);
   }
 }

@@ -1,23 +1,22 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-part 'subscription_preferences.freezed.dart';
-part 'subscription_preferences.g.dart';
+part 'fridge_notification_preferences.freezed.dart';
+part 'fridge_notification_preferences.g.dart';
 
-/// Notification preferences for a subscribed fridge
+/// Notification preferences for a followed fridge
 /// toJson/fromJson params ensure nested NotificationPreferences is properly serialized
 @Freezed(toJson: true, fromJson: true)
-abstract class SubscriptionPreferences with _$SubscriptionPreferences {
-  const SubscriptionPreferences._();
+abstract class FridgeNotificationPreferences with _$FridgeNotificationPreferences {
+  const FridgeNotificationPreferences._();
 
-  const factory SubscriptionPreferences({
+  const factory FridgeNotificationPreferences({
     required String fridgeId,
-    required DateTime subscribedAt,
     DateTime? updatedAt,
     @Default(NotificationPreferences()) NotificationPreferences notificationPreferences,
-  }) = _SubscriptionPreferences;
+  }) = _FridgeNotificationPreferences;
 
-  factory SubscriptionPreferences.fromJson(Map<String, dynamic> json) =>
-      _$SubscriptionPreferencesFromJson(json);
+  factory FridgeNotificationPreferences.fromJson(Map<String, dynamic> json) =>
+      _$FridgeNotificationPreferencesFromJson(json);
 }
 
 /// Notification preferences grouped by contact channel.

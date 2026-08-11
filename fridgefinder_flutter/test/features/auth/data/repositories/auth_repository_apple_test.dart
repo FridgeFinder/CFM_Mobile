@@ -94,19 +94,19 @@ void main() {
 
     test('throws on network error', () async {
       repository.setFailure(true);
-      expect(
-        () => repository.signInWithApple(),
-        throwsA(isA<Exception>()),
-      );
+      expect(() => repository.signInWithApple(), throwsA(isA<Exception>()));
     });
 
-    test('throws AppleSignInNotAvailableException when not available', () async {
-      repository.setUnavailable(true);
-      expect(
-        () => repository.signInWithApple(),
-        throwsA(isA<AppleSignInNotAvailableException>()),
-      );
-    });
+    test(
+      'throws AppleSignInNotAvailableException when not available',
+      () async {
+        repository.setUnavailable(true);
+        expect(
+          () => repository.signInWithApple(),
+          throwsA(isA<AppleSignInNotAvailableException>()),
+        );
+      },
+    );
   });
 
   group('reauthenticateWithApple', () {

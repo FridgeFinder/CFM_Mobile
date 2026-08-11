@@ -23,7 +23,7 @@ class FridgeRepository implements IFridgeRepository {
   /// Fetch all fridges from the API
   /// Throws [NetworkException] on network errors
   /// Throws [ServerException] on server errors
-  /// Based on real API: GET /v1/fridges
+  /// Based on current API: GET /fridges
   /// Filters out ghost fridges from the response
   @override
   Future<List<FridgeDomain>> getFridges({bool includeGhosts = false}) async {
@@ -62,7 +62,7 @@ class FridgeRepository implements IFridgeRepository {
   /// Fetch a single fridge by ID
   /// Throws [NotFoundException] if fridge not found
   /// Throws [NetworkException] on network errors
-  /// Based on real API: GET /v1/fridges/{fridgeId}
+  /// Based on current API: GET /fridges/{fridgeId}
   @override
   Future<FridgeDomain> getFridge(String fridgeId) async {
     try {
@@ -90,7 +90,7 @@ class FridgeRepository implements IFridgeRepository {
 
   /// Submit a condition report for a fridge
   /// Throws [NetworkException] on network errors
-  /// Based on real API: POST /v1/fridges/{fridgeId}/reports
+  /// Based on current API: POST /fridges/{fridgeId}/reports
   /// foodPercentage is in 0-1 range and will be converted to 0-3 API format
   /// If photoBytes is provided, uploads photo to /photo endpoint first, then includes URL in report
   /// Includes authenticated userId when available
@@ -164,7 +164,7 @@ class FridgeRepository implements IFridgeRepository {
 
   /// Upload a fridge photo
   /// Throws [NetworkException] on network errors
-  /// Based on real API: POST /v1/photo
+  /// Based on current API: POST /photo
   /// Converts image to WebP and sends raw bytes with Content-Type: image/webp
   /// Desktop sends @FILE_LOCATION (file path via curl), mobile sends raw WebP bytes
   /// Returns the photo URL from the API response

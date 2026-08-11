@@ -550,7 +550,15 @@ class AuthRepository {
     try {
       final response = await _dio.get(
         '/users/$userId/user-devices/$installationId',
+        options: Options(
+          // A missing device row is a valid state for first-time users/devices.
+          validateStatus: (status) => status != null && status < 500,
+        ),
       );
+      if (response.statusCode == 404) {
+        return null;
+      }
+
       final data = response.data;
       if (data is Map<String, dynamic> &&
           data['device'] is Map<String, dynamic>) {

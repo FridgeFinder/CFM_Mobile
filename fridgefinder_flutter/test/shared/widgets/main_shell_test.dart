@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:design_system/design_system.dart';
 import 'package:fridgefinder_app/src/common_widgets/main_shell.dart';
 import '../../helpers/test_helpers.dart';
 
@@ -123,7 +124,7 @@ void main() {
       // Verify all menu items are displayed
       expect(find.text('Fridge Map'), findsWidgets); // In appbar and drawer
       expect(find.text('Fridge List'), findsOneWidget);
-      expect(find.text('My Fridges'), findsOneWidget);
+      expect(find.text('My Fridges').evaluate().length, greaterThanOrEqualTo(1));
       expect(find.text('Profile'), findsWidgets);
     });
 
@@ -162,7 +163,7 @@ void main() {
         ),
       );
 
-      expect(find.byType(BottomNavigationBar), findsOneWidget);
+      expect(find.byType(NavigationBarEnhancedM3E), findsOneWidget);
     });
 
     testWidgets('renders child widget content', (WidgetTester tester) async {

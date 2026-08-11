@@ -8,7 +8,6 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'app.dart';
 import 'src/core/config/firebase_options_resolver.dart';
-import 'src/core/providers/database_provider.dart';
 import 'src/core/providers/environment_provider.dart';
 import 'src/core/utils/app_logger.dart';
 
@@ -52,7 +51,6 @@ void main() async {
   // Load persisted environment (dev/prod) and configure services
   final env = await loadPersistedEnvironment();
   Environment.setBootstrapEnvironment(env);
-  DatabaseProvider.configure(env);
   logger.i('Environment: ${env.name}');
 
   // Initialize Firebase with the selected environment's options.

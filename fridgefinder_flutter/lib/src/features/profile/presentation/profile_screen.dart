@@ -16,7 +16,6 @@ import '../../../core/constants/app_constants.dart';
 import '../../../features/auth/domain/models/user_profile.dart';
 import '../../../features/auth/presentation/widgets/sign_in_widget.dart';
 import '../../../common_widgets/loading_messages.dart';
-import 'test_notification_screen.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -320,6 +319,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                               TextButtonM3E(
                                                 onPressed: () => Navigator.of(
                                                   context,
+                                                  rootNavigator: true,
                                                 ).pop(false),
                                                 child: const Text('Cancel'),
                                               ),
@@ -327,6 +327,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                               FilledButtonM3E(
                                                 onPressed: () => Navigator.of(
                                                   context,
+                                                  rootNavigator: true,
                                                 ).pop(true),
                                                 child: const Text(
                                                   'Open Settings',
@@ -399,19 +400,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         },
                         icon: Icons.refresh,
                         child: const Text('Reset Auth State (Sign Out)'),
-                      ),
-                      M3ESpacing.verticalSM,
-                      OutlinedButtonM3E(
-                        onPressed: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const TestNotificationScreen(),
-                            ),
-                          );
-                        },
-                        icon: Icons.notifications_active,
-                        child: const Text('Test Notifications'),
                       ),
                     ],
                   ),
@@ -786,12 +774,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
                                 TextButtonM3E(
-                                  onPressed: () => Navigator.of(context).pop(false),
+                                  onPressed: () => Navigator.of(
+                                    context,
+                                    rootNavigator: true,
+                                  ).pop(false),
                                   child: const Text('Cancel'),
                                 ),
                                 M3ESpacing.horizontalXS,
                                 FilledButtonM3E(
-                                  onPressed: () => Navigator.of(context).pop(true),
+                                  onPressed: () => Navigator.of(
+                                    context,
+                                    rootNavigator: true,
+                                  ).pop(true),
                                   child: const Text('Open Settings'),
                                 ),
                               ],
@@ -996,7 +990,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             Text('Delete Account?', style: M3ETypography.headlineSmall),
             M3ESpacing.verticalMD,
             Text(
-              'Are you sure you want to delete your account? This will permanently delete your profile, subscriptions, and points. Your status reports will be anonymized but kept.',
+              'Are you sure you want to delete your account? This will permanently delete your profile, fridges followed, and points. Your status reports will be anonymized but kept.',
               style: M3ETypography.bodyMedium,
             ),
             M3ESpacing.verticalXL,
@@ -1043,6 +1037,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     WidgetRef ref,
     String userId,
   ) {
+    final snackbarContext = context;
+
     DialogM3E.showCustom(
       context: context,
       child: Padding(
@@ -1079,7 +1075,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
                     // Show loading indicator
                     showSnackbarM3E(
-                      context: context,
+                      context: snackbarContext,
                       message: 'Deleting account...',
                       duration: SnackbarDuration.long_,
                       icon: const Icon(Icons.hourglass_bottom),
@@ -1092,60 +1088,58 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       await repository.signOut();
 
                       // Show success message and navigate away
-                      if (context.mounted) {
-                        // Close the confirmation dialog using root navigator
-                        try {
-                          Navigator.of(context, rootNavigator: true).pop();
-                          debugPrint('Dialog closed successfully');
-                        } catch (e) {
-                          debugPrint('Error closing dialog: $e');
-                        }
+                      // Close the confirmation dialog using root navigator
+                      try {
+                        Navigator.of(context, rootNavigator: true).pop();
+                        debugPrint('Dialog closed successfully');
+                      } catch (e) {
+                        debugPrint('Error closing dialog: $e');
+                      }
 
-                        // Wait a moment to allow dialog to close
-                        await Future.delayed(const Duration(milliseconds: 300));
+                      // Wait a moment to allow dialog to close
+                      await Future.delayed(const Duration(milliseconds: 300));
+
+                      if (snackbarContext.mounted) {
+                        showSnackbarM3E(
+                          context: snackbarContext,
+                          message: 'Account deleted successfully',
+                          icon: const Icon(Icons.check_circle),
+                          backgroundColor: Colors.green,
+                          duration: SnackbarDuration.short_,
+                        );
+
+                        // Wait a moment for the message to be visible, then navigate to home
+                        await Future.delayed(
+                          const Duration(milliseconds: 500),
+                        );
 
                         if (context.mounted) {
-                          showSnackbarM3E(
-                            context: context,
-                            message: 'Account deleted successfully',
-                            icon: const Icon(Icons.check_circle),
-                            backgroundColor: Colors.green,
-                            duration: SnackbarDuration.short_,
-                          );
-
-                          // Wait a moment for the message to be visible, then navigate to home
-                          await Future.delayed(
-                            const Duration(milliseconds: 500),
-                          );
-
-                          if (context.mounted) {
-                            context.go('/');
-                          }
+                          context.go('/');
                         }
                       }
                     } catch (e) {
                       debugPrint('Error deleting account: $e');
 
-                      if (context.mounted) {
-                        final errorMessage = 'Error deleting account: $e';
+                      final errorMessage = 'Error deleting account: $e';
 
-                        // Close the dialog first so user can see the error and try again
-                        try {
-                          Navigator.of(context, rootNavigator: true).pop();
-                          debugPrint('Dialog closed after error');
-                        } catch (e) {
-                          debugPrint(
-                            'Error closing dialog after deletion error: $e',
-                          );
-                        }
+                      // Close the dialog first so user can see the error and try again
+                      try {
+                        Navigator.of(context, rootNavigator: true).pop();
+                        debugPrint('Dialog closed after error');
+                      } catch (e) {
+                        debugPrint(
+                          'Error closing dialog after deletion error: $e',
+                        );
+                      }
 
+                      if (snackbarContext.mounted) {
                         showSnackbarM3E(
-                          context: context,
+                          context: snackbarContext,
                           message: errorMessage,
-                          backgroundColor: Theme.of(context).colorScheme.error,
-                          foregroundColor: Theme.of(
-                            context,
-                          ).colorScheme.onError,
+                          backgroundColor:
+                              Theme.of(snackbarContext).colorScheme.error,
+                          foregroundColor:
+                              Theme.of(snackbarContext).colorScheme.onError,
                           duration: SnackbarDuration.long_,
                         );
                       }
