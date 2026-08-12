@@ -527,6 +527,48 @@ class AuthRepository {
     }
   }
 
+  /// Fetch username suggestions verified as available by the Users API.
+  Future<List<String>> getUsernameSuggestions({int count = 1}) async {
+    final normalizedCount = count.clamp(1, 20);
+
+    try {
+      final response = await _dio.get(
+        '/users/username-suggestions',
+        queryParameters: {'count': normalizedCount},
+      );
+      final data = response.data;
+      if (data is! Map<String, dynamic>) {
+        throw const FormatException('Invalid username suggestions response');
+      }
+
+      final rawSuggestions = data['suggestions'];
+      if (rawSuggestions is! List) {
+        throw const FormatException('Missing suggestions array');
+      }
+
+      final suggestions = rawSuggestions
+          .whereType<String>()
+          .where((value) => value.isNotEmpty)
+          .toSet()
+          .toList();
+
+      if (suggestions.isEmpty) {
+        throw const FormatException('Empty suggestions array');
+      }
+
+      if (suggestions.length < normalizedCount) {
+        throw FormatException(
+          'Expected at least $normalizedCount username suggestions, received ${suggestions.length}',
+        );
+      }
+
+      return suggestions;
+    } on DioException catch (e) {
+      logger.e('Error fetching username suggestions: ${e.message}');
+      rethrow;
+    }
+  }
+
   Future<void> registerUserDevice({
     required String userId,
     required String installationId,

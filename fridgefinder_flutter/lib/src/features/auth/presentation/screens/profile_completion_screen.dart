@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:design_system/design_system.dart';
@@ -104,23 +103,7 @@ class _ProfileCompletionScreenState
     try {
       final repository = ref.read(authRepositoryProvider);
       final generator = UsernameGenerator(repository);
-      String username;
-      try {
-        username = await generator
-            .generateUniqueUsername(maxAttempts: 3)
-            .timeout(const Duration(seconds: 7));
-      } on TimeoutException {
-        username = generator.generateOfflineUsername();
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Username service is slow. Using a quick generated username.',
-              ),
-            ),
-          );
-        }
-      }
+      final username = await generator.generateUniqueUsername();
 
       // Keep roll visible long enough to avoid abrupt state changes.
       await Future.delayed(const Duration(milliseconds: 800));
@@ -134,17 +117,12 @@ class _ProfileCompletionScreenState
     } catch (e) {
       logger.e('Error generating username: $e');
       if (mounted) {
-        final repository = ref.read(authRepositoryProvider);
-        final generator = UsernameGenerator(repository);
         setState(() {
-          _username = generator.generateOfflineUsername();
           _isRollingDice = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text(
-              'Could not verify username availability. Using a generated username.',
-            ),
+            content: Text('Could not generate a username. Please try again.'),
           ),
         );
       }
