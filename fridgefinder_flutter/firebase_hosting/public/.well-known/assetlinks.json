@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.fridgefinder.fridgefinderapp",
+      "sha256_cert_fingerprints": [
+        "4C:A4:16:3A:79:1F:B3:59:ED:E4:68:A8:90:F0:02:6D:38:FF:76:2B:B6:B1:A4:B7:66:9A:F4:34:15:5C:2C:EA"
+      ]
+    }
+  }
+]

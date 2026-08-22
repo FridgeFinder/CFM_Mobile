@@ -205,7 +205,7 @@ final class UserProfileProvider
   }
 }
 
-String _$userProfileHash() => r'a9f9455fcf0f717fc74fbd866e4e1bb74f2c468e';
+String _$userProfileHash() => r'bdc593f91ccd662f33eb8231522e49efd788da45';
 
 /// Provider for checking if user is authenticated
 /// Watches the auth state stream to reactively update

@@ -40,7 +40,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Future<void> _loadDeviceNotificationState() async {
     try {
       final fcmService = ref.read(fcmServiceProvider);
-      final cachedEnabled = await fcmService.getCachedDeviceNotificationsEnabled();
+      final cachedEnabled = await fcmService
+          .getCachedDeviceNotificationsEnabled();
       if (!mounted) return;
       if (cachedEnabled != null) {
         setState(() => _localNotificationsEnabled = cachedEnabled);
@@ -84,464 +85,474 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-              // User Info Section (if authenticated)
-              Consumer(
-                builder: (context, ref, child) {
-                  final isAuthenticated = ref.watch(isAuthenticatedProvider);
-                  final userProfileAsync = ref.watch(userProfileProvider);
-                  final userPointsAsync = ref.watch(userPointsProvider);
+                // User Info Section (if authenticated)
+                Consumer(
+                  builder: (context, ref, child) {
+                    final isAuthenticated = ref.watch(isAuthenticatedProvider);
+                    final userProfileAsync = ref.watch(userProfileProvider);
+                    final userPointsAsync = ref.watch(userPointsProvider);
 
-                  if (!isAuthenticated) {
+                    if (!isAuthenticated) {
+                      return CardM3E(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text(
+                              'Sign in to follow fridges and track your points',
+                              style: M3ETypography.bodyMedium,
+                            ),
+                            M3ESpacing.verticalMD,
+                            FilledButtonM3E(
+                              icon: Icons.login,
+                              onPressed: () {
+                                Navigator.of(context, rootNavigator: true).push(
+                                  MaterialPageRoute<void>(
+                                    fullscreenDialog: true,
+                                    builder: (context) => const SignInWidget(),
+                                  ),
+                                );
+                              },
+                              child: const Text('Sign In'),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
+                    // Keep showing previous data during refresh to prevent jank
+                    final profile = userProfileAsync.hasValue
+                        ? userProfileAsync.value
+                        : null;
+
+                    // Only show loading on initial load (no cached data)
+                    if (profile == null && userProfileAsync.isLoading) {
+                      return LoadingIndicatorM3E(
+                        message: getRandomLoadingMessage(),
+                      );
+                    }
+
+                    if (profile == null) return const SizedBox.shrink();
+
                     return CardM3E(
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                              'Sign in to follow fridges and track your points',
-                            style: M3ETypography.bodyMedium,
+                          Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 24,
+                                child: Text(
+                                  profile.username
+                                      .substring(0, 1)
+                                      .toUpperCase(),
+                                  style: M3ETypography.titleMedium,
+                                ),
+                              ),
+                              M3ESpacing.horizontalMD,
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      profile.username,
+                                      style: M3ETypography.titleLarge,
+                                    ),
+                                    Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.badge_outlined,
+                                          size: 16,
+                                        ),
+                                        M3ESpacing.horizontalXS,
+                                        Text(
+                                          profile.userType.value[0]
+                                                  .toUpperCase() +
+                                              profile.userType.value.substring(
+                                                1,
+                                              ),
+                                          style: M3ETypography.bodySmall,
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
                           M3ESpacing.verticalMD,
-                          FilledButtonM3E(
-                            icon: Icons.login,
-                            onPressed: () {
-                              DialogM3E.showCustom(
-                                context: context,
-                                barrierDismissible: true,
-                                child: Padding(
-                                  padding: M3ESpacing.all(M3ESpacing.xl),
-                                  child: SignInWidget(),
-                                ),
-                              );
-                            },
-                            child: const Text('Sign In'),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
-
-                  // Keep showing previous data during refresh to prevent jank
-                  final profile = userProfileAsync.hasValue
-                      ? userProfileAsync.value
-                      : null;
-
-                  // Only show loading on initial load (no cached data)
-                  if (profile == null && userProfileAsync.isLoading) {
-                    return LoadingIndicatorM3E(
-                      message: getRandomLoadingMessage(),
-                    );
-                  }
-
-                  if (profile == null) return const SizedBox.shrink();
-
-                  return CardM3E(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            CircleAvatar(
-                              radius: 24,
-                              child: Text(
-                                profile.username.substring(0, 1).toUpperCase(),
-                                style: M3ETypography.titleMedium,
+                          userPointsAsync.when(
+                            loading: () => const SizedBox.shrink(),
+                            error: (_, _) => const SizedBox.shrink(),
+                            data: (points) => Container(
+                              padding: M3ESpacing.all(M3ESpacing.sm),
+                              decoration: BoxDecoration(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.primaryContainer,
+                                borderRadius: BorderRadius.circular(8),
                               ),
-                            ),
-                            M3ESpacing.horizontalMD,
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                              child: Row(
                                 children: [
-                                  Text(
-                                    profile.username,
-                                    style: M3ETypography.titleLarge,
+                                  Icon(
+                                    Icons.stars,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onPrimaryContainer,
                                   ),
-                                  Row(
-                                    children: [
-                                      const Icon(
-                                        Icons.badge_outlined,
-                                        size: 16,
-                                      ),
-                                      M3ESpacing.horizontalXS,
-                                      Text(
-                                        profile.userType.value[0]
-                                                .toUpperCase() +
-                                            profile.userType.value.substring(1),
-                                        style: M3ETypography.bodySmall,
-                                      ),
-                                    ],
+                                  M3ESpacing.horizontalXS,
+                                  Text(
+                                    '$points points',
+                                    style: M3ETypography.titleMedium.copyWith(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onPrimaryContainer,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ],
                               ),
                             ),
-                          ],
-                        ),
-                        M3ESpacing.verticalMD,
-                        userPointsAsync.when(
-                          loading: () => const SizedBox.shrink(),
-                          error: (_, _) => const SizedBox.shrink(),
-                          data: (points) => Container(
-                            padding: M3ESpacing.all(M3ESpacing.sm),
-                            decoration: BoxDecoration(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.primaryContainer,
-                              borderRadius: BorderRadius.circular(8),
+                          ),
+                          M3ESpacing.verticalMD,
+                          // Notification Settings
+                          SizedBox(
+                            width: double.infinity,
+                            child: _buildNotificationSettings(
+                              context,
+                              ref,
+                              profile,
                             ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.stars,
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onPrimaryContainer,
+                          ),
+                          M3ESpacing.verticalMD,
+                          // Sign Out Button
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButtonM3E(
+                              onPressed: () => _showSignOutDialog(context, ref),
+                              icon: Icons.logout,
+                              child: const Text('Sign Out'),
+                            ),
+                          ),
+                          M3ESpacing.verticalSM,
+                          // Delete Account Button
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              onPressed: () => _showDeleteAccountDialog(
+                                context,
+                                ref,
+                                profile.userId,
+                              ),
+                              icon: const Icon(Icons.delete_outline),
+                              label: const Text('Delete Account'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Theme.of(
+                                  context,
+                                ).colorScheme.error,
+                                side: BorderSide(
+                                  color: Theme.of(context).colorScheme.error,
                                 ),
-                                M3ESpacing.horizontalXS,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+                M3ESpacing.verticalMD,
+                CardM3E(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
                                 Text(
-                                  '$points points',
-                                  style: M3ETypography.titleMedium.copyWith(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onPrimaryContainer,
-                                    fontWeight: FontWeight.bold,
+                                  'Allow Location Access',
+                                  style: M3ETypography.bodyLarge.copyWith(
+                                    fontWeight: FontWeight.w600,
                                   ),
+                                ),
+                                M3ESpacing.verticalXS,
+                                Text(
+                                  'Enable to show distances and sort fridges by proximity',
+                                  style: M3ETypography.bodyMedium,
                                 ),
                               ],
                             ),
                           ),
-                        ),
-                        M3ESpacing.verticalMD,
-                        // Notification Settings
-                        SizedBox(
-                          width: double.infinity,
-                          child: _buildNotificationSettings(
-                            context,
-                            ref,
-                            profile,
-                          ),
-                        ),
-                        M3ESpacing.verticalMD,
-                        // Sign Out Button
-                        SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButtonM3E(
-                            onPressed: () => _showSignOutDialog(context, ref),
-                            icon: Icons.logout,
-                            child: const Text('Sign Out'),
-                          ),
-                        ),
-                        M3ESpacing.verticalSM,
-                        // Delete Account Button
-                        SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton.icon(
-                            onPressed: () => _showDeleteAccountDialog(
-                              context,
-                              ref,
-                              profile.userId,
-                            ),
-                            icon: const Icon(Icons.delete_outline),
-                            label: const Text('Delete Account'),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: Theme.of(
-                                context,
-                              ).colorScheme.error,
-                              side: BorderSide(
-                                color: Theme.of(context).colorScheme.error,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-              M3ESpacing.verticalMD,
-              CardM3E(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Allow Location Access',
-                                style: M3ETypography.bodyLarge.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              M3ESpacing.verticalXS,
-                              Text(
-                                'Enable to show distances and sort fridges by proximity',
-                                style: M3ETypography.bodyMedium,
-                              ),
-                            ],
-                          ),
-                        ),
-                        SwitchM3E(
-                          value: locationAccessEnabled,
-                          onChanged: (value) async {
-                            final result = await ref
-                                .read(locationAccessProvider.notifier)
-                                .setAccessWithPermission(value);
+                          SwitchM3E(
+                            value: locationAccessEnabled,
+                            onChanged: (value) async {
+                              final result = await ref
+                                  .read(locationAccessProvider.notifier)
+                                  .setAccessWithPermission(value);
 
-                            if (context.mounted) {
-                              if (result['openSettings'] == true) {
-                                // Guide user to settings
-                                final shouldOpenSettings =
-                                    await DialogM3E.showCustom<bool>(
-                                      context: context,
-                                      child: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            'Location Permission Required',
-                                            style: M3ETypography.headlineSmall,
-                                          ),
-                                          M3ESpacing.verticalMD,
-                                          Text(
-                                            'Location access is disabled. '
-                                            'Please enable it in Settings to see distances and sort fridges by proximity.',
-                                            style: M3ETypography.bodyMedium,
-                                          ),
-                                          M3ESpacing.verticalXL,
-                                          Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.end,
-                                            children: [
-                                              TextButtonM3E(
-                                                onPressed: () => Navigator.of(
-                                                  context,
-                                                  rootNavigator: true,
-                                                ).pop(false),
-                                                child: const Text('Cancel'),
-                                              ),
-                                              M3ESpacing.horizontalXS,
-                                              FilledButtonM3E(
-                                                onPressed: () => Navigator.of(
-                                                  context,
-                                                  rootNavigator: true,
-                                                ).pop(true),
-                                                child: const Text(
-                                                  'Open Settings',
+                              if (context.mounted) {
+                                if (result['openSettings'] == true) {
+                                  // Guide user to settings
+                                  final shouldOpenSettings =
+                                      await DialogM3E.showCustom<bool>(
+                                        context: context,
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              'Location Permission Required',
+                                              style:
+                                                  M3ETypography.headlineSmall,
+                                            ),
+                                            M3ESpacing.verticalMD,
+                                            Text(
+                                              'Location access is disabled. '
+                                              'Please enable it in Settings to see distances and sort fridges by proximity.',
+                                              style: M3ETypography.bodyMedium,
+                                            ),
+                                            M3ESpacing.verticalXL,
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.end,
+                                              children: [
+                                                TextButtonM3E(
+                                                  onPressed: () => Navigator.of(
+                                                    context,
+                                                    rootNavigator: true,
+                                                  ).pop(false),
+                                                  child: const Text('Cancel'),
                                                 ),
-                                              ),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-                                    );
+                                                M3ESpacing.horizontalXS,
+                                                FilledButtonM3E(
+                                                  onPressed: () => Navigator.of(
+                                                    context,
+                                                    rootNavigator: true,
+                                                  ).pop(true),
+                                                  child: const Text(
+                                                    'Open Settings',
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      );
 
-                                if (shouldOpenSettings == true) {
-                                  await openAppSettings();
+                                  if (shouldOpenSettings == true) {
+                                    await openAppSettings();
+                                  }
+                                } else if (result['disabled'] == true) {
+                                  // User disabled location
+                                  showSnackbarM3E(
+                                    context: context,
+                                    message:
+                                        'Location access disabled. '
+                                        'To revoke location permission, go to Settings.',
+                                    duration: SnackbarDuration.long_,
+                                  );
+                                } else if (result['success'] == false &&
+                                    result['openSettings'] != true) {
+                                  // Permission denied but not permanently
+                                  showSnackbarM3E(
+                                    context: context,
+                                    message: 'Location permission is required',
+                                  );
                                 }
-                              } else if (result['disabled'] == true) {
-                                // User disabled location
-                                showSnackbarM3E(
-                                  context: context,
-                                  message:
-                                      'Location access disabled. '
-                                      'To revoke location permission, go to Settings.',
-                                  duration: SnackbarDuration.long_,
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                // Firebase Environment Settings Section - Only show in debug mode
+                if (kDebugMode) ...[
+                  M3ESpacing.verticalMD,
+                  CardM3E(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        OutlinedButtonM3E(
+                          onPressed: () async {
+                            try {
+                              final fcmService = ref.read(fcmServiceProvider);
+                              await fcmService.deleteToken();
+                              final repository = ref.read(
+                                authRepositoryProvider,
+                              );
+                              await repository.signOut();
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Signed out - Auth state reset',
+                                    ),
+                                  ),
                                 );
-                              } else if (result['success'] == false &&
-                                  result['openSettings'] != true) {
-                                // Permission denied but not permanently
-                                showSnackbarM3E(
-                                  context: context,
-                                  message: 'Location permission is required',
+                              }
+                            } catch (e) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Error: $e')),
                                 );
                               }
                             }
                           },
+                          icon: Icons.refresh,
+                          child: const Text('Reset Auth State (Sign Out)'),
                         ),
                       ],
                     ),
-                  ],
-                ),
-              ),
-              // Firebase Environment Settings Section - Only show in debug mode
-              if (kDebugMode) ...[
-                M3ESpacing.verticalMD,
-                CardM3E(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      OutlinedButtonM3E(
-                        onPressed: () async {
-                          try {
-                            final fcmService = ref.read(fcmServiceProvider);
-                            await fcmService.deleteToken();
-                            final repository = ref.read(authRepositoryProvider);
-                            await repository.signOut();
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'Signed out - Auth state reset',
-                                  ),
-                                ),
-                              );
-                            }
-                          } catch (e) {
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Error: $e')),
-                              );
-                            }
-                          }
-                        },
-                        icon: Icons.refresh,
-                        child: const Text('Reset Auth State (Sign Out)'),
-                      ),
-                    ],
                   ),
-                ),
-                M3ESpacing.verticalMD,
+                  M3ESpacing.verticalMD,
+                  CardM3E(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Current: ${environment.name.toUpperCase()}',
+                          style: M3ETypography.bodySmall.copyWith(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        M3ESpacing.verticalMD,
+                        Text(
+                          'Firebase Environment (API + Database + Auth)',
+                          style: M3ETypography.bodyMedium,
+                        ),
+                        M3ESpacing.verticalMD,
+                        // Environment Options
+                        _buildEnvironmentOption(
+                          context: context,
+                          ref: ref,
+                          title: 'Production',
+                          subtitle: 'Production project (fridgefinder-app)',
+                          environment: ApiEnvironment.prod,
+                          isSelected: environment == ApiEnvironment.prod,
+                          icon: Icons.cloud,
+                        ),
+                        M3ESpacing.verticalSM,
+                        _buildEnvironmentOption(
+                          context: context,
+                          ref: ref,
+                          title: 'Development',
+                          subtitle:
+                              'Development project (fridgefinder-app-dev)',
+                          environment: ApiEnvironment.dev,
+                          isSelected: environment == ApiEnvironment.dev,
+                          icon: Icons.construction,
+                        ),
+                      ],
+                    ),
+                  ),
+                  M3ESpacing.verticalMD,
+                ],
+                // Theme Settings Section
                 CardM3E(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Current: ${environment.name.toUpperCase()}',
-                        style: M3ETypography.bodySmall.copyWith(
+                        'Choose your preferred theme',
+                        style: M3ETypography.bodyMedium,
+                      ),
+                      M3ESpacing.verticalMD,
+                      // Theme Mode Options
+                      _buildThemeOption(
+                        context: context,
+                        ref: ref,
+                        title: 'System',
+                        subtitle: 'Follow device settings',
+                        mode: AppThemeMode.system,
+                        isSelected: themeMode == AppThemeMode.system,
+                        icon: Icons.brightness_auto,
+                      ),
+                      M3ESpacing.verticalSM,
+                      _buildThemeOption(
+                        context: context,
+                        ref: ref,
+                        title: 'Light',
+                        subtitle: 'Always use light theme',
+                        mode: AppThemeMode.light,
+                        isSelected: themeMode == AppThemeMode.light,
+                        icon: Icons.light_mode,
+                      ),
+                      M3ESpacing.verticalSM,
+                      _buildThemeOption(
+                        context: context,
+                        ref: ref,
+                        title: 'Dark',
+                        subtitle: 'Always use dark theme',
+                        mode: AppThemeMode.dark,
+                        isSelected: themeMode == AppThemeMode.dark,
+                        icon: Icons.dark_mode,
+                      ),
+                    ],
+                  ),
+                ),
+                M3ESpacing.verticalMD,
+                // Privacy Policy Section
+                CardM3E(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.privacy_tip_outlined,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                          M3ESpacing.horizontalSM,
+                          Text(
+                            'Privacy & Legal',
+                            style: M3ETypography.titleMedium.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      M3ESpacing.verticalSM,
+                      Text(
+                        'Learn how we protect and handle your data',
+                        style: M3ETypography.bodyMedium.copyWith(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
                       M3ESpacing.verticalMD,
-                      Text(
-                        'Firebase Environment (API + Database + Auth)',
-                        style: M3ETypography.bodyMedium,
-                      ),
-                      M3ESpacing.verticalMD,
-                      // Environment Options
-                      _buildEnvironmentOption(
-                        context: context,
-                        ref: ref,
-                        title: 'Production',
-                        subtitle: 'Production project (fridgefinder-app)',
-                        environment: ApiEnvironment.prod,
-                        isSelected: environment == ApiEnvironment.prod,
-                        icon: Icons.cloud,
-                      ),
-                      M3ESpacing.verticalSM,
-                      _buildEnvironmentOption(
-                        context: context,
-                        ref: ref,
-                        title: 'Development',
-                        subtitle: 'Development project (fridgefinder-app-dev)',
-                        environment: ApiEnvironment.dev,
-                        isSelected: environment == ApiEnvironment.dev,
-                        icon: Icons.construction,
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButtonM3E(
+                          onPressed: () async {
+                            final uri = Uri.parse(
+                              AppConstants.privacyPolicyUrl,
+                            );
+                            if (!await launchUrl(
+                              uri,
+                              mode: LaunchMode.externalApplication,
+                            )) {
+                              if (context.mounted) {
+                                showSnackbarM3E(
+                                  context: context,
+                                  message: 'Could not open privacy policy',
+                                );
+                              }
+                            }
+                          },
+                          icon: Icons.open_in_new,
+                          child: const Text('View Privacy Policy'),
+                        ),
                       ),
                     ],
                   ),
                 ),
-                M3ESpacing.verticalMD,
-              ],
-              // Theme Settings Section
-              CardM3E(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Choose your preferred theme',
-                      style: M3ETypography.bodyMedium,
-                    ),
-                    M3ESpacing.verticalMD,
-                    // Theme Mode Options
-                    _buildThemeOption(
-                      context: context,
-                      ref: ref,
-                      title: 'System',
-                      subtitle: 'Follow device settings',
-                      mode: AppThemeMode.system,
-                      isSelected: themeMode == AppThemeMode.system,
-                      icon: Icons.brightness_auto,
-                    ),
-                    M3ESpacing.verticalSM,
-                    _buildThemeOption(
-                      context: context,
-                      ref: ref,
-                      title: 'Light',
-                      subtitle: 'Always use light theme',
-                      mode: AppThemeMode.light,
-                      isSelected: themeMode == AppThemeMode.light,
-                      icon: Icons.light_mode,
-                    ),
-                    M3ESpacing.verticalSM,
-                    _buildThemeOption(
-                      context: context,
-                      ref: ref,
-                      title: 'Dark',
-                      subtitle: 'Always use dark theme',
-                      mode: AppThemeMode.dark,
-                      isSelected: themeMode == AppThemeMode.dark,
-                      icon: Icons.dark_mode,
-                    ),
-                  ],
-                ),
-              ),
-              M3ESpacing.verticalMD,
-              // Privacy Policy Section
-              CardM3E(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.privacy_tip_outlined,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                        M3ESpacing.horizontalSM,
-                        Text(
-                          'Privacy & Legal',
-                          style: M3ETypography.titleMedium.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                    M3ESpacing.verticalSM,
-                    Text(
-                      'Learn how we protect and handle your data',
-                      style: M3ETypography.bodyMedium.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    M3ESpacing.verticalMD,
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButtonM3E(
-                        onPressed: () async {
-                          final uri = Uri.parse(AppConstants.privacyPolicyUrl);
-                          if (!await launchUrl(
-                            uri,
-                            mode: LaunchMode.externalApplication,
-                          )) {
-                            if (context.mounted) {
-                              showSnackbarM3E(
-                                context: context,
-                                message: 'Could not open privacy policy',
-                              );
-                            }
-                          }
-                        },
-                        icon: Icons.open_in_new,
-                        child: const Text('View Privacy Policy'),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
               ],
             ),
           ),
@@ -749,7 +760,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
                 try {
                   final fcmService = ref.read(fcmServiceProvider);
-                  final success = await fcmService.setDeviceNotificationsEnabled(value);
+                  final success = await fcmService
+                      .setDeviceNotificationsEnabled(value);
 
                   if (!success && value) {
                     if (context.mounted) {
@@ -957,8 +969,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           showSnackbarM3E(
                             context: context,
                             message: 'Error signing out: $e',
-                            backgroundColor: Theme.of(context).colorScheme.error,
-                            foregroundColor: Theme.of(context).colorScheme.onError,
+                            backgroundColor: Theme.of(
+                              context,
+                            ).colorScheme.error,
+                            foregroundColor: Theme.of(
+                              context,
+                            ).colorScheme.onError,
                           );
                         }
                       }
@@ -1109,9 +1125,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         );
 
                         // Wait a moment for the message to be visible, then navigate to home
-                        await Future.delayed(
-                          const Duration(milliseconds: 500),
-                        );
+                        await Future.delayed(const Duration(milliseconds: 500));
 
                         if (context.mounted) {
                           context.go('/');
@@ -1136,10 +1150,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         showSnackbarM3E(
                           context: snackbarContext,
                           message: errorMessage,
-                          backgroundColor:
-                              Theme.of(snackbarContext).colorScheme.error,
-                          foregroundColor:
-                              Theme.of(snackbarContext).colorScheme.onError,
+                          backgroundColor: Theme.of(
+                            snackbarContext,
+                          ).colorScheme.error,
+                          foregroundColor: Theme.of(
+                            snackbarContext,
+                          ).colorScheme.onError,
                           duration: SnackbarDuration.long_,
                         );
                       }

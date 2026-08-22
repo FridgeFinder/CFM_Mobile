@@ -94,7 +94,9 @@ class _MyFridgesScreenState extends ConsumerState<MyFridgesScreen>
     final followedFridgeNotifications = followedFridgesAsync.hasValue
         ? followedFridgesAsync.value ?? const []
         : null;
-    final allFridges = fridgesAsync.hasValue ? fridgesAsync.value ?? const [] : null;
+    final allFridges = fridgesAsync.hasValue
+        ? fridgesAsync.value ?? const []
+        : null;
 
     if (!isAuthenticated) {
       return Scaffold(
@@ -127,11 +129,10 @@ class _MyFridgesScreenState extends ConsumerState<MyFridgesScreen>
                 FilledButtonM3E(
                   icon: Icons.login,
                   onPressed: () {
-                    DialogM3E.showCustom(
-                      context: context,
-                      child: Padding(
-                        padding: M3ESpacing.all(M3ESpacing.xl),
-                        child: SignInWidget(),
+                    Navigator.of(context, rootNavigator: true).push(
+                      MaterialPageRoute<void>(
+                        fullscreenDialog: true,
+                        builder: (context) => const SignInWidget(),
                       ),
                     );
                   },
@@ -146,9 +147,7 @@ class _MyFridgesScreenState extends ConsumerState<MyFridgesScreen>
 
     if (followedFridgeNotifications == null && followedFridgesAsync.isLoading) {
       return Scaffold(
-        body: LoadingIndicatorM3E(
-          message: getRandomLoadingMessage(),
-        ),
+        body: LoadingIndicatorM3E(message: getRandomLoadingMessage()),
       );
     }
 
@@ -162,7 +161,8 @@ class _MyFridgesScreenState extends ConsumerState<MyFridgesScreen>
       );
     }
 
-    if (followedFridgeNotifications == null || followedFridgeNotifications.isEmpty) {
+    if (followedFridgeNotifications == null ||
+        followedFridgeNotifications.isEmpty) {
       return Scaffold(
         body: _buildRefreshableEmptyState(
           context: context,
@@ -202,9 +202,7 @@ class _MyFridgesScreenState extends ConsumerState<MyFridgesScreen>
 
     if (allFridges == null && fridgesAsync.isLoading) {
       return Scaffold(
-        body: LoadingIndicatorM3E(
-          message: getRandomLoadingMessage(),
-        ),
+        body: LoadingIndicatorM3E(message: getRandomLoadingMessage()),
       );
     }
 
@@ -222,7 +220,9 @@ class _MyFridgesScreenState extends ConsumerState<MyFridgesScreen>
         .where((id) => id.isNotEmpty)
         .toSet();
     final followedFridges = (allFridges ?? const <dynamic>[])
-      .where((fridge) => followedFridgeIds.contains(normalizeFridgeId(fridge.id)))
+        .where(
+          (fridge) => followedFridgeIds.contains(normalizeFridgeId(fridge.id)),
+        )
         .toList();
 
     if (followedFridges.isEmpty) {
@@ -287,72 +287,72 @@ class _MyFridgesScreenState extends ConsumerState<MyFridgesScreen>
                 child: Padding(
                   padding: M3ESpacing.only(bottom: M3ESpacing.sm),
                   child: ListTileM3E(
-                  leading: SizedBox(
-                    width: 40,
-                    height: 40,
-                    child: FridgeIconUtils.getFridgeIcon(
-                      fridge: fridge,
-                      size: 40,
+                    leading: SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: FridgeIconUtils.getFridgeIcon(
+                        fridge: fridge,
+                        size: 40,
+                      ),
                     ),
-                  ),
-                  title: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          fridge.name,
+                    title: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            fridge.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Icon(
+                          Icons.favorite,
+                          color: FridgeMarker.followedGold,
+                          size: 20,
+                        ),
+                      ],
+                    ),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          fridge.location.shortAddress,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                      Icon(
-                        Icons.favorite,
-                        color: FridgeMarker.followedGold,
-                        size: 20,
-                      ),
-                    ],
-                  ),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        fridge.location.shortAddress,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      M3ESpacing.verticalXXS,
-                      Row(
-                        children: [
-                          Icon(statusIcon, size: 14, color: statusColor),
-                          M3ESpacing.horizontalXXS,
-                          Text(
-                            fridge.statusText,
-                            style: TextStyle(
-                              color: statusColor,
-                              fontWeight: FontWeight.w500,
-                              fontSize: 12,
+                        M3ESpacing.verticalXXS,
+                        Row(
+                          children: [
+                            Icon(statusIcon, size: 14, color: statusColor),
+                            M3ESpacing.horizontalXXS,
+                            Text(
+                              fridge.statusText,
+                              style: TextStyle(
+                                color: statusColor,
+                                fontWeight: FontWeight.w500,
+                                fontSize: 12,
+                              ),
                             ),
-                          ),
-                          M3ESpacing.horizontalSM,
-                          Text(
-                            'Food: ${fridge.foodLevelText}',
-                            style: const TextStyle(fontSize: 12),
-                          ),
-                        ],
-                      ),
-                    ],
+                            M3ESpacing.horizontalSM,
+                            Text(
+                              'Food: ${fridge.foodLevelText}',
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    onTap: () {
+                      ref
+                          .read(selectedFridgeIdProvider.notifier)
+                          .setSelectedFridgeId(fridge.id);
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        builder: (context) =>
+                            FridgeProfileSheet(fridge: fridge),
+                      );
+                    },
                   ),
-                  onTap: () {
-                    ref
-                        .read(selectedFridgeIdProvider.notifier)
-                        .setSelectedFridgeId(fridge.id);
-                    showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      builder: (context) =>
-                          FridgeProfileSheet(fridge: fridge),
-                    );
-                  },
-                ),
                 ),
               );
             },

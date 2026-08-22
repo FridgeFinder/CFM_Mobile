@@ -105,7 +105,11 @@ class FridgeProfileButtonRow extends ConsumerWidget {
         foregroundColor: Colors.black87,
       ),
       icon: const Icon(Icons.favorite_border, size: 20),
-      label: Text(label, style: M3ETypography.labelLarge.copyWith(color: Colors.black87), overflow: TextOverflow.ellipsis),
+      label: Text(
+        label,
+        style: M3ETypography.labelLarge.copyWith(color: Colors.black87),
+        overflow: TextOverflow.ellipsis,
+      ),
     );
   }
 
@@ -120,7 +124,11 @@ class FridgeProfileButtonRow extends ConsumerWidget {
         foregroundColor: Colors.black87,
       ),
       icon: const Icon(Icons.notifications, size: 20),
-      label: Text('Edit Alerts', style: M3ETypography.labelLarge.copyWith(color: Colors.black87), overflow: TextOverflow.ellipsis),
+      label: Text(
+        'Edit Alerts',
+        style: M3ETypography.labelLarge.copyWith(color: Colors.black87),
+        overflow: TextOverflow.ellipsis,
+      ),
     );
   }
 
@@ -128,7 +136,11 @@ class FridgeProfileButtonRow extends ConsumerWidget {
     return OutlinedButtonM3E(
       onPressed: () => _openDirections(context),
       icon: Icons.directions,
-      child: Text('Directions', style: M3ETypography.labelLarge, overflow: TextOverflow.ellipsis),
+      child: Text(
+        'Directions',
+        style: M3ETypography.labelLarge,
+        overflow: TextOverflow.ellipsis,
+      ),
     );
   }
 
@@ -154,7 +166,9 @@ class FridgeProfileButtonRow extends ConsumerWidget {
         return;
       }
 
-      final alertPreferences = ref.read(fridgeAlertPreferencesProvider(fridge.id));
+      final alertPreferences = ref.read(
+        fridgeAlertPreferencesProvider(fridge.id),
+      );
 
       if (!context.mounted) return;
 
@@ -171,57 +185,36 @@ class FridgeProfileButtonRow extends ConsumerWidget {
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     }
   }
 
   void _showSignInAndFollowDialog(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (dialogContext) => Dialog(
-        child: Stack(
-          children: [
-            Padding(
-              padding: EdgeInsets.all(M3ESpacing.xl),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text('Sign In to Follow', style: M3ETypography.headlineSmall),
-                  SizedBox(height: M3ESpacing.md),
-                  const Text('Sign in to follow this fridge and receive notifications.'),
-                  SizedBox(height: M3ESpacing.xl),
-                  SignInWidget(
-                    onSignInSuccess: () {
-                      if (context.mounted) {
-                        _showFollowDialog(context, ref);
-                      }
-                    },
-                  ),
-                ],
-              ),
-            ),
-            Positioned(
-              top: 8,
-              right: 8,
-              child: IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: () => Navigator.of(dialogContext).pop(),
-                tooltip: 'Close',
-              ),
-            ),
-          ],
+    Navigator.of(context, rootNavigator: true).push(
+      MaterialPageRoute<void>(
+        fullscreenDialog: true,
+        builder: (routeContext) => SignInWidget(
+          onSignInSuccess: () {
+            if (context.mounted) {
+              _showFollowDialog(context, ref);
+            }
+          },
         ),
       ),
     );
   }
 
-  Future<void> _showEditAlertsDialog(BuildContext context, WidgetRef ref) async {
+  Future<void> _showEditAlertsDialog(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
     try {
-      final alertPreferences = ref.read(fridgeAlertPreferencesProvider(fridge.id));
+      final alertPreferences = ref.read(
+        fridgeAlertPreferencesProvider(fridge.id),
+      );
 
       if (!context.mounted || alertPreferences == null) return;
 
@@ -239,9 +232,9 @@ class FridgeProfileButtonRow extends ConsumerWidget {
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     }
   }
@@ -261,7 +254,9 @@ class FridgeProfileButtonRow extends ConsumerWidget {
       _MapAppOption(
         name: 'Google Maps',
         icon: Icons.map,
-        url: Uri.parse('https://www.google.com/maps/search/?api=1&query=$lat,$lng'),
+        url: Uri.parse(
+          'https://www.google.com/maps/search/?api=1&query=$lat,$lng',
+        ),
         appUrl: Uri.parse('comgooglemaps://?q=$lat,$lng'),
       ),
       _MapAppOption(
@@ -290,9 +285,9 @@ class FridgeProfileButtonRow extends ConsumerWidget {
     if (!context.mounted) return;
 
     if (availableOptions.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No map apps available')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('No map apps available')));
       return;
     }
 
@@ -314,14 +309,22 @@ class FridgeProfileButtonRow extends ConsumerWidget {
                   Navigator.pop(context);
                   try {
                     if (await canLaunchUrl(option.appUrl)) {
-                      await launchUrl(option.appUrl, mode: LaunchMode.externalApplication);
+                      await launchUrl(
+                        option.appUrl,
+                        mode: LaunchMode.externalApplication,
+                      );
                     } else if (option.url != null) {
-                      await launchUrl(option.url!, mode: LaunchMode.externalApplication);
+                      await launchUrl(
+                        option.url!,
+                        mode: LaunchMode.externalApplication,
+                      );
                     }
                   } catch (e) {
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Failed to open ${option.name}')),
+                        SnackBar(
+                          content: Text('Failed to open ${option.name}'),
+                        ),
                       );
                     }
                   }

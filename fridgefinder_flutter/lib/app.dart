@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'src/routing/router.dart';
 import 'src/core/theme/m3e_theme.dart';
 import 'src/core/providers/theme_provider.dart';
 import 'src/core/providers/notification_providers.dart';
 import 'src/core/providers/notification_navigation_provider.dart';
+import 'src/core/providers/auth_provider.dart';
 import 'src/core/services/local_notification_service.dart';
+import 'src/core/services/magic_link_auth_service.dart';
 import 'src/core/utils/app_logger.dart';
 
 class FridgeFinderApp extends ConsumerStatefulWidget {
@@ -65,7 +68,9 @@ class _FridgeFinderAppState extends ConsumerState<FridgeFinderApp> {
       // Global error boundary for better crash handling
       // Note: ErrorWidget.builder is not set here to avoid test framework conflicts
       // Error handling is done via FlutterError.onError in main.dart instead
-      builder: (context, child) => child ?? const SizedBox(),
+      builder: (context, child) => _MagicLinkAuthBootstrap(
+        child: child ?? const SizedBox(),
+      ),
     );
   }
 
@@ -78,6 +83,124 @@ class _FridgeFinderAppState extends ConsumerState<FridgeFinderApp> {
       case AppThemeMode.system:
         return ThemeMode.system;
     }
+  }
+}
+
+class _MagicLinkAuthBootstrap extends ConsumerStatefulWidget {
+  const _MagicLinkAuthBootstrap({required this.child});
+
+  final Widget child;
+
+  @override
+  ConsumerState<_MagicLinkAuthBootstrap> createState() =>
+      _MagicLinkAuthBootstrapState();
+}
+
+class _MagicLinkAuthBootstrapState
+    extends ConsumerState<_MagicLinkAuthBootstrap> {
+  StreamSubscription<MagicLinkAuthEvent>? _eventsSubscription;
+  bool _emailPromptOpen = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final magicLinkService = ref.read(magicLinkAuthServiceProvider);
+    unawaited(magicLinkService.initialize());
+    _eventsSubscription = magicLinkService.events.listen(_handleEvent);
+  }
+
+  Future<void> _handleEvent(MagicLinkAuthEvent event) async {
+    if (!mounted) {
+      return;
+    }
+
+    switch (event.type) {
+      case MagicLinkAuthEventType.signedIn:
+        _showMessage('You are now signed in.');
+        break;
+      case MagicLinkAuthEventType.missingEmail:
+        await _promptForEmailConfirmation();
+        break;
+      case MagicLinkAuthEventType.expiredOrInvalidLink:
+      case MagicLinkAuthEventType.failure:
+        _showMessage(event.message ?? 'Could not complete email link sign-in.');
+        break;
+    }
+  }
+
+  Future<void> _promptForEmailConfirmation() async {
+    if (_emailPromptOpen || !mounted) {
+      return;
+    }
+
+    _emailPromptOpen = true;
+    final controller = TextEditingController();
+    final service = ref.read(magicLinkAuthServiceProvider);
+
+    final email = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Confirm your email'),
+          content: TextField(
+            controller: controller,
+            keyboardType: TextInputType.emailAddress,
+            autofocus: true,
+            decoration: const InputDecoration(
+              labelText: 'Email',
+              hintText: 'you@example.com',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () =>
+                  Navigator.of(dialogContext).pop(controller.text.trim()),
+              child: const Text('Continue'),
+            ),
+          ],
+        );
+      },
+    );
+
+    controller.dispose();
+    _emailPromptOpen = false;
+
+    if (!mounted) {
+      return;
+    }
+
+    if (email == null || email.isEmpty) {
+      _showMessage('Email is required to finish sign-in.');
+      return;
+    }
+
+    await service.confirmPendingLinkWithEmail(email);
+  }
+
+  void _showMessage(String message) {
+    if (!mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
+  @override
+  void dispose() {
+    _eventsSubscription?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return widget.child;
   }
 }
 

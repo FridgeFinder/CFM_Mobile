@@ -66,6 +66,9 @@ app.*.map.json
 **/.fastlane
 **/fastlane/.env
 
+# Firebase local deploy cache
+.firebase/
+
 # App Store Connect API Key
 *.p8
 
