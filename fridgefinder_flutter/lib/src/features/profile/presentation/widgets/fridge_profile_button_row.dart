@@ -174,6 +174,7 @@ class FridgeProfileButtonRow extends ConsumerWidget {
 
       final didFollow = await showDialog<bool>(
         context: context,
+        barrierColor: Colors.transparent,
         builder: (dialogContext) => NotificationPreferencesDialog.follow(
           fridgeId: fridge.id,
           existingPreferences: alertPreferences?.notificationPreferences,
@@ -220,6 +221,7 @@ class FridgeProfileButtonRow extends ConsumerWidget {
 
       final didUpdate = await showDialog<bool>(
         context: context,
+        barrierColor: Colors.transparent,
         builder: (dialogContext) => NotificationPreferencesDialog.edit(
           fridgeId: fridge.id,
           fridgeName: fridge.name,
