@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:firebase_core/firebase_core.dart';
 import '../../features/auth/data/repositories/auth_repository.dart';
 import '../../features/auth/domain/models/user_profile.dart';
+import '../services/magic_link_auth_service.dart';
 import 'dio_provider.dart';
 import '../utils/app_logger.dart';
 
@@ -128,7 +130,19 @@ Future<UserProfile?> userProfile(Ref ref) async {
 
   // No cache — blocking fetch on first load.
   logger.d('[AuthProvider] No cache, fetching profile for: ${authUser.uid}');
-  final profile = await repository.getUserProfile(authUser.uid);
+  UserProfile? profile;
+  try {
+    profile = await repository.getUserProfile(authUser.uid);
+  } catch (e) {
+    // During first sign-in (including magic-link), backend profile APIs may
+    // transiently fail or lag. Treat as "no profile yet" so onboarding can
+    // proceed instead of entering a loading/error refresh loop.
+    logger.w(
+      '[AuthProvider] Profile fetch failed for ${authUser.uid}; '
+      'continuing as incomplete profile: $e',
+    );
+    return null;
+  }
   if (profile != null) {
     logger.d('[AuthProvider] Profile found: ${profile.username}');
     try {
@@ -195,4 +209,12 @@ Future<bool> isProfileComplete(Ref ref) async {
     },
   );
 }
+
+final magicLinkAuthServiceProvider = Provider<MagicLinkAuthService>((ref) {
+  final service = MagicLinkAuthService(
+    authRepository: ref.watch(authRepositoryProvider),
+  );
+  ref.onDispose(service.dispose);
+  return service;
+});
 

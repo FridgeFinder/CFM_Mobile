@@ -3,11 +3,14 @@ import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:dio/dio.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart' hide generateNonce;
 import '../../../../core/utils/app_logger.dart';
 import '../../../../core/exceptions/app_exception.dart';
 import '../../domain/models/user_profile.dart';
 import '../utils/apple_sign_in_utils.dart';
+
+const _pendingMagicLinkEmailKey = 'pending_magic_link_email';
 
 /// Thrown when the user cancels sign-in (dismisses the picker).
 class SignInCancelledException implements Exception {
@@ -17,6 +20,16 @@ class SignInCancelledException implements Exception {
 /// Thrown when Apple Sign-In is not available on the device.
 class AppleSignInNotAvailableException implements Exception {
   const AppleSignInNotAvailableException();
+}
+
+/// Thrown when there is no persisted email for an incoming magic link.
+class MagicLinkEmailMissingException implements Exception {
+  const MagicLinkEmailMissingException();
+}
+
+/// Thrown when a magic link is invalid or expired.
+class MagicLinkExpiredException implements Exception {
+  const MagicLinkExpiredException();
 }
 
 /// Repository for authentication operations
@@ -213,6 +226,92 @@ class AuthRepository {
     }
   }
 
+  /// Sends a Firebase email sign-in link and persists the email for verification.
+  Future<void> sendEmailSignInLink({
+    required String email,
+    required String magicLinkUrl,
+    required String appBundleId,
+    required String androidPackageName,
+  }) async {
+    try {
+      final normalizedEmail = email.trim();
+      if (normalizedEmail.isEmpty) {
+        throw Exception('Please provide an email address.');
+      }
+
+      final settings = firebase_auth.ActionCodeSettings(
+        url: magicLinkUrl,
+        handleCodeInApp: true,
+        iOSBundleId: appBundleId,
+        androidPackageName: androidPackageName,
+        androidInstallApp: true,
+      );
+
+      await _auth.sendSignInLinkToEmail(
+        email: normalizedEmail,
+        actionCodeSettings: settings,
+      );
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_pendingMagicLinkEmailKey, normalizedEmail);
+
+      logger.i('Email sign-in link sent to $normalizedEmail');
+    } on firebase_auth.FirebaseAuthException catch (e) {
+      logger.e('Failed to send email sign-in link: ${e.code} - ${e.message}');
+      rethrow;
+    } catch (e) {
+      logger.e('Failed to send email sign-in link: $e');
+      rethrow;
+    }
+  }
+
+  bool isSignInWithEmailLink(String link) {
+    return _auth.isSignInWithEmailLink(link);
+  }
+
+  /// Completes sign-in with an email link and clears persisted email on success.
+  Future<firebase_auth.UserCredential> completeEmailLinkSignIn({
+    required String emailLink,
+    String? emailOverride,
+  }) async {
+    try {
+      final email = (emailOverride ?? await getPendingMagicLinkEmail())?.trim();
+      if (email == null || email.isEmpty) {
+        throw const MagicLinkEmailMissingException();
+      }
+
+      final credential = await _auth.signInWithEmailLink(
+        email: email,
+        emailLink: emailLink,
+      );
+
+      await clearPendingMagicLinkEmail();
+
+      final signedInUserId = credential.user?.uid;
+      if (signedInUserId != null) {
+        unawaited(updateLastLogin(signedInUserId));
+      }
+
+      logger.i('Email link sign-in successful: ${credential.user?.email}');
+      return credential;
+    } on firebase_auth.FirebaseAuthException catch (e) {
+      if (e.code == 'invalid-action-code' || e.code == 'expired-action-code') {
+        throw const MagicLinkExpiredException();
+      }
+      rethrow;
+    }
+  }
+
+  Future<String?> getPendingMagicLinkEmail() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_pendingMagicLinkEmailKey);
+  }
+
+  Future<void> clearPendingMagicLinkEmail() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_pendingMagicLinkEmailKey);
+  }
+
   /// Sign out (handles both Firebase Auth and Google Sign-In)
   Future<void> signOut() async {
     try {
@@ -268,6 +367,11 @@ class AuthRepository {
       }
     } on DioException catch (e) {
       final statusCode = e.response?.statusCode;
+      logger.e(
+        'User profile lookup failed for $userId '
+        '(status: $statusCode, type: ${e.type}, path: ${e.requestOptions.path}) '
+        'response: ${e.response?.data}',
+      );
       if (statusCode == 404) {
         logger.w(
           'User profile lookup returned $statusCode for $userId; '

@@ -29,12 +29,18 @@ enum ApiEnvironment {
     'https://users-api-dev.communityfridgefinder.com/v1',
     'https://notifications-api-dev.communityfridgefinder.com/v1',
     'https://user-rewards-api-dev.communityfridgefinder.com/v1',
+    'https://fridgefinder-app-dev.firebaseapp.com/finishSignUp',
+    'com.fridgefinder.fridgefinderFlutterApp',
+    'com.fridgefinder.fridgefinderapp',
   ),
   prod(
     'https://api-prod.communityfridgefinder.com/v1',
     'https://users-api-prod.communityfridgefinder.com/v1',
     'https://notifications-api-prod.communityfridgefinder.com/v1',
     'https://user-rewards-api-prod.communityfridgefinder.com/v1',
+    'https://fridgefinder-app.firebaseapp.com/finishSignUp',
+    'com.fridgefinder.fridgefinderFlutterApp',
+    'com.fridgefinder.fridgefinderapp',
   );
 
   const ApiEnvironment(
@@ -42,11 +48,17 @@ enum ApiEnvironment {
     this.usersApiBaseUrl,
     this.notificationsApiBaseUrl,
     this.rewardsApiBaseUrl,
+    this.magicLinkUrl,
+    this.appBundleId,
+    this.androidPackageName,
   );
   final String fridgeApiBaseUrl;
   final String usersApiBaseUrl;
   final String notificationsApiBaseUrl;
   final String rewardsApiBaseUrl;
+  final String magicLinkUrl;
+  final String appBundleId;
+  final String androidPackageName;
 }
 
 /// Reads the startup environment before Riverpod initializes.
@@ -135,4 +147,18 @@ String notificationsApiBaseUrl(Ref ref) {
 String rewardsApiBaseUrl(Ref ref) {
   final environment = ref.watch(environmentProvider);
   return environment.rewardsApiBaseUrl;
+}
+
+/// Provider that returns the current Firebase email-link redirect URL
+@riverpod
+String magicLinkUrl(Ref ref) {
+  final environment = ref.watch(environmentProvider);
+  return environment.magicLinkUrl;
+}
+
+/// Provider that returns the shared app bundle/package identifier
+@riverpod
+String appBundleId(Ref ref) {
+  final environment = ref.watch(environmentProvider);
+  return environment.appBundleId;
 }

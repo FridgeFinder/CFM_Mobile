@@ -1,0 +1,14 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "3U525G584M.com.fridgefinder.fridgefinderFlutterApp",
+        "paths": [
+          "/finishSignUp",
+          "/__/auth/*"
+        ]
+      }
+    ]
+  }
+}

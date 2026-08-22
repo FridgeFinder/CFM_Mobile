@@ -28,7 +28,7 @@ class MainShell extends ConsumerStatefulWidget {
 }
 
 class _MainShellState extends ConsumerState<MainShell>
-  with TickerProviderStateMixin, WidgetsBindingObserver {
+    with TickerProviderStateMixin, WidgetsBindingObserver {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
@@ -367,11 +367,14 @@ class _MainShellState extends ConsumerState<MainShell>
                               OutlinedButtonM3E(
                                 onPressed: () {
                                   _toggleDrawer();
-                                  DialogM3E.showCustom(
-                                    context: context,
-                                    child: Padding(
-                                      padding: M3ESpacing.all(0),
-                                      child: SignInWidget(),
+                                  Navigator.of(
+                                    context,
+                                    rootNavigator: true,
+                                  ).push(
+                                    MaterialPageRoute<void>(
+                                      fullscreenDialog: true,
+                                      builder: (context) =>
+                                          const SignInWidget(),
                                     ),
                                   );
                                 },
@@ -422,13 +425,14 @@ class _MainShellState extends ConsumerState<MainShell>
                                         Text(
                                           profile.userType.value[0]
                                                   .toUpperCase() +
-                                              profile.userType.value
-                                                  .substring(1),
+                                              profile.userType.value.substring(
+                                                1,
+                                              ),
                                           style: M3ETypography.bodySmall
                                               .copyWith(
-                                                color: Theme.of(context)
-                                                    .colorScheme
-                                                    .onSurfaceVariant,
+                                                color: Theme.of(
+                                                  context,
+                                                ).colorScheme.onSurfaceVariant,
                                               ),
                                         ),
                                       ],
