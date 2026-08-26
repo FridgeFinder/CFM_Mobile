@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
 import 'dart:async';
+
+import 'package:flutter/material.dart';
 import 'package:design_system/design_system.dart';
 import '../../domain/models/fridge_domain.dart';
 import '../../../../core/utils/fridge_icon_utils.dart';
@@ -91,6 +92,8 @@ class _FridgeMarkerState extends State<FridgeMarker>
           : 0;
       final delay = Duration(milliseconds: effectiveIndex * 30); // 30ms stagger per marker
 
+      // Held so dispose can cancel it - markers are created and destroyed as
+      // the map pans, and an orphaned timer outlives the widget it fires on.
       _entranceDelayTimer = Timer(delay, () {
         if (mounted) {
           _entranceController.forward();
@@ -130,12 +133,11 @@ class _FridgeMarkerState extends State<FridgeMarker>
     // Show health bar for all fridges with a report (food level is independent of condition)
     final showHealthBar = report != null;
 
-    // Calculate icon size to account for health bar if shown
-    final iconSize = showHealthBar
-        ? FridgeMarker.markerSize -
-            FridgeMarker.healthBarHeight -
-            FridgeMarker.healthBarSpacing
-        : FridgeMarker.markerSize;
+    // Always reserve the health bar's space so every pin renders at the same
+    // size, whether or not the fridge has a report to show a bar for.
+    const iconSize = FridgeMarker.markerSize -
+        FridgeMarker.healthBarHeight -
+        FridgeMarker.healthBarSpacing;
 
     final markerContent = SizedBox(
       width: FridgeMarker.markerSize,
@@ -143,7 +145,8 @@ class _FridgeMarkerState extends State<FridgeMarker>
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Health bar - video game style
+          // Health bar - video game style. Fridges without a report keep the
+          // same slot empty so their pin stays aligned and sized like the rest.
           if (showHealthBar)
             Container(
               width: FridgeMarker.markerSize,
@@ -163,8 +166,10 @@ class _FridgeMarkerState extends State<FridgeMarker>
                   ),
                 ),
               ),
-            ),
-          if (showHealthBar) SizedBox(height: FridgeMarker.healthBarSpacing),
+            )
+          else
+            const SizedBox(height: FridgeMarker.healthBarHeight),
+          const SizedBox(height: FridgeMarker.healthBarSpacing),
           // Fridge icon
           SizedBox(
             width: FridgeMarker.markerSize,

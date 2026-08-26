@@ -537,7 +537,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     maxZoom: 15.0, // Protomaps free-tier tiles max at zoom 15
                     minZoom: 3.0,
                     interactionOptions: const InteractionOptions(
-                      rotationThreshold: 40.0, // Increase from default (20) to reduce rotation sensitivity
+                      flags: ~InteractiveFlag.rotate  // Increase from default (20) to reduce rotation sensitivity
                     ),
                     onTap: (tapPosition, latLng) {
                       // Unfocus search when tapping on the map

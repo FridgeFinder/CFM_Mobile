@@ -286,7 +286,7 @@ void main() {
         final color = FridgeIconUtils.getStatusColor(
           FridgeCondition.notAtLocation,
         );
-        expect(color, Colors.grey);
+        expect(color, Color(0xFFD3D3D3));
       });
     });
 
