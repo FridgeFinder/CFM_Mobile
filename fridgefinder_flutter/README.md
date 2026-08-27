@@ -13,7 +13,7 @@ Runtime environment is selected with Dart define:
 --dart-define=APP_ENV=dev
 ```
 
-If `APP_ENV` is not provided, app bootstrap defaults to `dev`.
+If `APP_ENV` is not provided, app bootstrap defaults to `prod`.
 
 ## Platform Firebase Configuration
 
@@ -59,7 +59,7 @@ You can replace `android` with a specific Android device ID from `flutter device
 
 ## Fastlane Environment Guardrails
 
-Release lanes enforce explicit environment and require `APP_ENV=prod`.
+Production release lanes enforce explicit environment and require `APP_ENV=prod`.
 
 - iOS: `ios/fastlane/Fastfile`
 - Android: `android/fastlane/Fastfile`
@@ -70,3 +70,30 @@ Set environment before release lanes:
 ```bash
 export APP_ENV=prod
 ```
+
+## Dev TestFlight
+
+There is a dedicated iOS Fastlane lane for uploading a dev-environment build to
+TestFlight:
+
+```bash
+cd ios
+APP_ENV=dev bundle exec fastlane ios dev_testflight
+```
+
+This lane builds the iOS app with:
+
+- `Release-dev` Xcode configuration
+- `--dart-define=APP_ENV=dev`
+- `GoogleService-Info.dev.plist`
+- `Info.dev.plist`
+
+Current limitation: the repo-side dev lane still uses the same iOS bundle ID as
+production because the checked-in `GoogleService-Info.dev.plist` is registered
+for `com.fridgefinder.fridgefinderFlutterApp`. To make the dev build a separate
+installable TestFlight app, you still need to create a second iOS app in:
+
+- Firebase for the dev project
+- Apple Developer / App Store Connect
+
+Then replace the dev plist and update the dev bundle ID in Xcode.

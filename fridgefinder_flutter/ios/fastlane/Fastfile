@@ -1,5 +1,7 @@
 # Fastfile for iOS
 
+require 'base64'
+
 default_platform(:ios)
 
 platform :ios do
@@ -9,6 +11,27 @@ platform :ios do
       UI.user_error!("APP_ENV must be 'dev' or 'prod' (got: #{app_env})")
     end
     app_env
+  end
+
+  def app_store_api_key!
+    app_store_connect_api_key(
+      key_id: ENV["APP_STORE_CONNECT_API_KEY_ID"],
+      issuer_id: ENV["APP_STORE_CONNECT_ISSUER_ID"],
+      key_filepath: ENV["APP_STORE_CONNECT_API_KEY_PATH"]
+    )
+  end
+
+  def configure_utf8_locale!
+    ENV["LANG"] = "en_US.UTF-8"
+    ENV["LC_ALL"] = "en_US.UTF-8"
+  end
+
+  def dart_define_xcargs(defines)
+    encoded_defines = defines.map do |key, value|
+      Base64.strict_encode64("#{key}=#{value}")
+    end.join(",")
+
+    "DART_DEFINES=#{encoded_defines}"
   end
 
   desc "Generate screenshots for App Store"
@@ -48,11 +71,7 @@ platform :ios do
     sh("cd .. && APP_ENV=#{app_env} ./scripts/require_prod_env.sh")
 
     # Set up App Store Connect API Key
-    api_key = app_store_connect_api_key(
-      key_id: ENV["APP_STORE_CONNECT_API_KEY_ID"],
-      issuer_id: ENV["APP_STORE_CONNECT_ISSUER_ID"],
-      key_filepath: ENV["APP_STORE_CONNECT_API_KEY_PATH"]
-    )
+    api_key = app_store_api_key!
 
     # Upload to TestFlight
     upload_to_testflight(
@@ -65,17 +84,53 @@ platform :ios do
     )
   end
 
+  desc "Build and upload the dev environment app to TestFlight"
+  lane :dev_testflight do
+    app_env = validated_app_env("dev")
+    unless app_env == "dev"
+      UI.user_error!("dev_testflight requires APP_ENV=dev")
+    end
+
+    configure_utf8_locale!
+
+    sh("cd .. && flutter pub get")
+
+    build_app(
+      workspace: "Runner.xcworkspace",
+      scheme: "Runner",
+      configuration: "Release-dev",
+      clean: true,
+      output_directory: "../build/ios/dev-ipa",
+      output_name: "FridgeFinder-dev.ipa",
+      export_method: "app-store",
+      export_options: {
+        method: "app-store",
+        signingStyle: "automatic",
+        teamID: ENV["APP_STORE_CONNECT_TEAM_ID"] || "3U525G584M",
+        uploadSymbols: true,
+      },
+      xcargs: dart_define_xcargs("APP_ENV" => app_env)
+    )
+
+    api_key = app_store_api_key!
+
+    upload_to_testflight(
+      api_key: api_key,
+      ipa: "../build/ios/dev-ipa/FridgeFinder-dev.ipa",
+      skip_waiting_for_build_processing: true,
+      skip_submission: true,
+      distribute_external: false,
+      notify_external_testers: false
+    )
+  end
+
   desc "Upload existing IPA to App Store Connect"
   lane :upload_release do
     app_env = validated_app_env("prod")
     sh("cd .. && APP_ENV=#{app_env} ./scripts/require_prod_env.sh")
 
     # Set up App Store Connect API Key
-    api_key = app_store_connect_api_key(
-      key_id: ENV["APP_STORE_CONNECT_API_KEY_ID"],
-      issuer_id: ENV["APP_STORE_CONNECT_ISSUER_ID"],
-      key_filepath: ENV["APP_STORE_CONNECT_API_KEY_PATH"]
-    )
+    api_key = app_store_api_key!
 
     # Upload to App Store Connect
     upload_to_app_store(
@@ -98,8 +153,7 @@ platform :ios do
     # ensure_git_status_clean
 
     # Set locale to UTF-8 to avoid CocoaPods warnings
-    ENV["LANG"] = "en_US.UTF-8"
-    ENV["LC_ALL"] = "en_US.UTF-8"
+    configure_utf8_locale!
 
     # Flutter will automatically run pod install during the build process
     # Even if it detects CocoaPods as "broken", it usually still works
@@ -111,11 +165,7 @@ platform :ios do
     sh("cd .. && flutter build ipa --release --dart-define=APP_ENV=#{app_env}")
 
     # Set up App Store Connect API Key
-    api_key = app_store_connect_api_key(
-      key_id: ENV["APP_STORE_CONNECT_API_KEY_ID"],
-      issuer_id: ENV["APP_STORE_CONNECT_ISSUER_ID"],
-      key_filepath: ENV["APP_STORE_CONNECT_API_KEY_PATH"]
-    )
+    api_key = app_store_api_key!
 
     # Upload to App Store Connect
     upload_to_app_store(
