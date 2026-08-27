@@ -1,12 +1,13 @@
+import 'dart:async';
 import 'dart:typed_data';
 import 'package:dio/dio.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../map/domain/models/fridge_domain.dart';
 import '../../../map/domain/repositories/i_fridge_repository.dart';
 import '../../../../core/exceptions/app_exception.dart';
 import '../../../../core/providers/dio_provider.dart';
-import '../../../../core/providers/database_provider.dart';
 import '../../../../core/utils/app_logger.dart';
 
 part 'fridge_repository.g.dart';
@@ -15,13 +16,14 @@ part 'fridge_repository.g.dart';
 /// Handles API communication and error handling
 class FridgeRepository implements IFridgeRepository {
   final Dio _dio;
+  final Dio _usersDio;
 
-  FridgeRepository(this._dio);
+  FridgeRepository(this._dio, this._usersDio);
 
   /// Fetch all fridges from the API
   /// Throws [NetworkException] on network errors
   /// Throws [ServerException] on server errors
-  /// Based on real API: GET /v1/fridges
+  /// Based on current API: GET /fridges
   /// Filters out ghost fridges from the response
   @override
   Future<List<FridgeDomain>> getFridges({bool includeGhosts = false}) async {
@@ -60,7 +62,7 @@ class FridgeRepository implements IFridgeRepository {
   /// Fetch a single fridge by ID
   /// Throws [NotFoundException] if fridge not found
   /// Throws [NetworkException] on network errors
-  /// Based on real API: GET /v1/fridges/{fridgeId}
+  /// Based on current API: GET /fridges/{fridgeId}
   @override
   Future<FridgeDomain> getFridge(String fridgeId) async {
     try {
@@ -88,10 +90,10 @@ class FridgeRepository implements IFridgeRepository {
 
   /// Submit a condition report for a fridge
   /// Throws [NetworkException] on network errors
-  /// Based on real API: POST /v1/fridges/{fridgeId}/reports
+  /// Based on current API: POST /fridges/{fridgeId}/reports
   /// foodPercentage is in 0-1 range and will be converted to 0-3 API format
   /// If photoBytes is provided, uploads photo to /photo endpoint first, then includes URL in report
-  /// Also writes to Realtime Database to trigger Cloud Functions
+  /// Includes authenticated userId when available
   @override
   Future<void> submitFridgeReport(
     String fridgeId,
@@ -123,11 +125,17 @@ class FridgeRepository implements IFridgeRepository {
         logger.d('Photo uploaded successfully, URL: $photoUrl');
       }
 
+      final currentUserId = firebase_auth.FirebaseAuth.instance.currentUser?.uid;
+        final userIdPayload = currentUserId == null
+          ? null
+          : <String, dynamic>{'userId': currentUserId};
+
       final response = await _dio.post(
         '/fridges/$fridgeId/reports',
         data: {
           'condition': condition.value,
           'foodPercentage': foodLevel,
+          ...?userIdPayload,
           if (notes != null && notes.isNotEmpty) 'notes': notes,
           if (photoUrl != null && photoUrl.isNotEmpty) 'photoUrl': photoUrl,
         },
@@ -140,28 +148,13 @@ class FridgeRepository implements IFridgeRepository {
         );
       }
 
-      // Write to Realtime Database to trigger Cloud Functions
-      // Include fridge name for better notifications
-      FridgeDomain? fridge;
-      try {
-        fridge = await getFridge(fridgeId);
-      } catch (e) {
-        // If we can't get fridge, continue without name
-        logger.w('Could not fetch fridge name for notification: $e');
+      if (currentUserId != null) {
+        // Best-effort role transition after the report succeeds.
+        // This is intentionally async and must never block report UX.
+        unawaited(_promoteNeighborToVolunteer(currentUserId));
       }
 
-      await _writeStatusReportToDatabase(
-        fridgeId: fridgeId,
-        condition: condition.value,
-        foodPercentage: foodPercentage,
-        notes: notes,
-        photoUrl: photoUrl,
-        fridgeName: fridge?.name,
-      );
-
-      logger.i(
-        'Status report submitted and written to database for fridge $fridgeId',
-      );
+      logger.i('Status report submitted for fridge $fridgeId');
     } on DioException catch (e) {
       throw _handleDioError(e);
     } catch (e) {
@@ -169,41 +162,9 @@ class FridgeRepository implements IFridgeRepository {
     }
   }
 
-  /// Write status report to Realtime Database for Cloud Functions triggers
-  Future<void> _writeStatusReportToDatabase({
-    required String fridgeId,
-    required String condition,
-    required double foodPercentage,
-    String? notes,
-    String? photoUrl,
-    String? fridgeName,
-  }) async {
-    try {
-      final database = DatabaseProvider.databaseRef;
-      final reportRef = database.child('statusReports').push();
-
-      final reportData = {
-        'fridgeId': fridgeId,
-        'fridgeName': fridgeName, // Include fridge name for notifications
-        'condition': condition,
-        'foodPercentage': foodPercentage,
-        'notes': notes,
-        'photoUrl': photoUrl,
-        'reportDate': DateTime.now().toIso8601String(),
-        'createdAt': DateTime.now().toIso8601String(),
-      };
-
-      await reportRef.set(reportData);
-      logger.d('Status report written to Realtime Database');
-    } catch (e) {
-      // Don't throw - this is supplementary to the API call
-      logger.w('Failed to write status report to database: $e');
-    }
-  }
-
   /// Upload a fridge photo
   /// Throws [NetworkException] on network errors
-  /// Based on real API: POST /v1/photo
+  /// Based on current API: POST /photo
   /// Converts image to WebP and sends raw bytes with Content-Type: image/webp
   /// Desktop sends @FILE_LOCATION (file path via curl), mobile sends raw WebP bytes
   /// Returns the photo URL from the API response
@@ -357,10 +318,63 @@ class FridgeRepository implements IFridgeRepository {
       originalError: e,
     );
   }
+
+  Future<void> _promoteNeighborToVolunteer(String userId) async {
+    try {
+      final userResponse = await _usersDio.get('/users/$userId');
+      final userPayload = _extractUserPayload(userResponse.data);
+      if (userPayload == null) {
+        logger.w(
+          'Could not evaluate userType for volunteer promotion: no user payload for $userId',
+        );
+        return;
+      }
+
+      final currentUserType = userPayload['userType']?.toString().trim().toLowerCase();
+      if (currentUserType != 'neighbor') {
+        return;
+      }
+
+      await _usersDio.patch('/users/$userId', data: {'userType': 'Volunteer'});
+      logger.i('Promoted user $userId from neighbor to Volunteer.');
+    } on DioException catch (e) {
+      logger.w(
+        'Failed to promote user $userId to volunteer: ${e.response?.statusCode} ${e.message}',
+      );
+    } catch (e) {
+      logger.w('Failed to promote user $userId to volunteer: $e');
+    }
+  }
+
+  Map<String, dynamic>? _extractUserPayload(dynamic data) {
+    if (data is! Map<String, dynamic>) {
+      return null;
+    }
+
+    if (data['user'] is Map<String, dynamic>) {
+      return Map<String, dynamic>.from(data['user'] as Map<String, dynamic>);
+    }
+
+    if (data['data'] is Map<String, dynamic>) {
+      final nested = data['data'] as Map<String, dynamic>;
+      if (nested['user'] is Map<String, dynamic>) {
+        return Map<String, dynamic>.from(nested['user'] as Map<String, dynamic>);
+      }
+      if (nested.containsKey('userId')) {
+        return Map<String, dynamic>.from(nested);
+      }
+    }
+
+    if (data.containsKey('userId')) {
+      return Map<String, dynamic>.from(data);
+    }
+
+    return null;
+  }
 }
 
 /// Riverpod provider for FridgeRepository
 @riverpod
 FridgeRepository fridgeRepository(Ref ref) {
-  return FridgeRepository(ref.watch(dioProvider));
+  return FridgeRepository(ref.watch(dioProvider), ref.watch(userDioProvider));
 }

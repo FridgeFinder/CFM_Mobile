@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,11 +7,13 @@ import 'package:url_launcher/url_launcher.dart';
 import './bottom_nav_bar.dart';
 import '../common_widgets/index.dart' as common_widgets;
 import '../core/providers/auth_provider.dart';
+import '../core/providers/environment_provider.dart';
 import '../core/providers/notification_providers.dart';
 import '../core/providers/drawer_provider.dart';
-import '../core/providers/subscriptions_provider.dart';
+import '../core/providers/followed_fridges_provider.dart';
 import '../core/constants/app_constants.dart';
 import '../features/auth/presentation/widgets/sign_in_widget.dart';
+import '../features/map/presentation/controllers/fridge_list_controller.dart';
 
 /// Main shell layout that keeps the bottom navigation bar constant
 /// while allowing the page content to transition with M3E fade through pattern
@@ -25,7 +28,7 @@ class MainShell extends ConsumerStatefulWidget {
 }
 
 class _MainShellState extends ConsumerState<MainShell>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin, WidgetsBindingObserver {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
@@ -35,6 +38,7 @@ class _MainShellState extends ConsumerState<MainShell>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
 
     // Use M3E medium3 duration for fade through (350ms)
     _animationController = AnimationController(
@@ -70,15 +74,27 @@ class _MainShellState extends ConsumerState<MainShell>
       _animationController.forward(from: 0.0);
       // Dismiss any open fridge profile sheet on tab switch
       // Deferred to avoid modifying provider during widget tree build
-      Future(() => ref.read(bottomSheetCloseTriggerProvider.notifier).triggerClose());
+      Future(
+        () => ref.read(bottomSheetCloseTriggerProvider.notifier).triggerClose(),
+      );
     }
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _animationController.dispose();
     _drawerAnimationController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state != AppLifecycleState.resumed) return;
+
+    ref.invalidate(fridgeListProvider);
+    ref.invalidate(followedFridgesProvider);
   }
 
   String _getTitleForRoute(String route) {
@@ -113,6 +129,7 @@ class _MainShellState extends ConsumerState<MainShell>
 
   @override
   Widget build(BuildContext context) {
+    final environment = ref.watch(environmentProvider);
     final drawerAnimation =
         Tween<Offset>(begin: const Offset(1.0, 0.0), end: Offset.zero).animate(
           CurvedAnimation(
@@ -170,11 +187,41 @@ class _MainShellState extends ConsumerState<MainShell>
                       // Page Title
                       Expanded(
                         child: Center(
-                          child: Text(
-                            _getTitleForRoute(widget.currentRoute),
-                            style: M3ETypography.titleLarge.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  _getTitleForRoute(widget.currentRoute),
+                                  style: M3ETypography.titleLarge.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                if (kDebugMode &&
+                                    environment == ApiEnvironment.dev) ...[
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    width: 7,
+                                    height: 7,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: const Color(0xFF2EE88D),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'DEV',
+                                    style: M3ETypography.labelSmall.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 0.6,
+                                    ),
+                                  ),
+                                ],
+                              ],
                             ),
                           ),
                         ),
@@ -320,11 +367,14 @@ class _MainShellState extends ConsumerState<MainShell>
                               OutlinedButtonM3E(
                                 onPressed: () {
                                   _toggleDrawer();
-                                  DialogM3E.showCustom(
-                                    context: context,
-                                    child: Padding(
-                                      padding: M3ESpacing.all(0),
-                                      child: SignInWidget(),
+                                  Navigator.of(
+                                    context,
+                                    rootNavigator: true,
+                                  ).push(
+                                    MaterialPageRoute<void>(
+                                      fullscreenDialog: true,
+                                      builder: (context) =>
+                                          const SignInWidget(),
                                     ),
                                   );
                                 },
@@ -372,16 +422,19 @@ class _MainShellState extends ConsumerState<MainShell>
                                                 ).colorScheme.onSurface,
                                               ),
                                         ),
-                                        if (profile.isVolunteer)
-                                          Text(
-                                            'Volunteer',
-                                            style: M3ETypography.bodySmall
-                                                .copyWith(
-                                                  color: Theme.of(context)
-                                                      .colorScheme
-                                                      .onSurfaceVariant,
-                                                ),
-                                          ),
+                                        Text(
+                                          profile.userType.value[0]
+                                                  .toUpperCase() +
+                                              profile.userType.value.substring(
+                                                1,
+                                              ),
+                                          style: M3ETypography.bodySmall
+                                              .copyWith(
+                                                color: Theme.of(
+                                                  context,
+                                                ).colorScheme.onSurfaceVariant,
+                                              ),
+                                        ),
                                       ],
                                     ),
                                   ],
@@ -404,7 +457,7 @@ class _MainShellState extends ConsumerState<MainShell>
                                       // automatically — no need to invalidate it.
                                       // Only invalidate cached data providers.
                                       ref.invalidate(userProfileProvider);
-                                      ref.invalidate(subscribedFridgesProvider);
+                                      ref.invalidate(followedFridgesProvider);
 
                                       _toggleDrawer();
                                     } catch (e) {

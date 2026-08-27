@@ -2,35 +2,48 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fridgefinder_app/src/features/profile/presentation/profile_screen.dart';
+import 'package:fridgefinder_app/src/core/providers/auth_provider.dart';
+import 'package:fridgefinder_app/src/core/providers/environment_provider.dart';
+import 'package:fridgefinder_app/src/core/providers/location_provider.dart';
+import 'package:fridgefinder_app/src/core/providers/points_provider.dart';
+import 'package:fridgefinder_app/src/core/providers/theme_provider.dart';
 import 'package:design_system/design_system.dart';
 
 /// Tests for ProfileScreen structure and widget composition
 /// These tests verify the UI structure without requiring full provider mocking
 void main() {
+  Widget buildProfileScreenTestApp({ThemeData? theme}) {
+    return ProviderScope(
+      overrides: [
+        authUserProvider.overrideWith((ref) => Stream.value(null)),
+        isAuthenticatedProvider.overrideWith((ref) => false),
+        userProfileProvider.overrideWith((ref) => Future.value(null)),
+        userPointsProvider.overrideWith((ref) => Future.value(0)),
+        appThemeModeProvider.overrideWithValue(AppThemeMode.system),
+        environmentProvider.overrideWithValue(ApiEnvironment.dev),
+        locationAccessProvider.overrideWithValue(true),
+      ],
+      child: MaterialApp(
+        theme: theme,
+        home: const Scaffold(body: ProfileScreen()),
+      ),
+    );
+  }
+
   group('ProfileScreen Structure Tests', () {
-    testWidgets('ProfileScreen widget is created successfully',
-        (WidgetTester tester) async {
-      await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(
-            home: Scaffold(body: ProfileScreen()),
-          ),
-        ),
-      );
+    testWidgets('ProfileScreen widget is created successfully', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(buildProfileScreenTestApp());
 
       // Verify the widget tree renders without errors
       expect(find.byType(ProfileScreen), findsOneWidget);
     });
 
-    testWidgets('ProfileScreen has SingleChildScrollView for scrollability',
-        (WidgetTester tester) async {
-      await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(
-            home: Scaffold(body: ProfileScreen()),
-          ),
-        ),
-      );
+    testWidgets('ProfileScreen has SingleChildScrollView for scrollability', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(buildProfileScreenTestApp());
 
       await tester.pump();
 
@@ -38,15 +51,11 @@ void main() {
       expect(find.byType(SingleChildScrollView), findsOneWidget);
     });
 
-    testWidgets('ProfileScreen uses M3E spacing and components',
-        (WidgetTester tester) async {
+    testWidgets('ProfileScreen uses M3E spacing and components', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
-        ProviderScope(
-          child: MaterialApp(
-            theme: ThemeData(useMaterial3: true),
-            home: const Scaffold(body: ProfileScreen()),
-          ),
-        ),
+        buildProfileScreenTestApp(theme: ThemeData(useMaterial3: true)),
       );
 
       await tester.pump();
@@ -56,16 +65,14 @@ void main() {
       expect(find.byType(Padding), findsWidgets);
     });
 
-    testWidgets('ProfileScreen displays correctly with Material3 theme',
-        (WidgetTester tester) async {
+    testWidgets('ProfileScreen displays correctly with Material3 theme', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
-        ProviderScope(
-          child: MaterialApp(
-            theme: ThemeData(
-              colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-              useMaterial3: true,
-            ),
-            home: const Scaffold(body: ProfileScreen()),
+        buildProfileScreenTestApp(
+          theme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+            useMaterial3: true,
           ),
         ),
       );
@@ -77,8 +84,9 @@ void main() {
       expect(find.byType(ProfileScreen), findsOneWidget);
     });
 
-    testWidgets('SwitchM3E widget structure is correct',
-        (WidgetTester tester) async {
+    testWidgets('SwitchM3E widget structure is correct', (
+      WidgetTester tester,
+    ) async {
       bool testValue = false;
 
       await tester.pumpWidget(
@@ -100,8 +108,9 @@ void main() {
       expect(find.byType(SwitchM3E), findsOneWidget);
     });
 
-    testWidgets('SegmentedButtonM3E widget structure is correct',
-        (WidgetTester tester) async {
+    testWidgets('SegmentedButtonM3E widget structure is correct', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -109,14 +118,8 @@ void main() {
               showSelectedIcon: false,
               emptySelectionAllowed: false,
               segments: const [
-                ButtonSegment(
-                  value: 'option1',
-                  label: Text('Option 1'),
-                ),
-                ButtonSegment(
-                  value: 'option2',
-                  label: Text('Option 2'),
-                ),
+                ButtonSegment(value: 'option1', label: Text('Option 1')),
+                ButtonSegment(value: 'option2', label: Text('Option 2')),
               ],
               selected: const {'option1'},
               onSelectionChanged: (Set<String> selected) {},
@@ -133,8 +136,9 @@ void main() {
       expect(find.text('Option 2'), findsOneWidget);
     });
 
-    testWidgets('LoadingIndicatorM3E displays with message',
-        (WidgetTester tester) async {
+    testWidgets('LoadingIndicatorM3E displays with message', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
@@ -150,14 +154,11 @@ void main() {
       expect(find.text('Test loading message'), findsOneWidget);
     });
 
-    testWidgets('LoadingIndicatorM3E displays without message',
-        (WidgetTester tester) async {
+    testWidgets('LoadingIndicatorM3E displays without message', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: LoadingIndicatorM3E(),
-          ),
-        ),
+        const MaterialApp(home: Scaffold(body: LoadingIndicatorM3E())),
       );
 
       await tester.pump();
@@ -166,14 +167,12 @@ void main() {
       expect(find.byType(LoadingIndicatorM3E), findsOneWidget);
     });
 
-    testWidgets('CardM3E renders with child content', (WidgetTester tester) async {
+    testWidgets('CardM3E renders with child content', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: CardM3E(
-              child: const Text('Card content'),
-            ),
-          ),
+          home: Scaffold(body: CardM3E(child: const Text('Card content'))),
         ),
       );
 
@@ -184,8 +183,9 @@ void main() {
       expect(find.text('Card content'), findsOneWidget);
     });
 
-    testWidgets('FilledButtonM3E renders with icon and text',
-        (WidgetTester tester) async {
+    testWidgets('FilledButtonM3E renders with icon and text', (
+      WidgetTester tester,
+    ) async {
       bool pressed = false;
 
       await tester.pumpWidget(
@@ -215,8 +215,9 @@ void main() {
       expect(pressed, isTrue);
     });
 
-    testWidgets('OutlinedButtonM3E renders with icon and text',
-        (WidgetTester tester) async {
+    testWidgets('OutlinedButtonM3E renders with icon and text', (
+      WidgetTester tester,
+    ) async {
       bool pressed = false;
 
       await tester.pumpWidget(
@@ -246,8 +247,9 @@ void main() {
       expect(pressed, isTrue);
     });
 
-    testWidgets('CircularProgressIndicatorM3E renders with different sizes',
-        (WidgetTester tester) async {
+    testWidgets('CircularProgressIndicatorM3E renders with different sizes', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
@@ -268,8 +270,9 @@ void main() {
       expect(find.byType(CircularProgressIndicatorM3E), findsNWidgets(3));
     });
 
-    testWidgets('M3E typography styles are applied correctly',
-        (WidgetTester tester) async {
+    testWidgets('M3E typography styles are applied correctly', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(

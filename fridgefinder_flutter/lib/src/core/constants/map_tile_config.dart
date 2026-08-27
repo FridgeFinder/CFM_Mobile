@@ -20,12 +20,38 @@ class ResolvedTileConfig {
 /// Map tile configuration with Protomaps vector tiles as primary,
 /// MapTiler raster as secondary, and OpenStreetMap as final fallback.
 class MapTileConfig {
+  static bool _didWarnMissingProtomapsKey = false;
+  static bool _didWarnMissingMapTilerKey = false;
+
+  static String? _safeEnv(String key) {
+    try {
+      return dotenv.env[key];
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static bool _isValidApiKey(String? apiKey) {
+    return apiKey != null && apiKey.isNotEmpty && apiKey != 'your_api_key_here';
+  }
+
+  /// Returns true when a usable Protomaps API key is configured.
+  static bool hasProtomapsApiKey() =>
+      _isValidApiKey(_safeEnv('PROTOMAPS_API_KEY'));
+
+  /// Returns true when a usable MapTiler API key is configured.
+  static bool hasMapTilerApiKey() =>
+      _isValidApiKey(_safeEnv('MAPTILER_API_KEY'));
+
   /// Get Protomaps API key from environment variables.
   /// Returns null if API key is not found, empty, or placeholder.
   static String? getProtomapsApiKey() {
-    final apiKey = dotenv.env['PROTOMAPS_API_KEY'];
-    if (apiKey == null || apiKey.isEmpty || apiKey == 'your_api_key_here') {
-      logger.w('Protomaps API key not found or invalid in environment variables');
+    final apiKey = _safeEnv('PROTOMAPS_API_KEY');
+    if (!_isValidApiKey(apiKey)) {
+      if (!_didWarnMissingProtomapsKey) {
+        logger.w('Protomaps API key not found or invalid in environment variables');
+        _didWarnMissingProtomapsKey = true;
+      }
       return null;
     }
     return apiKey;
@@ -51,10 +77,13 @@ class MapTileConfig {
   /// Get MapTiler API key from environment variables.
   /// Returns null if API key is not found, empty, or placeholder.
   static String? getMapTilerApiKey() {
-    final apiKey = dotenv.env['MAPTILER_API_KEY'];
-    if (apiKey == null || apiKey.isEmpty || apiKey == 'your_api_key_here') {
-      logger.w(
-          'MapTiler API key not found or invalid in environment variables');
+    final apiKey = _safeEnv('MAPTILER_API_KEY');
+    if (!_isValidApiKey(apiKey)) {
+      if (!_didWarnMissingMapTilerKey) {
+        logger.w(
+            'MapTiler API key not found or invalid in environment variables');
+        _didWarnMissingMapTilerKey = true;
+      }
       return null;
     }
     return apiKey;

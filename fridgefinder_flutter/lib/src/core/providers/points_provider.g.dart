@@ -16,8 +16,8 @@ const userPointsProvider = UserPointsProvider._();
 /// Provider for user's points
 
 final class UserPointsProvider
-    extends $FunctionalProvider<AsyncValue<int>, int, Stream<int>>
-    with $FutureModifier<int>, $StreamProvider<int> {
+    extends $FunctionalProvider<AsyncValue<int>, int, FutureOr<int>>
+    with $FutureModifier<int>, $FutureProvider<int> {
   /// Provider for user's points
   const UserPointsProvider._()
     : super(
@@ -35,16 +35,16 @@ final class UserPointsProvider
 
   @$internal
   @override
-  $StreamProviderElement<int> $createElement($ProviderPointer pointer) =>
-      $StreamProviderElement(pointer);
+  $FutureProviderElement<int> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
 
   @override
-  Stream<int> create(Ref ref) {
+  FutureOr<int> create(Ref ref) {
     return userPoints(ref);
   }
 }
 
-String _$userPointsHash() => r'07b4af30dd17d5f0a00df429c6f145a97b749330';
+String _$userPointsHash() => r'bcc3e0648b5fb5547ac6bb2236f8611aa6974513';
 
 /// Notifier for managing points
 
@@ -74,7 +74,7 @@ final class PointsManagerProvider
   PointsManager create() => PointsManager();
 }
 
-String _$pointsManagerHash() => r'57b66979abcd385a09d9385f24aca76dba5b3e30';
+String _$pointsManagerHash() => r'4d39943958c2f1dd6dd0a89fd1a58039870b2dbb';
 
 /// Notifier for managing points
 

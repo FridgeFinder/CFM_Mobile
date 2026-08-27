@@ -1,6 +1,62 @@
 import 'package:logger/logger.dart';
 import 'package:flutter/foundation.dart';
 
+const _redactedValue = '***REDACTED***';
+
+const _sensitiveKeys = <String>{
+  'authorization',
+  'token',
+  'idtoken',
+  'accesstoken',
+  'refreshtoken',
+  'email',
+  'phonenumber',
+  'phone',
+  'zipcode',
+  'zip',
+  'username',
+  'firstname',
+  'lastname',
+  'name',
+};
+
+dynamic _redactDynamic(dynamic value) {
+  if (value is Map) {
+    return _redactMap(
+      value.map((key, val) => MapEntry(key.toString(), val)),
+    );
+  }
+  if (value is List) {
+    return value.map(_redactDynamic).toList();
+  }
+  return value;
+}
+
+Map<String, dynamic> _redactMap(Map<String, dynamic> input) {
+  final result = <String, dynamic>{};
+  for (final entry in input.entries) {
+    final normalizedKey = entry.key.toLowerCase().replaceAll(RegExp(r'[^a-z]'), '');
+    if (_sensitiveKeys.contains(normalizedKey)) {
+      result[entry.key] = _redactedValue;
+      continue;
+    }
+
+    final value = entry.value;
+    if (value is String) {
+      final lowered = entry.key.toLowerCase();
+      if (lowered.contains('auth') || lowered.contains('token')) {
+        result[entry.key] = _redactedValue;
+        continue;
+      }
+      result[entry.key] = value;
+      continue;
+    }
+
+    result[entry.key] = _redactDynamic(value);
+  }
+  return result;
+}
+
 /// Centralized logger for the FridgeFinder app
 ///
 /// Usage:
@@ -69,15 +125,23 @@ class ProductionFilter extends LogFilter {
 extension LoggerExtensions on Logger {
   /// Log an API request
   void apiRequest(String method, String url, {Map<String, dynamic>? data}) {
-    d('API $method $url${data != null ? '\nData: $data' : ''}');
+    final redactedData = data == null ? null : _redactMap(data);
+    d('API $method $url${redactedData != null ? '\nData: $redactedData' : ''}');
   }
 
   /// Log an API response
   void apiResponse(String url, int statusCode, {dynamic data}) {
+    final redactedData = _redactDynamic(data);
     if (statusCode >= 200 && statusCode < 300) {
-      d('API Response $statusCode $url${data != null ? '\nData: $data' : ''}');
+      d(
+        'API Response $statusCode $url'
+        '${redactedData != null ? '\nData: $redactedData' : ''}',
+      );
     } else {
-      w('API Response $statusCode $url${data != null ? '\nData: $data' : ''}');
+      w(
+        'API Response $statusCode $url'
+        '${redactedData != null ? '\nData: $redactedData' : ''}',
+      );
     }
   }
 

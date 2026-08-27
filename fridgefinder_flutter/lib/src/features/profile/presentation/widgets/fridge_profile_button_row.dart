@@ -4,12 +4,12 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:design_system/design_system.dart';
 import '../../../map/domain/models/fridge_domain.dart';
 import '../../../../core/providers/auth_provider.dart';
-import '../../../../core/providers/subscriptions_provider.dart';
+import '../../../../core/providers/followed_fridges_provider.dart';
 import '../../../auth/presentation/widgets/edit_notification_preferences_dialog.dart';
 import '../../../auth/presentation/widgets/sign_in_widget.dart';
 
 /// Follow/Unfollow + Directions button row.
-/// Watches `isFridgeSubscribedProvider` only.
+/// Watches `isFridgeFollowedProvider` only.
 class FridgeProfileButtonRow extends ConsumerWidget {
   final FridgeDomain fridge;
 
@@ -45,7 +45,7 @@ class FridgeProfileButtonRow extends ConsumerWidget {
     }
 
     final isAuthenticated = ref.watch(isAuthenticatedProvider);
-    final isSubscribedAsync = ref.watch(isFridgeSubscribedProvider(fridge.id));
+    final isFollowed = ref.watch(isFridgeFollowedProvider(fridge.id));
 
     if (!isAuthenticated) {
       return _buildButtonRow(
@@ -58,33 +58,24 @@ class FridgeProfileButtonRow extends ConsumerWidget {
       );
     }
 
-    return isSubscribedAsync.when(
-      loading: () => const SizedBox(
-        height: 40,
-        child: Center(child: CircularProgressIndicatorM3E.small(strokeWidth: 2)),
-      ),
-      error: (_, _) => const SizedBox(height: 40),
-      data: (isSubscribed) {
-        if (isSubscribed) {
-          return _buildButtonRow(
-            context: context,
-            followButton: _buildEditAlertsButton(
-              context: context,
-              onPressed: () => _showEditAlertsDialog(context, ref),
-            ),
-            directionsButton: _buildDirectionsButton(context),
-          );
-        }
-
-        return _buildButtonRow(
+    if (isFollowed) {
+      return _buildButtonRow(
+        context: context,
+        followButton: _buildEditAlertsButton(
           context: context,
-          followButton: _buildFollowButton(
-            context: context,
-            onPressed: () => _showFollowDialog(context, ref),
-          ),
-          directionsButton: _buildDirectionsButton(context),
-        );
-      },
+          onPressed: () => _showEditAlertsDialog(context, ref),
+        ),
+        directionsButton: _buildDirectionsButton(context),
+      );
+    }
+
+    return _buildButtonRow(
+      context: context,
+      followButton: _buildFollowButton(
+        context: context,
+        onPressed: () => _showFollowDialog(context, ref),
+      ),
+      directionsButton: _buildDirectionsButton(context),
     );
   }
 
@@ -114,7 +105,11 @@ class FridgeProfileButtonRow extends ConsumerWidget {
         foregroundColor: Colors.black87,
       ),
       icon: const Icon(Icons.favorite_border, size: 20),
-      label: Text(label, style: M3ETypography.labelLarge.copyWith(color: Colors.black87), overflow: TextOverflow.ellipsis),
+      label: Text(
+        label,
+        style: M3ETypography.labelLarge.copyWith(color: Colors.black87),
+        overflow: TextOverflow.ellipsis,
+      ),
     );
   }
 
@@ -129,7 +124,11 @@ class FridgeProfileButtonRow extends ConsumerWidget {
         foregroundColor: Colors.black87,
       ),
       icon: const Icon(Icons.notifications, size: 20),
-      label: Text('Edit Alerts', style: M3ETypography.labelLarge.copyWith(color: Colors.black87), overflow: TextOverflow.ellipsis),
+      label: Text(
+        'Edit Alerts',
+        style: M3ETypography.labelLarge.copyWith(color: Colors.black87),
+        overflow: TextOverflow.ellipsis,
+      ),
     );
   }
 
@@ -137,7 +136,11 @@ class FridgeProfileButtonRow extends ConsumerWidget {
     return OutlinedButtonM3E(
       onPressed: () => _openDirections(context),
       icon: Icons.directions,
-      child: Text('Directions', style: M3ETypography.labelLarge, overflow: TextOverflow.ellipsis),
+      child: Text(
+        'Directions',
+        style: M3ETypography.labelLarge,
+        overflow: TextOverflow.ellipsis,
+      ),
     );
   }
 
@@ -163,93 +166,85 @@ class FridgeProfileButtonRow extends ConsumerWidget {
         return;
       }
 
-      final subscriptionAsync = await ref.read(
-        fridgeSubscriptionPreferencesProvider(fridge.id).future,
+      final alertPreferences = ref.read(
+        fridgeAlertPreferencesProvider(fridge.id),
       );
 
       if (!context.mounted) return;
 
-      await showDialog(
+      final didFollow = await showDialog<bool>(
         context: context,
-        builder: (dialogContext) => NotificationPreferencesDialog.subscribe(
+        barrierColor: Colors.transparent,
+        builder: (dialogContext) => NotificationPreferencesDialog.follow(
           fridgeId: fridge.id,
-          isVolunteer: userProfileAsync.isVolunteer,
-          existingPreferences: subscriptionAsync?.notificationPreferences,
+          existingPreferences: alertPreferences?.notificationPreferences,
         ),
       );
+
+      if (didFollow == true && context.mounted) {
+        _refreshFollowState(ref);
+      }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     }
   }
 
   void _showSignInAndFollowDialog(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (dialogContext) => Dialog(
-        child: Stack(
-          children: [
-            Padding(
-              padding: EdgeInsets.all(M3ESpacing.xl),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text('Sign In to Follow', style: M3ETypography.headlineSmall),
-                  SizedBox(height: M3ESpacing.md),
-                  const Text('Sign in to follow this fridge and receive notifications.'),
-                  SizedBox(height: M3ESpacing.xl),
-                  SignInWidget(
-                    onSignInSuccess: () {
-                      if (context.mounted) {
-                        _showFollowDialog(context, ref);
-                      }
-                    },
-                  ),
-                ],
-              ),
-            ),
-            Positioned(
-              top: 8,
-              right: 8,
-              child: IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: () => Navigator.of(dialogContext).pop(),
-                tooltip: 'Close',
-              ),
-            ),
-          ],
+    Navigator.of(context, rootNavigator: true).push(
+      MaterialPageRoute<void>(
+        fullscreenDialog: true,
+        builder: (routeContext) => SignInWidget(
+          onSignInSuccess: () {
+            if (context.mounted) {
+              _showFollowDialog(context, ref);
+            }
+          },
         ),
       ),
     );
   }
 
-  Future<void> _showEditAlertsDialog(BuildContext context, WidgetRef ref) async {
+  Future<void> _showEditAlertsDialog(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
     try {
-      final subscriptionAsync = await ref.read(
-        fridgeSubscriptionPreferencesProvider(fridge.id).future,
+      final alertPreferences = ref.read(
+        fridgeAlertPreferencesProvider(fridge.id),
       );
 
-      if (!context.mounted || subscriptionAsync == null) return;
+      if (!context.mounted || alertPreferences == null) return;
 
-      await showDialog(
+      final didUpdate = await showDialog<bool>(
         context: context,
+        barrierColor: Colors.transparent,
         builder: (dialogContext) => NotificationPreferencesDialog.edit(
           fridgeId: fridge.id,
           fridgeName: fridge.name,
-          initialPreferences: subscriptionAsync.notificationPreferences,
+          initialPreferences: alertPreferences.notificationPreferences,
         ),
       );
+
+      if (didUpdate == true && context.mounted) {
+        _refreshFollowState(ref);
+      }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     }
+  }
+
+  void _refreshFollowState(WidgetRef ref) {
+    ref.invalidate(followedFridgesProvider);
+    ref.invalidate(isFridgeFollowedProvider(fridge.id));
+    ref.invalidate(fridgeAlertPreferencesProvider(fridge.id));
   }
 
   Future<void> _openDirections(BuildContext context) async {
@@ -261,7 +256,9 @@ class FridgeProfileButtonRow extends ConsumerWidget {
       _MapAppOption(
         name: 'Google Maps',
         icon: Icons.map,
-        url: Uri.parse('https://www.google.com/maps/search/?api=1&query=$lat,$lng'),
+        url: Uri.parse(
+          'https://www.google.com/maps/search/?api=1&query=$lat,$lng',
+        ),
         appUrl: Uri.parse('comgooglemaps://?q=$lat,$lng'),
       ),
       _MapAppOption(
@@ -290,9 +287,9 @@ class FridgeProfileButtonRow extends ConsumerWidget {
     if (!context.mounted) return;
 
     if (availableOptions.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No map apps available')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('No map apps available')));
       return;
     }
 
@@ -314,14 +311,22 @@ class FridgeProfileButtonRow extends ConsumerWidget {
                   Navigator.pop(context);
                   try {
                     if (await canLaunchUrl(option.appUrl)) {
-                      await launchUrl(option.appUrl, mode: LaunchMode.externalApplication);
+                      await launchUrl(
+                        option.appUrl,
+                        mode: LaunchMode.externalApplication,
+                      );
                     } else if (option.url != null) {
-                      await launchUrl(option.url!, mode: LaunchMode.externalApplication);
+                      await launchUrl(
+                        option.url!,
+                        mode: LaunchMode.externalApplication,
+                      );
                     }
                   } catch (e) {
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Failed to open ${option.name}')),
+                        SnackBar(
+                          content: Text('Failed to open ${option.name}'),
+                        ),
                       );
                     }
                   }

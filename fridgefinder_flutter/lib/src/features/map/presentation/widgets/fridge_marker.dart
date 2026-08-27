@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'package:design_system/design_system.dart';
 import '../../domain/models/fridge_domain.dart';
 import '../../../../core/utils/fridge_icon_utils.dart';
@@ -9,19 +10,19 @@ import '../../../../core/utils/fridge_icon_utils.dart';
 /// Features M3E springy entrance/exit animations
 class FridgeMarker extends StatefulWidget {
   final FridgeDomain fridge;
-  final bool isSubscribed;
+  final bool isFollowed;
   final int? animationIndex; // For staggered entrance animation
   static const double markerSize = 40;
   static const double healthBarHeight = 6;
   static const double healthBarSpacing = 2;
 
-  /// Shimmering, glowing gold color for subscribed fridges - #FFD700
-  static const Color subscribedGold = Color(0xFFFFD700);
+  /// Shimmering, glowing gold color for followed fridges - #FFD700
+  static const Color followedGold = Color(0xFFFFD700);
 
   const FridgeMarker({
     super.key,
     required this.fridge,
-    this.isSubscribed = false,
+    this.isFollowed = false,
     this.animationIndex,
   });
 
@@ -31,7 +32,7 @@ class FridgeMarker extends StatefulWidget {
 
 class _FridgeMarkerState extends State<FridgeMarker>
     with TickerProviderStateMixin {
-  late AnimationController _pulseController; // For subscribed glow pulse
+  late AnimationController _pulseController; // For followed glow pulse
   late Animation<double> _pulseAnimation;
 
   late AnimationController _entranceController; // For entrance/exit animation
@@ -39,12 +40,13 @@ class _FridgeMarkerState extends State<FridgeMarker>
   late Animation<double> _fadeAnimation;
 
   bool _hasAnimated = false; // Track if entrance animation has been played
+  Timer? _entranceDelayTimer;
 
   @override
   void initState() {
     super.initState();
 
-    // Pulse animation for subscribed fridges
+    // Pulse animation for followed fridges
     _pulseController = AnimationController(
       duration: const Duration(milliseconds: 1500),
       vsync: this,
@@ -89,7 +91,7 @@ class _FridgeMarkerState extends State<FridgeMarker>
           : 0;
       final delay = Duration(milliseconds: effectiveIndex * 30); // 30ms stagger per marker
 
-      Future.delayed(delay, () {
+      _entranceDelayTimer = Timer(delay, () {
         if (mounted) {
           _entranceController.forward();
         }
@@ -99,6 +101,7 @@ class _FridgeMarkerState extends State<FridgeMarker>
 
   @override
   void dispose() {
+    _entranceDelayTimer?.cancel();
     _pulseController.dispose();
     _entranceController.dispose();
     super.dispose();
@@ -187,7 +190,7 @@ class _FridgeMarkerState extends State<FridgeMarker>
           ),
         );
       },
-      child: widget.isSubscribed
+      child: widget.isFollowed
           ? AnimatedBuilder(
               animation: _pulseAnimation,
               builder: (context, child) {
@@ -196,13 +199,13 @@ class _FridgeMarkerState extends State<FridgeMarker>
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: FridgeMarker.subscribedGold
+                        color: FridgeMarker.followedGold
                             .withValues(alpha: _pulseAnimation.value * 0.6),
                         blurRadius: 8,
                         spreadRadius: 1,
                       ),
                       BoxShadow(
-                        color: FridgeMarker.subscribedGold
+                        color: FridgeMarker.followedGold
                             .withValues(alpha: _pulseAnimation.value * 0.4),
                         blurRadius: 12,
                         spreadRadius: 2,

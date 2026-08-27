@@ -8,7 +8,8 @@ import '../../map/presentation/widgets/filter_pills_row.dart';
 import './widgets/fridge_card.dart';
 import '../../profile/presentation/fridge_profile_sheet.dart';
 import '../../../common_widgets/index.dart' as common_widgets;
-import '../../../core/providers/subscriptions_provider.dart';
+import '../../../core/providers/followed_fridges_provider.dart';
+import '../../../core/utils/fridge_id_utils.dart';
 
 /// List screen showing all community fridges in a scrollable list
 /// Shares filter state with map view through mapFilterProvider
@@ -75,6 +76,34 @@ class _ListScreenState extends ConsumerState<ListScreen>
     );
   }
 
+  Future<void> _handlePullToRefresh() async {
+    ref.invalidate(fridgeListProvider);
+    ref.invalidate(followedFridgesProvider);
+
+    await Future.wait([
+      ref.read(fridgeListProvider.future),
+      ref.read(followedFridgesProvider.future),
+    ]);
+  }
+
+  Widget _buildRefreshableEmptyState({
+    required BuildContext context,
+    required Widget child,
+  }) {
+    return RefreshIndicator(
+      onRefresh: _handlePullToRefresh,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: [
+          SizedBox(
+            height: MediaQuery.of(context).size.height * 0.55,
+            child: Center(child: child),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // Watch shared filter state (same as map view)
@@ -97,8 +126,8 @@ class _ListScreenState extends ConsumerState<ListScreen>
     );
     // Also watch the original fridges to check for loading/error states
     final fridgesAsync = ref.watch(fridgeListProvider);
-    // Watch subscriptions for green glow
-    final subscriptionsAsync = ref.watch(subscribedFridgesProvider);
+    // Watch followed fridges for the gold glow state
+    final followedFridgesAsync = ref.watch(followedFridgesProvider);
 
     return GestureDetector(
       onTap: () {
@@ -116,9 +145,12 @@ class _ListScreenState extends ConsumerState<ListScreen>
             return filterStateAsync.when(
               data: (filterState) {
 
-                // Compute subscribedFridgeIds ONCE at the beginning to use for both filtering and green glow
-                final subscribedFridgeIds = subscriptionsAsync.when(
-                  data: (subs) => subs.map((s) => s.fridgeId).toSet(),
+                // Compute followedFridgeIds once to reuse for filtering and gold glow state
+                final followedFridgeIds = followedFridgesAsync.when(
+                  data: (subs) => subs
+                      .map((s) => normalizeFridgeId(s.fridgeId))
+                      .where((id) => id.isNotEmpty)
+                      .toSet(),
                   loading: () => <String>{},
                   error: (_, _) => <String>{},
                 );
@@ -128,7 +160,7 @@ class _ListScreenState extends ConsumerState<ListScreen>
                     ? fridgesWithDistance
                     : fridgesWithDistance.where((fw) => fw.fridge.latestFridgeReport?.condition != FridgeCondition.ghost).toList();
 
-                // Apply filter conditions first, then subscribed filter, then search
+                // Apply filter conditions first, then followed filter, then search
                 // If no conditions selected, show all fridges (same as map view)
                 var filtered = filterState.selectedConditions.isEmpty
                     ? baseList
@@ -142,11 +174,11 @@ class _ListScreenState extends ConsumerState<ListScreen>
                         });
                       }).toList();
 
-                // Apply subscribed filter if active
+                // Apply followed filter if active
                 if (filterState.followingOnly) {
                   filtered = filtered.where((fridgeWithDistance) {
-                    return subscribedFridgeIds.contains(
-                      fridgeWithDistance.fridge.id,
+                    return followedFridgeIds.contains(
+                      normalizeFridgeId(fridgeWithDistance.fridge.id),
                     );
                   }).toList();
                 }
@@ -200,7 +232,8 @@ class _ListScreenState extends ConsumerState<ListScreen>
                     // List of Fridges
                     Expanded(
                       child: filtered.isEmpty
-                          ? Center(
+                          ? _buildRefreshableEmptyState(
+                              context: context,
                               child: common_widgets.EmptyStateView(
                                 title:
                                     filterState.searchQuery.isEmpty &&
@@ -232,37 +265,41 @@ class _ListScreenState extends ConsumerState<ListScreen>
                                     : null,
                               ),
                             )
-                          : ListView.separated(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: M3ESpacing.md,
+                          : RefreshIndicator(
+                              onRefresh: _handlePullToRefresh,
+                              child: ListView.separated(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: M3ESpacing.md,
+                                ),
+                                separatorBuilder: (context, index) =>
+                                    M3ESpacing.verticalSM,
+                                itemCount: filtered.length,
+                                itemBuilder: (context, index) {
+                                  final fridgeWithDistance = filtered[index];
+                                  // Wrap each card with staggered entrance animation
+                                  return M3ETransitions.listItemEntrance(
+                                    animation: _listAnimationController,
+                                    index: index,
+                                    totalItems: filtered.length.clamp(
+                                      0,
+                                      10,
+                                    ), // Limit stagger to first 10
+                                    child: FridgeCard(
+                                      fridge: fridgeWithDistance.fridge,
+                                      distanceKm: fridgeWithDistance.distanceKm,
+                                      isFollowed: followedFridgeIds.contains(
+                                        fridgeWithDistance.fridge.id,
+                                      ),
+                                      onTap: () => _showFridgeProfile(
+                                        context,
+                                        ref,
+                                        fridgeWithDistance.fridge,
+                                      ),
+                                    ),
+                                  );
+                                },
                               ),
-                              separatorBuilder: (context, index) =>
-                                  M3ESpacing.verticalSM,
-                              itemCount: filtered.length,
-                              itemBuilder: (context, index) {
-                                final fridgeWithDistance = filtered[index];
-                                // Wrap each card with staggered entrance animation
-                                return M3ETransitions.listItemEntrance(
-                                  animation: _listAnimationController,
-                                  index: index,
-                                  totalItems: filtered.length.clamp(
-                                    0,
-                                    10,
-                                  ), // Limit stagger to first 10
-                                  child: FridgeCard(
-                                    fridge: fridgeWithDistance.fridge,
-                                    distanceKm: fridgeWithDistance.distanceKm,
-                                    isSubscribed: subscribedFridgeIds.contains(
-                                      fridgeWithDistance.fridge.id,
-                                    ),
-                                    onTap: () => _showFridgeProfile(
-                                      context,
-                                      ref,
-                                      fridgeWithDistance.fridge,
-                                    ),
-                                  ),
-                                );
-                              },
                             ),
                     ),
                   ],

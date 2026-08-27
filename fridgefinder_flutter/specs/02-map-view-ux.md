@@ -6,7 +6,7 @@ Improve map interaction (rotation, clustering, zoom), add ghost fridge filter, a
 ## Feedback Sources
 - December 8, 2025 notes (pages 2-3)
 - November 10, 2025 notes (pages 7-8)
-- Follow/Subscription issues (pages 23-25)
+- Follow issues (pages 23-25)
 
 ---
 
@@ -31,9 +31,9 @@ Improve map interaction (rotation, clustering, zoom), add ghost fridge filter, a
 - Ghost filter should be **excluded from default selected conditions** (toggled off by default)
 - The ghost icon already exists in `fridge_icon_utils.dart` (lines 171-186) - light blue wavy outline
 - Need to handle ghost fridges in list view as well
-- Ghost fridges should NOT be subscribable/followable
+- Ghost fridges should NOT be followable
 - **ARCHITECTURAL RECOMMENDATION:** Do NOT move the ghost filter from the data layer to the UI layer. Loading all ghost fridges into `fridgeListProvider` means they propagate through the entire provider dependency tree (`mapFilteredFridgesProvider`, `filteredFridgesProvider`, `fridgesSortedByDistanceProvider`) even when filtered out. Instead, add a parameter to the repository: `getFridges({bool includeGhosts = false})`. The filter pill toggles this parameter, triggering a provider refresh. This avoids the memory overhead of holding ghost fridge objects in cache permanently.
-- If the team decides to keep the UI-layer filter approach despite the memory concern, memoize the `subscribedFridgeIds` set outside the marker builder closure in `map_screen.dart` (lines 651-658) — it is currently recreated on every filter state change.
+- If the team decides to keep the UI-layer filter approach despite the memory concern, memoize the `followedFridgeIds` set outside the marker builder closure in `map_screen.dart` (lines 651-658) — it is currently recreated on every filter state change.
 
 ---
 
@@ -42,7 +42,7 @@ Improve map interaction (rotation, clustering, zoom), add ghost fridge filter, a
 ### Current State
 - **File:** `lib/src/features/map/presentation/widgets/filter_pills_row.dart` (111 lines)
 - **File:** `lib/src/features/map/presentation/widgets/filter_status_indicator.dart` (81 lines)
-- "Showing only subscribed fridges" text at bottom-left is small (12px), white with text shadows
+- "Showing only followed fridges" text at bottom-left is small (12px), white with text shadows
 - Filter state persists across app restarts via Hive storage
 - Active filter indication is subtle - easy to forget a filter is selected
 - No reset mechanism on app launch
@@ -54,15 +54,15 @@ Improve map interaction (rotation, clustering, zoom), add ghost fridge filter, a
   - Ensure ADA/accessibility compliance for filter status text
 - **Filter persistence behavior:**
   - Keep filter persistence (team decided this is desired), but ensure the active filter indicator is prominent enough that users notice
-- **"Subscribed"/"Following" filter text:**
-  - Rename from "Subscribed" to "Following" (per terminology change in Spec 01)
+- **"Following"/"Following" filter text:**
+  - Rename from "Following" to "Following" (per terminology change in Spec 01)
   - Ensure text is readable in both light and dark modes
 
 ### Implementation Notes
 - Update `filter_status_indicator.dart` - increase text size, improve contrast
 - Consider adding a "Clear Filters" button when filters are active
 - The `isDarkMode` parameter is passed to `_buildSubscribedPill()` but NOT used (line 92-109) - fix this
-- Update "Subscribed" label to "Following" in `filter_pills_row.dart` line 101
+- Update "Following" label to "Following" in `filter_pills_row.dart` line 101
 - Add `Semantics(liveRegion: true, label: 'Active filter: ...')` to `filter_status_indicator.dart`. Screen readers currently cannot announce filter changes. The existing text uses `Colors.white` with shadows for map overlay readability, which is acceptable.
 
 ---
@@ -71,9 +71,9 @@ Improve map interaction (rotation, clustering, zoom), add ghost fridge filter, a
 
 ### Current State
 - **File:** `fridge_profile_sheet.dart` (lines 1054-1100)
-- Users CAN subscribe to fridges with "Not at Location" status
+- Users CAN follow to fridges with "Not at Location" status
 - No validation prevents this
-- Subscribe dialog appears regardless of fridge condition
+- Follow dialog appears regardless of fridge condition
 
 ### Target State
 - **Disable** the Follow button for fridges with "Not at Location" condition
@@ -81,10 +81,10 @@ Improve map interaction (rotation, clustering, zoom), add ghost fridge filter, a
 - If a fridge becomes "Not at Location" while followed, don't auto-unfollow, but prevent new follows
 
 ### Implementation Notes
-- Add condition check before showing subscribe dialog in `fridge_profile_sheet.dart`
+- Add condition check before showing follow dialog in `fridge_profile_sheet.dart`
 - Check `fridge.latestFridgeReport?.condition != FridgeCondition.notAtLocation`
 - Show disabled button state or informational message
-- Guard MUST be in both UI AND provider. Add a condition check in `subscriptions_provider.dart` `subscribeToFridge()` method (lines 88-156). Currently no condition check exists — any programmatic call (deep links, notification taps, tests) can bypass a UI-only guard.
+- Guard MUST be in both UI AND provider. Add a condition check in `followed_fridges_provider.dart` `followFridge()` method (lines 88-156). Currently no condition check exists — any programmatic call (deep links, notification taps, tests) can bypass a UI-only guard.
 - Add `Semantics(button: true, label: 'Follow this fridge - disabled, fridge not at location')` when the button is disabled for accessibility.
 
 ---
@@ -131,10 +131,10 @@ Improve map interaction (rotation, clustering, zoom), add ghost fridge filter, a
 - **Solution:** Use a theme-neutral color like `Colors.grey` in the domain model, OR move color logic to a UI-layer utility that accepts `isDarkMode` parameter
 - The `isDarkMode` approach is cleaner but requires updating all call sites
 
-### Prevent follow on "Not at Location" - subscription provider impact:
-- The follow prevention must happen in the UI (disable button) AND in `subscriptions_provider.dart` (guard the subscribe method)
-- If only UI is guarded, programmatic subscriptions could still happen
-- Add a check in the subscription method: if fridge condition is notAtLocation, throw or return early
+### Prevent follow on "Not at Location" - follow provider impact:
+- The follow prevention must happen in the UI (disable button) AND in `followed_fridges_provider.dart` (guard the follow method)
+- If only UI is guarded, programmatic follows could still happen
+- Add a check in the follow method: if fridge condition is notAtLocation, throw or return early
 
 ### Test data fidelity:
 - `MockFridgeRepository.getFridges()` in `test/test_helpers.dart` line 17 returns `FridgeFixtures.allFridges` which INCLUDES the ghost fridge. Production filters ghosts out. Tests see 5 fridges while production sees 4. Fix: filter ghosts in mock to match production behavior, or add `includeGhosts` parameter.
@@ -149,7 +149,6 @@ Improve map interaction (rotation, clustering, zoom), add ghost fridge filter, a
 - **P0:** Ghost filter defaults to OFF on fresh install
 - **P0:** Toggling ghost filter ON shows ghost fridges, OFF hides them
 - **P1:** Follow button is disabled when fridge condition is `notAtLocation`
-- **P1:** `subscribeToFridge()` throws or returns early for `notAtLocation` fridges
 - **P1:** `FilterCondition.ghost.matches()` returns true for ghost fridges, false for others
 - **P2:** "Not at Location" status text is visible in dark mode
 
@@ -163,7 +162,7 @@ Improve map interaction (rotation, clustering, zoom), add ghost fridge filter, a
 5. `lib/src/core/utils/fridge_icon_utils.dart` - Fix dark mode color
 6. `lib/src/features/map/domain/models/fridge_domain.dart` - Fix dark mode color (use theme-neutral color)
 7. `lib/src/features/profile/presentation/fridge_profile_sheet.dart` - Prevent follow on "Not at Location"
-8. `lib/src/core/providers/subscriptions_provider.dart` - Guard subscribe method for notAtLocation
+8. `lib/src/core/providers/followed_fridges_provider.dart` - Guard follow method for notAtLocation
 
 ## Design System Compliance
 - Filter pills use `FilterChipM3E` component

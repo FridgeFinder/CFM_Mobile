@@ -650,7 +650,7 @@ class _SliderM3EState extends State<SliderM3E>
                 trackHeight: 4.0,
                 valueIndicatorShape: const PaddleSliderValueIndicatorShape(),
                 showValueIndicator: (widget.showValueLabel && _isDragging)
-                    ? ShowValueIndicator.always
+                    ? ShowValueIndicator.onDrag
                     : ShowValueIndicator.never,
                 valueIndicatorTextStyle: Theme.of(context).textTheme.labelMedium?.copyWith(
                   color: colorScheme.onPrimary,
@@ -838,7 +838,6 @@ class _RangeSliderM3EState extends State<RangeSliderM3E>
     final colorScheme = Theme.of(context).colorScheme;
     final activeColor = widget.activeColor ?? colorScheme.primary;
     final inactiveColor = widget.inactiveColor ?? colorScheme.surfaceContainerHighest;
-    final thumbColor = widget.thumbColor ?? colorScheme.primary;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

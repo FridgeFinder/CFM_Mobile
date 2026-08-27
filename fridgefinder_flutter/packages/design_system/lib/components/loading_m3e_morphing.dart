@@ -2,7 +2,6 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../theme/motion.dart';
 import '../theme/spacing.dart';
-import '../theme/colors.dart';
 
 /// M3E Morphing Shape Loading Indicator
 ///

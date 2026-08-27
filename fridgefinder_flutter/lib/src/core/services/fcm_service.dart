@@ -1,11 +1,10 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/widgets.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import '../utils/app_logger.dart';
 import '../../features/auth/data/repositories/auth_repository.dart';
-import '../providers/database_provider.dart';
 import 'device_id_service.dart';
 import 'local_notification_service.dart';
 
@@ -14,22 +13,20 @@ import 'local_notification_service.dart';
 
 /// Service for managing Firebase Cloud Messaging
 ///
-/// PRODUCTION ENVIRONMENT ONLY
-/// This always uses production FCM (FirebaseMessaging.instance).
-/// Not affected by fridge data API environment setting.
+/// Uses the currently selected Firebase environment (dev/prod)
+/// initialized during app bootstrap in main.dart.
 ///
-/// Multi-device support: tokens are stored at `users/{uid}/fcmTokens/{deviceId}`
-/// with dual-write to `users/{uid}/fcmToken` for backend compatibility.
+/// Device tokens are registered through the Users API device endpoints.
 class FCMService with WidgetsBindingObserver {
+  static const _deviceNotificationCacheBoxName = 'device_notification_state_cache';
+
   final FirebaseMessaging _messaging;
   final AuthRepository _authRepository;
   final LocalNotificationService _localNotifications;
   final DeviceIdService _deviceIdService;
-  final DatabaseReference _database;
 
   StreamSubscription<String>? _tokenSubscription;
   StreamSubscription<RemoteMessage>? _messageSubscription;
-  StreamSubscription<NotificationSettings>? _settingsSubscription;
 
   // Track when we last verified the token to avoid excessive checks
   DateTime? _lastTokenVerification;
@@ -37,24 +34,95 @@ class FCMService with WidgetsBindingObserver {
 
   // In-memory cache of current FCM token
   String? _currentToken;
+  bool? _cachedDeviceNotificationsEnabled;
+  String? _cachedDeviceNotificationsKey;
 
   /// Current cached FCM token (null if not yet obtained or after sign-out)
   String? get currentToken => _currentToken;
+
+  String _deviceNotificationCacheKey({
+    required String userId,
+    required String installationId,
+  }) => 'device_notifications_${userId}_$installationId';
+
+  Future<Box<bool>?> _openDeviceNotificationCacheBox() async {
+    try {
+      return await Hive.openBox<bool>(_deviceNotificationCacheBoxName);
+    } catch (e) {
+      logger.w('Unable to open device notification cache box: $e');
+      return null;
+    }
+  }
+
+  Future<bool?> _getCachedDeviceNotificationState({
+    required String userId,
+    required String installationId,
+  }) async {
+    final cacheKey = _deviceNotificationCacheKey(
+      userId: userId,
+      installationId: installationId,
+    );
+
+    if (_cachedDeviceNotificationsKey == cacheKey &&
+        _cachedDeviceNotificationsEnabled != null) {
+      return _cachedDeviceNotificationsEnabled;
+    }
+
+    final box = await _openDeviceNotificationCacheBox();
+    final cachedValue = box?.get(cacheKey);
+    if (cachedValue != null) {
+      _cachedDeviceNotificationsKey = cacheKey;
+      _cachedDeviceNotificationsEnabled = cachedValue;
+    }
+    return cachedValue;
+  }
+
+  Future<void> _setCachedDeviceNotificationState({
+    required String userId,
+    required String installationId,
+    required bool enabled,
+  }) async {
+    final cacheKey = _deviceNotificationCacheKey(
+      userId: userId,
+      installationId: installationId,
+    );
+
+    _cachedDeviceNotificationsKey = cacheKey;
+    _cachedDeviceNotificationsEnabled = enabled;
+
+    final box = await _openDeviceNotificationCacheBox();
+    await box?.put(cacheKey, enabled);
+  }
+
+  Future<void> _clearCachedDeviceNotificationState({
+    required String userId,
+    required String installationId,
+  }) async {
+    final cacheKey = _deviceNotificationCacheKey(
+      userId: userId,
+      installationId: installationId,
+    );
+    if (_cachedDeviceNotificationsKey == cacheKey) {
+      _cachedDeviceNotificationsKey = null;
+      _cachedDeviceNotificationsEnabled = null;
+    }
+
+    final box = await _openDeviceNotificationCacheBox();
+    await box?.delete(cacheKey);
+  }
 
   // Guard against redundant initialization
   bool _isInitialized = false;
 
   FCMService({
     FirebaseMessaging? messaging,
-    AuthRepository? authRepository,
+    required AuthRepository authRepository,
     LocalNotificationService? localNotifications,
     DeviceIdService? deviceIdService,
-    DatabaseReference? database,
   }) : _messaging = messaging ?? FirebaseMessaging.instance,
-       _authRepository = authRepository ?? AuthRepository(),
+       _authRepository = authRepository,
        _localNotifications = localNotifications ?? LocalNotificationService(),
-       _deviceIdService = deviceIdService ?? DeviceIdService(),
-       _database = database ?? DatabaseProvider.databaseRef {
+       _deviceIdService = deviceIdService ?? DeviceIdService() {
     // Register lifecycle observer to handle app resume
     WidgetsBinding.instance.addObserver(this);
   }
@@ -85,10 +153,11 @@ class FCMService with WidgetsBindingObserver {
 
       _lastTokenVerification = DateTime.now();
 
-      // Only verify if permissions are granted
       final settings = await _messaging.getNotificationSettings();
-      if (settings.authorizationStatus == AuthorizationStatus.authorized ||
-          settings.authorizationStatus == AuthorizationStatus.provisional) {
+      await syncDeviceNotificationState(settings: settings);
+
+      // Only verify token if permissions are granted
+      if (_isNotificationsAuthorized(settings)) {
         await _verifyTokenSaved();
       }
     } catch (e) {
@@ -97,7 +166,7 @@ class FCMService with WidgetsBindingObserver {
   }
 
   /// Initialize FCM service (without requesting permissions)
-  /// Permissions should be requested when user subscribes to first fridge
+  /// Permissions should be requested when user follows their first fridge
   Future<void> initialize() async {
     if (_isInitialized) return;
 
@@ -130,11 +199,9 @@ class FCMService with WidgetsBindingObserver {
 
       // Check if permissions are already granted and get token if so
       final settings = await _messaging.getNotificationSettings();
-      if (settings.authorizationStatus == AuthorizationStatus.authorized ||
-          settings.authorizationStatus == AuthorizationStatus.provisional) {
-        // Migrate old fcmToken → fcmTokens/{deviceId} if needed
-        await _migrateOldToken();
+      await syncDeviceNotificationState(settings: settings);
 
+      if (_isNotificationsAuthorized(settings)) {
         // Try to get token, but don't fail if APNS not ready (iOS)
         try {
           final token = await _messaging.getToken();
@@ -162,47 +229,21 @@ class FCMService with WidgetsBindingObserver {
     }
   }
 
-  /// Migrate old single `fcmToken` field to `fcmTokens/{deviceId}` map.
-  /// Called once during initialization. No-op if old field doesn't exist.
-  Future<void> _migrateOldToken() async {
-    try {
-      final currentUser = _authRepository.currentUser;
-      if (currentUser == null) return;
-      final userRef = _database.child('users').child(currentUser.uid);
-      final snapshot = await userRef.child('fcmToken').get();
-      if (snapshot.exists && snapshot.value != null) {
-        final oldToken = snapshot.value as String;
-        if (oldToken.isNotEmpty) {
-          final deviceId = await _deviceIdService.getDeviceId();
-          await userRef.child('fcmTokens').child(deviceId).set(oldToken);
-          await userRef.child('fcmToken').remove();
-          _currentToken = oldToken;
-          logger.i('Migrated old fcmToken to fcmTokens/$deviceId');
-        }
-      }
-    } catch (e) {
-      logger.e('Error migrating old FCM token: $e');
-    }
-  }
-
-  /// Verify that FCM token is saved in database
-  /// If permissions are granted but token is missing, attempt to retrieve and save it
+  /// Verify that the current device has a token registered in Users API.
   Future<void> _verifyTokenSaved() async {
     try {
       final currentUser = _authRepository.currentUser;
       if (currentUser == null) return;
 
-      // Check if token exists in database at new multi-device path
       final deviceId = await _deviceIdService.getDeviceId();
-      final tokenSnapshot = await _database
-          .child('users')
-          .child(currentUser.uid)
-          .child('fcmTokens')
-          .child(deviceId)
-          .get();
+      final device = await _authRepository.getUserDevice(
+        userId: currentUser.uid,
+        installationId: deviceId,
+      );
 
-      if (!tokenSnapshot.exists || tokenSnapshot.value == null || (tokenSnapshot.value as String).isEmpty) {
-        logger.w('FCM token not found in database - attempting to retrieve and save');
+      final token = device?['token'];
+      if (token is! String || token.isEmpty) {
+        logger.w('FCM token not found in Users API - attempting to retrieve and save');
 
         // Try to get and save token
         try {
@@ -231,7 +272,8 @@ class FCMService with WidgetsBindingObserver {
           }
         }
       } else {
-        logger.d('FCM token verified in database');
+        _currentToken = token;
+        logger.d('FCM token verified in Users API');
       }
     } catch (e) {
       logger.e('Error verifying FCM token: $e');
@@ -239,7 +281,7 @@ class FCMService with WidgetsBindingObserver {
   }
 
   /// Request notification permissions and get FCM token
-  /// Should be called when user subscribes to their first fridge
+  /// Should be called when user follows their first fridge
   /// On iOS, handles APNS token availability gracefully
   Future<bool> requestPermissionsAndGetToken() async {
     try {
@@ -268,9 +310,11 @@ class FCMService with WidgetsBindingObserver {
 
         // Always return true if permissions were granted
         // Token will be saved automatically via listener when available
+        await syncDeviceNotificationState(settings: settings);
         return true;
       } else {
         logger.w('Notification permissions not granted');
+        await syncDeviceNotificationState(settings: settings);
         return false;
       }
     } catch (e) {
@@ -352,13 +396,7 @@ class FCMService with WidgetsBindingObserver {
     }
   }
 
-  /// Save FCM token to database using targeted child writes.
-  ///
-  /// Writes to both:
-  /// - `users/{uid}/fcmTokens/{deviceId}` (new multi-device path)
-  /// - `users/{uid}/fcmToken` (old path, dual-write for backend compat)
-  ///
-  /// Does NOT use `updateUserProfile` to avoid shallow merge race conditions.
+  /// Save FCM token to Users API device registration endpoint.
   Future<void> _saveFCMToken(String token) async {
     try {
       final currentUser = _authRepository.currentUser;
@@ -368,12 +406,16 @@ class FCMService with WidgetsBindingObserver {
       }
 
       final deviceId = await _deviceIdService.getDeviceId();
-      final userRef = _database.child('users').child(currentUser.uid);
+      final platform = Platform.isIOS ? 'ios' : 'android';
+      await _authRepository.registerUserDevice(
+        userId: currentUser.uid,
+        installationId: deviceId,
+        token: token,
+        platform: platform,
+      );
 
-      // Write to new multi-device path
-      await userRef.child('fcmTokens').child(deviceId).set(token);
-      // Dual-write to old path for backend compat (remove after backend migration)
-      await userRef.child('fcmToken').set(token);
+      // Keep device notification flag aligned after token registration.
+      await syncDeviceNotificationState();
 
       _currentToken = token;
       logger.i('FCM token saved for device $deviceId');
@@ -442,26 +484,215 @@ class FCMService with WidgetsBindingObserver {
     }
   }
 
-  /// Check if FCM token exists in database for this device
-  /// Returns true if token exists and is not empty
+  /// Check if this device has an FCM token registered in Users API.
   Future<bool> hasTokenInDatabase() async {
     try {
       final currentUser = _authRepository.currentUser;
       if (currentUser == null) return false;
 
       final deviceId = await _deviceIdService.getDeviceId();
-      final tokenSnapshot = await _database
-          .child('users')
-          .child(currentUser.uid)
-          .child('fcmTokens')
-          .child(deviceId)
-          .get();
+      final device = await _authRepository.getUserDevice(
+        userId: currentUser.uid,
+        installationId: deviceId,
+      );
 
-      return tokenSnapshot.exists &&
-             tokenSnapshot.value != null &&
-             (tokenSnapshot.value as String).isNotEmpty;
+      final token = device?['token'];
+      return token is String && token.isNotEmpty;
     } catch (e) {
       logger.e('Error checking token in database: $e');
+      return false;
+    }
+  }
+
+  bool _isNotificationsAuthorized(NotificationSettings settings) {
+    return settings.authorizationStatus == AuthorizationStatus.authorized ||
+        settings.authorizationStatus == AuthorizationStatus.provisional;
+  }
+
+  /// Ensures a device row exists for the current user/installation.
+  ///
+  /// Returns true when a row exists (or was created), false when it cannot be
+  /// created yet (typically because an FCM token is not available yet).
+  Future<bool> _ensureDeviceRegistration({
+    required String userId,
+    required String installationId,
+  }) async {
+    final existing = await _authRepository.getUserDevice(
+      userId: userId,
+      installationId: installationId,
+    );
+    if (existing != null) {
+      return true;
+    }
+
+    String? token = _currentToken;
+    if (token == null || token.isEmpty) {
+      try {
+        token = await _messaging.getToken();
+      } catch (e) {
+        logger.w('Unable to fetch token while creating missing device row: $e');
+      }
+    }
+
+    if (token == null || token.isEmpty) {
+      logger.i('Device row missing and token unavailable; deferring registration.');
+      return false;
+    }
+
+    final platform = Platform.isIOS ? 'ios' : 'android';
+    logger.i(
+      'Registering missing user device via POST '
+      '/users/$userId/user-devices/$installationId '
+      '(platform: $platform)',
+    );
+    await _authRepository.registerUserDevice(
+      userId: userId,
+      installationId: installationId,
+      token: token,
+      platform: platform,
+    );
+    _currentToken = token;
+    logger.i('Registered missing device row for installation $installationId');
+    return true;
+  }
+
+  /// Sync the current device's notification-enabled state to the Users API.
+  Future<void> syncDeviceNotificationState({NotificationSettings? settings}) async {
+    try {
+      final currentUser = _authRepository.currentUser;
+      if (currentUser == null) return;
+
+      final resolvedSettings = settings ?? await _messaging.getNotificationSettings();
+      final systemEnabled = _isNotificationsAuthorized(resolvedSettings);
+      final deviceId = await _deviceIdService.getDeviceId();
+
+      final hasDeviceRow = await _ensureDeviceRegistration(
+        userId: currentUser.uid,
+        installationId: deviceId,
+      );
+      if (!hasDeviceRow) {
+        return;
+      }
+
+      // Preserve explicit app-level opt-out when OS permission is still granted.
+      // iOS permissions cannot be revoked programmatically, so a user disabling
+      // notifications in-app should continue to read as disabled.
+      bool enabled = systemEnabled;
+      if (systemEnabled) {
+        final device = await _authRepository.getUserDevice(
+          userId: currentUser.uid,
+          installationId: deviceId,
+        );
+        final backendFlag = device?['notificationsEnabled'];
+        if (backendFlag is bool && !backendFlag) {
+          enabled = false;
+        }
+      }
+
+      await _authRepository.updateUserDevice(
+        userId: currentUser.uid,
+        installationId: deviceId,
+        notificationsEnabled: enabled,
+        lastSeenAt: DateTime.now(),
+      );
+    } catch (e) {
+      logger.w('Unable to sync device notification state: $e');
+    }
+  }
+
+  /// Returns effective device-level push status (OS permission + device flag).
+  Future<bool> getDeviceNotificationsEnabled() async {
+    try {
+      final currentUser = _authRepository.currentUser;
+      if (currentUser == null) return false;
+
+      final settings = await _messaging.getNotificationSettings();
+      final systemEnabled = _isNotificationsAuthorized(settings);
+      if (!systemEnabled) return false;
+
+      final deviceId = await _deviceIdService.getDeviceId();
+      final hasDeviceRow = await _ensureDeviceRegistration(
+        userId: currentUser.uid,
+        installationId: deviceId,
+      );
+      if (!hasDeviceRow) return false;
+
+      final device = await _authRepository.getUserDevice(
+        userId: currentUser.uid,
+        installationId: deviceId,
+      );
+
+      final backendFlag = device?['notificationsEnabled'];
+      bool enabled;
+      if (backendFlag is bool) {
+        enabled = backendFlag && systemEnabled;
+      } else {
+        // Backward-compatible fallback while older rows may lack this flag.
+        enabled = systemEnabled;
+      }
+
+      await _setCachedDeviceNotificationState(
+        userId: currentUser.uid,
+        installationId: deviceId,
+        enabled: enabled,
+      );
+      return enabled;
+    } catch (e) {
+      logger.w('Error reading device notification state: $e');
+      return false;
+    }
+  }
+
+  /// Returns last known cached device-level push status for fast UI paint.
+  /// Returns null when there is no cached value yet.
+  Future<bool?> getCachedDeviceNotificationsEnabled() async {
+    try {
+      final currentUser = _authRepository.currentUser;
+      if (currentUser == null) return null;
+
+      final deviceId = await _deviceIdService.getDeviceId();
+      return _getCachedDeviceNotificationState(
+        userId: currentUser.uid,
+        installationId: deviceId,
+      );
+    } catch (e) {
+      logger.w('Error reading cached device notification state: $e');
+      return null;
+    }
+  }
+
+  /// Updates device-level notification preference and handles permission prompt when enabling.
+  Future<bool> setDeviceNotificationsEnabled(bool enabled) async {
+    try {
+      final currentUser = _authRepository.currentUser;
+      if (currentUser == null) return false;
+
+      if (enabled) {
+        final granted = await requestPermissionsAndGetToken();
+        if (!granted) {
+          await syncDeviceNotificationState();
+          return false;
+        }
+
+        await syncDeviceNotificationState();
+        return getDeviceNotificationsEnabled();
+      }
+
+      final deviceId = await _deviceIdService.getDeviceId();
+      await _authRepository.updateUserDevice(
+        userId: currentUser.uid,
+        installationId: deviceId,
+        notificationsEnabled: false,
+        lastSeenAt: DateTime.now(),
+      );
+      await _setCachedDeviceNotificationState(
+        userId: currentUser.uid,
+        installationId: deviceId,
+        enabled: false,
+      );
+      return false;
+    } catch (e) {
+      logger.e('Error updating device notification state: $e');
       return false;
     }
   }
@@ -504,7 +735,7 @@ class FCMService with WidgetsBindingObserver {
 
   /// Delete FCM token for this device (call before sign out).
   ///
-  /// Removes only this device's entry from `fcmTokens/{deviceId}`,
+  /// Unregisters this device via Users API,
   /// cancels token refresh subscription, deletes FCM token from
   /// Firebase servers, clears badge, and resets local state.
   Future<void> deleteToken() async {
@@ -512,10 +743,14 @@ class FCMService with WidgetsBindingObserver {
       final currentUser = _authRepository.currentUser;
       if (currentUser != null) {
         final deviceId = await _deviceIdService.getDeviceId();
-        final userRef = _database.child('users').child(currentUser.uid);
-        // Remove this device's entry only
-        await userRef.child('fcmTokens').child(deviceId).remove();
-        // Note: leave fcmToken field for other-device backend compat
+        await _authRepository.unregisterUserDevice(
+          userId: currentUser.uid,
+          installationId: deviceId,
+        );
+        await _clearCachedDeviceNotificationState(
+          userId: currentUser.uid,
+          installationId: deviceId,
+        );
       }
 
       // Cancel token refresh subscription (fixes stale closure on re-login)
@@ -527,6 +762,8 @@ class FCMService with WidgetsBindingObserver {
 
       // Clear local state
       _currentToken = null;
+      _cachedDeviceNotificationsEnabled = null;
+      _cachedDeviceNotificationsKey = null;
       _isInitialized = false;
 
       logger.i('FCM token deleted and state cleared');
@@ -539,7 +776,6 @@ class FCMService with WidgetsBindingObserver {
   void dispose() {
     _tokenSubscription?.cancel();
     _messageSubscription?.cancel();
-    _settingsSubscription?.cancel();
     WidgetsBinding.instance.removeObserver(this);
   }
 }

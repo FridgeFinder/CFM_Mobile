@@ -44,7 +44,7 @@ final class EnvironmentProvider
   }
 }
 
-String _$environmentHash() => r'2104f823b10716f245035456e1a9b1d35337be1b';
+String _$environmentHash() => r'fba7e98a3443cec680bb65f97b5be0cb0cc20fbf';
 
 /// Notifier to manage API environment selection with persistence
 
@@ -111,4 +111,235 @@ final class ApiBaseUrlProvider
   }
 }
 
-String _$apiBaseUrlHash() => r'9cdc3371b499ae7cf33cfcde77ad9f2b939b0f19';
+String _$apiBaseUrlHash() => r'fc7def4dbb6de30f3fb7e161778877ba8bb59664';
+
+/// Provider that returns the current Users API base URL
+
+@ProviderFor(usersApiBaseUrl)
+const usersApiBaseUrlProvider = UsersApiBaseUrlProvider._();
+
+/// Provider that returns the current Users API base URL
+
+final class UsersApiBaseUrlProvider
+    extends $FunctionalProvider<String, String, String>
+    with $Provider<String> {
+  /// Provider that returns the current Users API base URL
+  const UsersApiBaseUrlProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'usersApiBaseUrlProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$usersApiBaseUrlHash();
+
+  @$internal
+  @override
+  $ProviderElement<String> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  String create(Ref ref) {
+    return usersApiBaseUrl(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(String value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<String>(value),
+    );
+  }
+}
+
+String _$usersApiBaseUrlHash() => r'01fe624a29326935f2f42ab9d8c6d86ca1e89b9c';
+
+/// Provider that returns the current Notifications API base URL
+
+@ProviderFor(notificationsApiBaseUrl)
+const notificationsApiBaseUrlProvider = NotificationsApiBaseUrlProvider._();
+
+/// Provider that returns the current Notifications API base URL
+
+final class NotificationsApiBaseUrlProvider
+    extends $FunctionalProvider<String, String, String>
+    with $Provider<String> {
+  /// Provider that returns the current Notifications API base URL
+  const NotificationsApiBaseUrlProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'notificationsApiBaseUrlProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$notificationsApiBaseUrlHash();
+
+  @$internal
+  @override
+  $ProviderElement<String> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  String create(Ref ref) {
+    return notificationsApiBaseUrl(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(String value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<String>(value),
+    );
+  }
+}
+
+String _$notificationsApiBaseUrlHash() =>
+    r'9c6c7fe8be0ea31e55cc74118ad2f08d85d3cb9a';
+
+/// Provider that returns the current User Rewards API base URL
+
+@ProviderFor(rewardsApiBaseUrl)
+const rewardsApiBaseUrlProvider = RewardsApiBaseUrlProvider._();
+
+/// Provider that returns the current User Rewards API base URL
+
+final class RewardsApiBaseUrlProvider
+    extends $FunctionalProvider<String, String, String>
+    with $Provider<String> {
+  /// Provider that returns the current User Rewards API base URL
+  const RewardsApiBaseUrlProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'rewardsApiBaseUrlProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$rewardsApiBaseUrlHash();
+
+  @$internal
+  @override
+  $ProviderElement<String> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  String create(Ref ref) {
+    return rewardsApiBaseUrl(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(String value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<String>(value),
+    );
+  }
+}
+
+String _$rewardsApiBaseUrlHash() => r'bd1f7efad93b53bb62928b14fc83b8a5f564cb82';
+
+/// Provider that returns the current Firebase email-link redirect URL
+
+@ProviderFor(magicLinkUrl)
+const magicLinkUrlProvider = MagicLinkUrlProvider._();
+
+/// Provider that returns the current Firebase email-link redirect URL
+
+final class MagicLinkUrlProvider
+    extends $FunctionalProvider<String, String, String>
+    with $Provider<String> {
+  /// Provider that returns the current Firebase email-link redirect URL
+  const MagicLinkUrlProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'magicLinkUrlProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$magicLinkUrlHash();
+
+  @$internal
+  @override
+  $ProviderElement<String> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  String create(Ref ref) {
+    return magicLinkUrl(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(String value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<String>(value),
+    );
+  }
+}
+
+String _$magicLinkUrlHash() => r'30a8c1f991dc01c17c3413d8412dc97f3c294767';
+
+/// Provider that returns the shared app bundle/package identifier
+
+@ProviderFor(appBundleId)
+const appBundleIdProvider = AppBundleIdProvider._();
+
+/// Provider that returns the shared app bundle/package identifier
+
+final class AppBundleIdProvider
+    extends $FunctionalProvider<String, String, String>
+    with $Provider<String> {
+  /// Provider that returns the shared app bundle/package identifier
+  const AppBundleIdProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'appBundleIdProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$appBundleIdHash();
+
+  @$internal
+  @override
+  $ProviderElement<String> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  String create(Ref ref) {
+    return appBundleId(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(String value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<String>(value),
+    );
+  }
+}
+
+String _$appBundleIdHash() => r'c30a2d4551a9264ac8fc64996d4dbac58545833c';

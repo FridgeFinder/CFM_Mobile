@@ -1,24 +1,180 @@
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:flutter/services.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:latlong2/latlong.dart';
 import '../../data/repositories/fridge_repository.dart';
 import '../../domain/models/fridge_domain.dart';
 import '../../../../core/providers/location_provider.dart';
-import '../../../../core/providers/subscriptions_provider.dart';
+import '../../../../core/providers/followed_fridges_provider.dart';
+import '../../../../core/utils/app_logger.dart';
 import '../../../../core/utils/distance_calculator.dart' as distance_utils;
 import '../../../../core/utils/fuzzy_search.dart';
+import '../../../../core/utils/fridge_id_utils.dart';
 import 'map_filter_controller.dart'; // Provides mapFilterProvider
 
 part 'fridge_list_controller.g.dart';
+
+const _fridgeListCacheBoxName = 'fridge_list_cache';
+const _fridgeListCacheKey = 'all_fridges';
+
+Future<bool> _ensureHiveInitialized() async {
+  try {
+    await Hive.initFlutter();
+    return true;
+  } on MissingPluginException catch (_) {
+    return false;
+  } catch (e) {
+    if (e.toString().contains('already initialized')) {
+      return true;
+    }
+    logger.w('Unable to initialize Hive: $e');
+    return false;
+  }
+}
+
+List<FridgeDomain>? _lastFridgeListSnapshot;
+
+Future<Box<String>?> _openFridgeListCacheBox() async {
+  try {
+    if (!await _ensureHiveInitialized()) {
+      return null;
+    }
+    if (Hive.isBoxOpen(_fridgeListCacheBoxName)) {
+      return Hive.box<String>(_fridgeListCacheBoxName);
+    }
+    return await Hive.openBox<String>(_fridgeListCacheBoxName);
+  } catch (e) {
+    if (e.toString().contains('initialize Hive') ||
+        e.toString().contains('You need to initialize Hive')) {
+      return null;
+    }
+    logger.w('Unable to open fridge list cache box: $e');
+    return null;
+  }
+}
+
+List<FridgeDomain> _decodeFridgeList(String? rawJson) {
+  if (rawJson == null || rawJson.isEmpty) return const [];
+
+  try {
+    final decoded = jsonDecode(rawJson);
+    if (decoded is! List) return const [];
+
+    return decoded
+        .whereType<Map<String, dynamic>>()
+        .map(FridgeDomain.fromJson)
+        .toList();
+  } catch (e) {
+    logger.w('Unable to decode fridge list cache: $e');
+    return const [];
+  }
+}
+
+String _encodeFridgeList(List<FridgeDomain> fridges) {
+  final normalized = fridges.map((fridge) => fridge.toJson()).toList()
+    ..sort((a, b) {
+      final idA = a['id'] as String? ?? '';
+      final idB = b['id'] as String? ?? '';
+      return idA.compareTo(idB);
+    });
+
+  return jsonEncode(normalized);
+}
 
 /// Controller for managing the list of all fridges
 /// Uses real FridgeFinder API to fetch data
 @riverpod
 Future<List<FridgeDomain>> fridgeList(Ref ref) async {
-  final repository = ref.watch(fridgeRepositoryProvider);
+  final repository = ref.read(fridgeRepositoryProvider);
+  var isDisposed = false;
+  ref.onDispose(() {
+    isDisposed = true;
+  });
+
+  if (_lastFridgeListSnapshot != null) {
+    unawaited(
+      _refreshFridgeListFromApi(
+        repository: repository,
+        isDisposed: () => isDisposed,
+        onDataChanged: () {
+          if (isDisposed || !ref.mounted) return;
+          ref.invalidateSelf();
+        },
+      ),
+    );
+    return _lastFridgeListSnapshot!;
+  }
+
+  final cacheBox = await _openFridgeListCacheBox();
+  final cachedRaw = cacheBox?.get(_fridgeListCacheKey);
+  final cachedFridges = _decodeFridgeList(cachedRaw);
+
+  Future<void> refreshFromApi() async {
+    final repository = ref.read(fridgeRepositoryProvider);
+    await _refreshFridgeListFromApi(
+      repository: repository,
+      cacheBox: cacheBox,
+      cachedRaw: cachedRaw,
+      isDisposed: () => isDisposed,
+      onDataChanged: () {
+        if (isDisposed || !ref.mounted) return;
+        ref.invalidateSelf();
+      },
+    );
+  }
+
+  // Return cache immediately and refresh in background to avoid tab-switch jank.
+  if (cachedFridges.isNotEmpty) {
+    _lastFridgeListSnapshot = cachedFridges;
+    unawaited(refreshFromApi());
+    return cachedFridges;
+  }
+
   // Always fetch all fridges including ghosts — ghost filtering is done
   // downstream in filteredFridgesProvider/mapFilteredFridgesProvider to
   // avoid refetching from the API on every filter change.
-  return repository.getFridges(includeGhosts: true);
+  final fridges = await repository.getFridges(includeGhosts: true);
+  if (cacheBox != null) {
+    final latestRaw = _encodeFridgeList(fridges);
+    await cacheBox.put(_fridgeListCacheKey, latestRaw);
+  }
+  _lastFridgeListSnapshot = fridges;
+  return fridges;
+}
+
+Future<void> _refreshFridgeListFromApi(
+  {
+  required FridgeRepository repository,
+  Box<String>? cacheBox,
+  String? cachedRaw,
+  required bool Function() isDisposed,
+  required void Function() onDataChanged,
+}) async {
+  try {
+    if (isDisposed()) return;
+    final latestFridges = await repository.getFridges(includeGhosts: true);
+    final previousRaw = _lastFridgeListSnapshot == null
+        ? null
+        : _encodeFridgeList(_lastFridgeListSnapshot!);
+    _lastFridgeListSnapshot = latestFridges;
+    if (isDisposed()) return;
+
+    final latestRaw = _encodeFridgeList(latestFridges);
+    if (cacheBox != null && latestRaw != cachedRaw) {
+      await cacheBox.put(_fridgeListCacheKey, latestRaw);
+    } else if (cacheBox == null && latestRaw != cachedRaw) {
+      // Intentionally do nothing here; the in-memory snapshot is already updated.
+    }
+
+    if (latestRaw != previousRaw) {
+      onDataChanged();
+    }
+  } catch (e) {
+    logger.w('Failed to refresh fridge list from API: $e');
+  }
 }
 
 /// Notifier for managing a single selected fridge ID
@@ -168,13 +324,13 @@ List<FridgeWithDistance> fridgesSortedByDistance(Ref ref) {
       [];
 }
 
-/// Provider for filtered fridges based on map filter state (pill filters + subscribed filter + fuzzy search)
-/// Applies pill condition filters first, then subscribed filter, then fuzzy search on remaining fridges
+/// Provider for filtered fridges based on map filter state (pill filters + followed filter + fuzzy search)
+/// Applies pill condition filters first, then followed filter, then fuzzy search on remaining fridges
 @riverpod
 List<FridgeDomain> mapFilteredFridges(Ref ref) {
   final fridgesAsync = ref.watch(fridgeListProvider);
   final filterStateAsync = ref.watch(mapFilterProvider);
-  final subscriptionsAsync = ref.watch(subscribedFridgesProvider);
+  final followedFridgesAsync = ref.watch(followedFridgesProvider);
 
   return filterStateAsync.whenOrNull(
         data: (filterState) {
@@ -198,14 +354,19 @@ List<FridgeDomain> mapFilteredFridges(Ref ref) {
                           });
                         }).toList();
 
-                  // Then apply subscribed filter if active
+                  // Then apply followed filter if active
                   if (filterState.followingOnly) {
-                    final subscribedFridgeIds = subscriptionsAsync.whenOrNull(
-                      data: (subs) => subs.map((s) => s.fridgeId).toSet(),
+                    final followedFridgeIds = followedFridgesAsync.whenOrNull(
+                      data: (subs) => subs
+                          .map((s) => normalizeFridgeId(s.fridgeId))
+                          .where((id) => id.isNotEmpty)
+                          .toSet(),
                     ) ?? <String>{};
 
                     filtered = filtered.where((fridge) {
-                      return subscribedFridgeIds.contains(fridge.id);
+                      return followedFridgeIds.contains(
+                        normalizeFridgeId(fridge.id),
+                      );
                     }).toList();
                   }
 

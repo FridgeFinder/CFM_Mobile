@@ -1,19 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:design_system/design_system.dart';
 import 'package:fridgefinder_app/src/features/map/presentation/controllers/filter_condition.dart';
 import 'package:fridgefinder_app/src/features/map/presentation/widgets/filter_pill_button.dart';
-import '../../../../test_setup.dart';
 
 void main() {
-  setUpAll(() async {
-    await setupTests();
-  });
-
-  tearDownAll(() async {
-    await teardownTests();
-  });
-
   group('FilterPillButton Tests', () {
     testWidgets('renders with correct label', (WidgetTester tester) async {
       await tester.pumpWidget(
@@ -50,7 +42,8 @@ void main() {
         ),
       );
 
-      expect(find.byIcon(Icons.check), findsOneWidget);
+      final chip = tester.widget<FilterChipM3E>(find.byType(FilterChipM3E));
+      expect(chip.selected, isTrue);
     });
 
     testWidgets('does not show checkmark when not selected', (
@@ -70,7 +63,8 @@ void main() {
         ),
       );
 
-      expect(find.byIcon(Icons.check), findsNothing);
+      final chip = tester.widget<FilterChipM3E>(find.byType(FilterChipM3E));
+      expect(chip.selected, isFalse);
     });
 
     testWidgets('has rounded border shape', (WidgetTester tester) async {
@@ -169,7 +163,10 @@ void main() {
       );
 
       // Check unselected state
-      expect(find.byIcon(Icons.check), findsNothing);
+      expect(
+        tester.widget<FilterChipM3E>(find.byType(FilterChipM3E)).selected,
+        isFalse,
+      );
 
       // Rebuild with selected
       await tester.pumpWidget(
@@ -188,7 +185,10 @@ void main() {
       );
 
       // Check selected state
-      expect(find.byIcon(Icons.check), findsOneWidget);
+      expect(
+        tester.widget<FilterChipM3E>(find.byType(FilterChipM3E)).selected,
+        isTrue,
+      );
     });
   });
 }

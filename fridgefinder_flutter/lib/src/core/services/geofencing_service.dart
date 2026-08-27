@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:geolocator/geolocator.dart';
 import '../utils/app_logger.dart';
 import '../../features/auth/data/repositories/auth_repository.dart';
@@ -12,7 +11,6 @@ class GeofencingService {
   final AuthRepository _authRepository;
   final IFridgeRepository _fridgeRepository;
   final LocalNotificationService _localNotifications;
-  final FirebaseFunctions _functions;
 
   StreamSubscription<Position>? _locationSubscription;
   bool _isMonitoring = false;
@@ -29,16 +27,12 @@ class GeofencingService {
   static const double _geofenceRadiusMeters = 400.0;
 
   GeofencingService({
-    AuthRepository? authRepository,
+    required AuthRepository authRepository,
     required IFridgeRepository fridgeRepository,
     LocalNotificationService? localNotifications,
-    FirebaseFunctions? functions,
-  }) : _authRepository = authRepository ?? AuthRepository(),
+  }) : _authRepository = authRepository,
        _fridgeRepository = fridgeRepository,
-       _localNotifications = localNotifications ?? LocalNotificationService(),
-       // Firebase Cloud Functions always uses PRODUCTION instance
-       // (not affected by fridge API environment setting)
-       _functions = functions ?? FirebaseFunctions.instance;
+       _localNotifications = localNotifications ?? LocalNotificationService();
 
   /// Start monitoring location for geofencing
   Future<void> startMonitoring() async {
@@ -139,7 +133,7 @@ class GeofencingService {
       // Get all fridges
       final fridges = await _fridgeRepository.getFridges();
 
-      // Check proximity to ALL fridges (not just subscribed ones)
+      // Check proximity to ALL fridges (not just followed ones)
       for (final fridge in fridges) {
         // Calculate distance to this fridge
         final distance = Geolocator.distanceBetween(
@@ -213,7 +207,8 @@ class GeofencingService {
     }
   }
 
-  /// Send geofence notification via FCM backend and local notification
+  /// Send geofence notification locally.
+  /// Cloud Functions triggering is intentionally disabled in mobile app.
   Future<void> _sendGeofenceNotification(
     FridgeDomain fridge,
     String notificationType,
@@ -246,53 +241,21 @@ class GeofencingService {
       final profile = await _authRepository.getUserProfile(currentUser.uid);
       if (profile == null) return;
 
-      // Check if notifications are enabled
-      if (!profile.settings.notificationsEnabled) {
-        logger.d(
-          'Notifications disabled for user - skipping geofence notification',
-        );
-        return;
-      }
-
-      // Send notification via FCM Cloud Function (production backend)
-      // This ensures notifications work even when app is closed/killed
-      try {
-        final callable = _functions.httpsCallable('sendGeofencingNotification');
-        final result = await callable.call({
+      final notificationId = fridge.id.hashCode + notificationType.hashCode;
+      await _localNotifications.showNotification(
+        id: notificationId,
+        title: '${fridge.name} needs help!',
+        body: notificationMessage,
+        payload: {
           'fridgeId': fridge.id,
-          'fridgeName': fridge.name,
-          'notificationType': notificationType,
-          'notificationMessage': notificationMessage,
-          'distanceFeet': distanceFeet,
-        });
-
-        if (result.data['success'] == true) {
-          logger.i(
-            'FCM geofence notification sent via backend: ${fridge.name} needs $notificationType ($distanceFeet ft away)',
-          );
-        } else {
-          logger.w(
-            'FCM notification not sent: ${result.data['reason']}',
-          );
-        }
-      } catch (fcmError) {
-        logger.e('Error sending FCM notification: $fcmError');
-
-        // Fallback to local notification if FCM fails
-        final notificationId = fridge.id.hashCode + notificationType.hashCode;
-        await _localNotifications.showNotification(
-          id: notificationId,
-          title: '${fridge.name} needs help!',
-          body: notificationMessage,
-          payload: {
-            'fridgeId': fridge.id,
-            'type': 'geofence',
-            'needType': notificationType,
-            'distanceFeet': distanceFeet.toString(),
-          },
-        );
-        logger.i('Local notification sent as fallback');
-      }
+          'type': 'geofence',
+          'needType': notificationType,
+          'distanceFeet': distanceFeet.toString(),
+        },
+      );
+      logger.i(
+        'Local geofence notification sent: ${fridge.name} needs $notificationType ($distanceFeet ft away)',
+      );
 
       // Mark notification as sent for today
       _lastNotificationDates[notificationKey] = now;

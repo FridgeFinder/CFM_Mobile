@@ -32,20 +32,21 @@ void main() {
   // ---------------------------------------------------------------------------
   group('Condition labels', () {
     testWidgets('displays "Good" not "Good - Operational"', (tester) async {
-      await tester.pumpWidget(_buildTestApp(
-        fridge: FridgeFixtures.verifiedFridgeWithFood,
-      ));
+      await tester.pumpWidget(
+        _buildTestApp(fridge: FridgeFixtures.verifiedFridgeWithFood),
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('Good'), findsOneWidget);
       expect(find.text('Good - Operational'), findsNothing);
     });
 
-    testWidgets('displays "Needs Cleaning" not "Dirty - Needs Cleaning"',
-        (tester) async {
-      await tester.pumpWidget(_buildTestApp(
-        fridge: FridgeFixtures.verifiedFridgeWithFood,
-      ));
+    testWidgets('displays "Needs Cleaning" not "Dirty - Needs Cleaning"', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _buildTestApp(fridge: FridgeFixtures.verifiedFridgeWithFood),
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('Needs Cleaning'), findsOneWidget);
@@ -53,27 +54,27 @@ void main() {
     });
 
     testWidgets('displays "Needs Repairs"', (tester) async {
-      await tester.pumpWidget(_buildTestApp(
-        fridge: FridgeFixtures.verifiedFridgeWithFood,
-      ));
+      await tester.pumpWidget(
+        _buildTestApp(fridge: FridgeFixtures.verifiedFridgeWithFood),
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('Needs Repairs'), findsOneWidget);
     });
 
     testWidgets('displays "Not at Location"', (tester) async {
-      await tester.pumpWidget(_buildTestApp(
-        fridge: FridgeFixtures.verifiedFridgeWithFood,
-      ));
+      await tester.pumpWidget(
+        _buildTestApp(fridge: FridgeFixtures.verifiedFridgeWithFood),
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('Not at Location'), findsOneWidget);
     });
 
     testWidgets('does not display ghost condition option', (tester) async {
-      await tester.pumpWidget(_buildTestApp(
-        fridge: FridgeFixtures.verifiedFridgeWithFood,
-      ));
+      await tester.pumpWidget(
+        _buildTestApp(fridge: FridgeFixtures.verifiedFridgeWithFood),
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('Ghost - No Longer There'), findsNothing);
@@ -84,22 +85,24 @@ void main() {
   // Cycle 2: Make Condition Required
   // ---------------------------------------------------------------------------
   group('Condition required', () {
-    testWidgets('label says "Fridge Condition" without "(Optional)"',
-        (tester) async {
-      await tester.pumpWidget(_buildTestApp(
-        fridge: FridgeFixtures.verifiedFridgeWithFood,
-      ));
+    testWidgets('label says "Fridge Condition" without "(Optional)"', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _buildTestApp(fridge: FridgeFixtures.verifiedFridgeWithFood),
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('Fridge Condition'), findsOneWidget);
       expect(find.text('Fridge Condition (Optional)'), findsNothing);
     });
 
-    testWidgets('Next button disabled when no condition selected (step 0)',
-        (tester) async {
-      await tester.pumpWidget(_buildTestApp(
-        fridge: FridgeFixtures.verifiedFridgeWithFood,
-      ));
+    testWidgets('Next button disabled when no condition selected (step 0)', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _buildTestApp(fridge: FridgeFixtures.verifiedFridgeWithFood),
+      );
       await tester.pumpAndSettle();
 
       // Find the FilledButtonM3E containing 'Next'
@@ -110,11 +113,12 @@ void main() {
       expect(button.onPressed, isNull, reason: 'Next should be disabled');
     });
 
-    testWidgets('Next button enabled after selecting a condition',
-        (tester) async {
-      await tester.pumpWidget(_buildTestApp(
-        fridge: FridgeFixtures.verifiedFridgeWithFood,
-      ));
+    testWidgets('Next button enabled after selecting a condition', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _buildTestApp(fridge: FridgeFixtures.verifiedFridgeWithFood),
+      );
       await tester.pumpAndSettle();
 
       // Tap the "Good" radio option (rendered as ListTile by RadioM3E)
@@ -132,9 +136,9 @@ void main() {
   // ---------------------------------------------------------------------------
   group('Food level step', () {
     Future<void> navigateToFoodStep(WidgetTester tester) async {
-      await tester.pumpWidget(_buildTestApp(
-        fridge: FridgeFixtures.verifiedFridgeWithFood,
-      ));
+      await tester.pumpWidget(
+        _buildTestApp(fridge: FridgeFixtures.verifiedFridgeWithFood),
+      );
       await tester.pumpAndSettle();
 
       // Select a condition to enable Next
@@ -146,8 +150,9 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    testWidgets('slider starts at 0.0, not pre-filled from fridge data',
-        (tester) async {
+    testWidgets('slider starts at 0.0, not pre-filled from fridge data', (
+      tester,
+    ) async {
       await navigateToFoodStep(tester);
 
       // Find the SliderM3E and verify it wraps a Slider at 0.0
@@ -157,14 +162,16 @@ void main() {
       expect(sliderWidget.value, 0.0);
     });
 
-    testWidgets('Next button disabled until slider is touched',
-        (tester) async {
+    testWidgets('Next button disabled until slider is touched', (tester) async {
       await navigateToFoodStep(tester);
 
       final nextButton = find.widgetWithText(FilledButtonM3E, 'Next');
       final button = tester.widget<FilledButtonM3E>(nextButton);
-      expect(button.onPressed, isNull,
-          reason: 'Next should be disabled until slider touched');
+      expect(
+        button.onPressed,
+        isNull,
+        reason: 'Next should be disabled until slider touched',
+      );
     });
 
     testWidgets('Next button enabled after dragging slider', (tester) async {
@@ -178,8 +185,11 @@ void main() {
 
       final nextButton = find.widgetWithText(FilledButtonM3E, 'Next');
       final button = tester.widget<FilledButtonM3E>(nextButton);
-      expect(button.onPressed, isNotNull,
-          reason: 'Next should be enabled after slider touch');
+      expect(
+        button.onPressed,
+        isNotNull,
+        reason: 'Next should be enabled after slider touch',
+      );
     });
   });
 
@@ -189,10 +199,12 @@ void main() {
   group('Dirty state (onDirtyChanged)', () {
     testWidgets('fires true after selecting a condition', (tester) async {
       bool? lastDirty;
-      await tester.pumpWidget(_buildTestApp(
-        fridge: FridgeFixtures.verifiedFridgeWithFood,
-        onDirtyChanged: (v) => lastDirty = v,
-      ));
+      await tester.pumpWidget(
+        _buildTestApp(
+          fridge: FridgeFixtures.verifiedFridgeWithFood,
+          onDirtyChanged: (v) => lastDirty = v,
+        ),
+      );
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Good'));
@@ -203,10 +215,12 @@ void main() {
 
     testWidgets('fires true after typing notes', (tester) async {
       bool? lastDirty;
-      await tester.pumpWidget(_buildTestApp(
-        fridge: FridgeFixtures.verifiedFridgeWithFood,
-        onDirtyChanged: (v) => lastDirty = v,
-      ));
+      await tester.pumpWidget(
+        _buildTestApp(
+          fridge: FridgeFixtures.verifiedFridgeWithFood,
+          onDirtyChanged: (v) => lastDirty = v,
+        ),
+      );
       await tester.pumpAndSettle();
 
       // Navigate to step 0 → select condition → step 1 → touch slider → step 2
@@ -223,8 +237,7 @@ void main() {
 
       // Type notes
       lastDirty = null;
-      await tester.enterText(
-          find.byType(TextField).first, 'Some notes');
+      await tester.enterText(find.byType(TextField).first, 'Some notes');
       await tester.pumpAndSettle();
 
       expect(lastDirty, isTrue);
@@ -242,8 +255,9 @@ void main() {
       final contents = file.readAsStringSync();
 
       // The only Color(0xFF...) allowed is 0xFFFFFFFF (white) used in _getFoodLevelColor
-      final matches = RegExp(r'Color\(0xFF(?!FFFFFF\b)[0-9A-Fa-f]{6}\)')
-          .allMatches(contents);
+      final matches = RegExp(
+        r'Color\(0xFF(?!FFFFFF\b)[0-9A-Fa-f]{6}\)',
+      ).allMatches(contents);
       expect(
         matches.length,
         0,

@@ -7,7 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:design_system/design_system.dart';
-import '../../../../core/providers/subscriptions_provider.dart';
+import '../../../../core/providers/followed_fridges_provider.dart';
 import '../../domain/models/fridge_domain.dart';
 import '../controllers/fridge_list_controller.dart';
 import '../controllers/map_filter_controller.dart';
@@ -24,6 +24,7 @@ import '../../../../core/providers/notification_navigation_provider.dart';
 import '../../../../core/providers/theme_provider.dart';
 import '../../../../core/providers/vector_tile_style_provider.dart';
 import '../../../../core/utils/app_logger.dart';
+import '../../../../core/utils/fridge_id_utils.dart';
 import '../../../../core/constants/map_tile_config.dart';
 import 'package:vector_map_tiles/vector_map_tiles.dart';
 
@@ -44,7 +45,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
       false; // Controls search bar visibility with animation
   String?
   _handlingNotificationId; // Track which notification we're currently handling
-  // ignore: unused_field
   Timer? _logOutputTimer; // Timer for outputting logs
 
   // GlobalKeys for each fridge marker to preserve state across rebuilds
@@ -411,9 +411,9 @@ class _MapScreenState extends ConsumerState<MapScreen>
       }
     });
 
-    final subscriptionsAsync = ref.watch(subscribedFridgesProvider);
+    final followedFridgesAsync = ref.watch(followedFridgesProvider);
     _log(
-      '⭐ build: subscribedFridgesProvider state = ${subscriptionsAsync.runtimeType}',
+      '⭐ build: followedFridgesProvider state = ${followedFridgesAsync.runtimeType}',
     );
 
     // Detect dark mode for theme-aware search bar background
@@ -551,6 +551,13 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     // Tile layer: vector tiles (Protomaps) with raster fallback (MapTiler/OSM)
                     Consumer(
                       builder: (context, ref, child) {
+                        if (!MapTileConfig.hasProtomapsApiKey()) {
+                          logger.i(
+                            '[TileLayer] Protomaps key missing, using raster fallback',
+                          );
+                          return _buildRasterFallbackLayer(ref);
+                        }
+
                         final vectorStyleAsync =
                             ref.watch(vectorTileStyleProvider);
                         // Use logger.i (not _log) for real-time output — _log
@@ -640,11 +647,12 @@ class _MapScreenState extends ConsumerState<MapScreen>
                             maxClusterRadius: 20,
                             size: const Size(50, 50),
                             markers: () {
-                              // Create set of subscribed fridge IDs for O(1) lookup
-                              final subscribedFridgeIds = subscriptionsAsync
+                              // Create set of followed fridge IDs for O(1) lookup
+                              final followedFridgeIds = followedFridgesAsync
                                   .when(
-                                    data: (subscriptions) => subscriptions
-                                        .map((s) => s.fridgeId)
+                                    data: (followedFridges) => followedFridges
+                                        .map((s) => normalizeFridgeId(s.fridgeId))
+                                        .where((id) => id.isNotEmpty)
                                         .toSet(),
                                     loading: () => <String>{},
                                     error: (_, _) => <String>{},
@@ -675,8 +683,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
                                         child: FridgeMarker(
                                           key: markerKey,
                                           fridge: fridge,
-                                          isSubscribed: subscribedFridgeIds
-                                              .contains(fridge.id),
+                                          isFollowed: followedFridgeIds
+                                              .contains(normalizeFridgeId(fridge.id)),
                                           animationIndex: index,
                                         ),
                                       );
@@ -711,15 +719,16 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     // Attribution widget — dynamic based on active tile source
                     Consumer(
                       builder: (context, ref, child) {
-                        final vectorStyleAsync =
-                            ref.watch(vectorTileStyleProvider);
-                        final isVector = vectorStyleAsync.hasValue;
+                        final hasProtomapsKey =
+                            MapTileConfig.hasProtomapsApiKey();
+                        final isVector = hasProtomapsKey &&
+                            ref.watch(vectorTileStyleProvider).hasValue;
                         return RichAttributionWidget(
                           attributions: [
                             if (isVector)
                               TextSourceAttribution('Protomaps'),
                             if (!isVector &&
-                                MapTileConfig.getMapTilerApiKey() != null)
+                                MapTileConfig.hasMapTilerApiKey())
                               TextSourceAttribution('MapTiler'),
                             TextSourceAttribution('OpenStreetMap contributors'),
                           ],

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:design_system/design_system.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fridgefinder_app/src/common_widgets/error_view.dart';
 
@@ -63,7 +64,7 @@ void main() {
         ),
       );
 
-      expect(find.byType(ElevatedButton), findsOneWidget);
+      expect(find.byType(FilledButtonM3E), findsOneWidget);
       expect(find.text('Try Again'), findsOneWidget);
     });
 
@@ -76,7 +77,7 @@ void main() {
         ),
       );
 
-      expect(find.byType(ElevatedButton), findsNothing);
+      expect(find.byType(FilledButtonM3E), findsNothing);
     });
 
     testWidgets('calls retry callback when retry button tapped', (
@@ -95,7 +96,7 @@ void main() {
         ),
       );
 
-      await tester.tap(find.byType(ElevatedButton));
+      await tester.tap(find.byType(FilledButtonM3E));
       await tester.pumpAndSettle();
 
       expect(retryPressed, isTrue);

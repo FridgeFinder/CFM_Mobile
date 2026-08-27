@@ -15,7 +15,7 @@ import '../theme/motion.dart';
 /// - Smooth 300ms transitions with emphasized decelerate curve
 /// - Check circle icon when selected (replaces standard checkmark)
 /// - Larger icons (20px) with proper spacing (6px)
-/// - Custom semantic colors for filter meaning (green for full/subscribed, amber for many, etc.)
+/// - Custom semantic colors for filter meaning (green for full/followed, amber for many, etc.)
 class FilterChipM3E extends StatefulWidget {
   final String label;
   final bool selected;

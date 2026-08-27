@@ -295,10 +295,12 @@ void main() {
 
   group('Enum Tests', () {
     test('FABSize enum has all variants', () {
-      expect(FABSize.values.length, 3);
+      expect(FABSize.values.length, 5);
+      expect(FABSize.values, contains(FABSize.xs));
       expect(FABSize.values, contains(FABSize.small));
       expect(FABSize.values, contains(FABSize.regular));
       expect(FABSize.values, contains(FABSize.large));
+      expect(FABSize.values, contains(FABSize.xl));
     });
 
     test('IconButtonVariant enum has all variants', () {

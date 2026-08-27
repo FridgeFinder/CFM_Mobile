@@ -52,7 +52,7 @@ final class AuthRepositoryProvider
   }
 }
 
-String _$authRepositoryHash() => r'19a3485653561ac2f781b997131430c5659286d1';
+String _$authRepositoryHash() => r'22fc0d03b89a59e112b7d39093f330eeb7417497';
 
 /// Provider for current Firebase Auth user
 
@@ -98,7 +98,7 @@ final class AuthUserProvider
   }
 }
 
-String _$authUserHash() => r'dcab000a047790ae422fec96858a0f4b887844a8';
+String _$authUserHash() => r'69cae50b31d80cc6f5ff44af3e87cc31fdd5ab57';
 
 /// Provider for current authenticated user (nullable)
 /// This watches the auth state stream and returns the current user
@@ -158,11 +158,15 @@ final class CurrentAuthUserProvider
 String _$currentAuthUserHash() => r'06969c84ef3be0f2a77accdf346ed15925c41135';
 
 /// Provider for user profile
+/// Returns cached data immediately, then refreshes from the API in the background.
+/// Re-builds only when the API response differs from the cached value.
 
 @ProviderFor(userProfile)
 const userProfileProvider = UserProfileProvider._();
 
 /// Provider for user profile
+/// Returns cached data immediately, then refreshes from the API in the background.
+/// Re-builds only when the API response differs from the cached value.
 
 final class UserProfileProvider
     extends
@@ -173,6 +177,8 @@ final class UserProfileProvider
         >
     with $FutureModifier<UserProfile?>, $FutureProvider<UserProfile?> {
   /// Provider for user profile
+  /// Returns cached data immediately, then refreshes from the API in the background.
+  /// Re-builds only when the API response differs from the cached value.
   const UserProfileProvider._()
     : super(
         from: null,
@@ -199,7 +205,7 @@ final class UserProfileProvider
   }
 }
 
-String _$userProfileHash() => r'3cb5884614cfbe2b599889b33c1441fc945390c9';
+String _$userProfileHash() => r'bdc593f91ccd662f33eb8231522e49efd788da45';
 
 /// Provider for checking if user is authenticated
 /// Watches the auth state stream to reactively update
@@ -253,8 +259,7 @@ String _$isAuthenticatedHash() => r'5d11c591acebeb1c703d1b318d396598f404a230';
 /// Provider for checking if profile is complete
 /// Profile is complete if:
 /// - Username is set (non-empty)
-/// - isVolunteer is set (always required)
-/// - zipCode is set if user is a volunteer
+/// - Profile object exists
 
 @ProviderFor(isProfileComplete)
 const isProfileCompleteProvider = IsProfileCompleteProvider._();
@@ -262,8 +267,7 @@ const isProfileCompleteProvider = IsProfileCompleteProvider._();
 /// Provider for checking if profile is complete
 /// Profile is complete if:
 /// - Username is set (non-empty)
-/// - isVolunteer is set (always required)
-/// - zipCode is set if user is a volunteer
+/// - Profile object exists
 
 final class IsProfileCompleteProvider
     extends $FunctionalProvider<AsyncValue<bool>, bool, FutureOr<bool>>
@@ -271,8 +275,7 @@ final class IsProfileCompleteProvider
   /// Provider for checking if profile is complete
   /// Profile is complete if:
   /// - Username is set (non-empty)
-  /// - isVolunteer is set (always required)
-  /// - zipCode is set if user is a volunteer
+  /// - Profile object exists
   const IsProfileCompleteProvider._()
     : super(
         from: null,

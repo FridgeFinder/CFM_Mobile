@@ -12,7 +12,7 @@ class FridgeCard extends ConsumerStatefulWidget {
   final FridgeDomain fridge;
   final VoidCallback onTap;
   final double? distanceKm;
-  final bool isSubscribed;
+  final bool isFollowed;
   static const double iconSize = 48;
 
   const FridgeCard({
@@ -20,7 +20,7 @@ class FridgeCard extends ConsumerStatefulWidget {
     required this.fridge,
     required this.onTap,
     this.distanceKm,
-    this.isSubscribed = false,
+    this.isFollowed = false,
   });
 
   @override
@@ -35,7 +35,7 @@ class _FridgeCardState extends ConsumerState<FridgeCard>
   @override
   void initState() {
     super.initState();
-    if (widget.isSubscribed) {
+    if (widget.isFollowed) {
       _controller = AnimationController(
         duration: const Duration(milliseconds: 1500),
         vsync: this,
@@ -53,8 +53,8 @@ class _FridgeCardState extends ConsumerState<FridgeCard>
   @override
   void didUpdateWidget(FridgeCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.isSubscribed != oldWidget.isSubscribed) {
-      if (widget.isSubscribed) {
+    if (widget.isFollowed != oldWidget.isFollowed) {
+      if (widget.isFollowed) {
         _controller.duration = const Duration(milliseconds: 1500);
         _controller.repeat(reverse: true);
       } else {
@@ -90,11 +90,11 @@ class _FridgeCardState extends ConsumerState<FridgeCard>
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // SVG marker icon - same as map (with green glow if subscribed)
+              // SVG marker icon - same as map (with green glow if followed)
               // Wrapped in Hero for smooth transition to detail view
               Hero(
                 tag: 'fridge-icon-${widget.fridge.id}',
-                child: widget.isSubscribed
+                child: widget.isFollowed
                     ? AnimatedBuilder(
                         animation: _animation,
                         builder: (context, child) {
@@ -105,7 +105,7 @@ class _FridgeCardState extends ConsumerState<FridgeCard>
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
-                                  color: FridgeMarker.subscribedGold
+                                  color: FridgeMarker.followedGold
                                       .withValues(
                                         alpha: _animation.value * 0.6,
                                       ),
@@ -113,7 +113,7 @@ class _FridgeCardState extends ConsumerState<FridgeCard>
                                   spreadRadius: 1,
                                 ),
                                 BoxShadow(
-                                  color: FridgeMarker.subscribedGold
+                                  color: FridgeMarker.followedGold
                                       .withValues(
                                         alpha: _animation.value * 0.4,
                                       ),

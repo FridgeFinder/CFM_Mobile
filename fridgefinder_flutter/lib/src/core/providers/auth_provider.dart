@@ -1,20 +1,44 @@
+import 'dart:async';
+import 'dart:convert';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:firebase_core/firebase_core.dart';
 import '../../features/auth/data/repositories/auth_repository.dart';
 import '../../features/auth/domain/models/user_profile.dart';
+import '../services/magic_link_auth_service.dart';
+import 'dio_provider.dart';
 import '../utils/app_logger.dart';
 
 part 'auth_provider.g.dart';
 
+const _profileCacheBoxName = 'profile_cache';
+String _profileCacheKey(String userId) => 'profile_$userId';
+
+Future<Box<String>?> _openProfileCacheBox() async {
+  try {
+    return await Hive.openBox<String>(_profileCacheBoxName);
+  } catch (e) {
+    logger.w('[AuthProvider] Unable to open profile cache box: $e');
+    return null;
+  }
+}
+
 /// Provider for AuthRepository
 @riverpod
 AuthRepository authRepository(Ref ref) {
-  return AuthRepository();
+  return AuthRepository(dio: ref.watch(userDioProvider));
 }
 
 /// Provider for current Firebase Auth user
 @riverpod
 Stream<firebase_auth.User?> authUser(Ref ref) {
+  if (Firebase.apps.isEmpty) {
+    logger.d('[AuthProvider] Firebase not initialized, returning logged-out auth state');
+    return Stream<firebase_auth.User?>.value(null);
+  }
+
   final repository = ref.watch(authRepositoryProvider);
   logger.d('[AuthProvider] Setting up auth state stream');
   return repository.authStateChanges.map((user) {
@@ -38,10 +62,14 @@ AsyncValue<firebase_auth.User?> currentAuthUser(Ref ref) {
 }
 
 /// Provider for user profile
+/// Returns cached data immediately, then refreshes from the API in the background.
+/// Re-builds only when the API response differs from the cached value.
 @riverpod
 Future<UserProfile?> userProfile(Ref ref) async {
+  var isDisposed = false;
+  ref.onDispose(() => isDisposed = true);
+
   final authUserAsync = ref.watch(currentAuthUserProvider);
-  // Extract user from AsyncValue
   final authUser = authUserAsync.when(
     data: (user) => user,
     loading: () => null,
@@ -52,18 +80,79 @@ Future<UserProfile?> userProfile(Ref ref) async {
     return null;
   }
 
-  logger.d('[AuthProvider] Fetching profile for user: ${authUser.uid}');
-  final repository = ref.watch(authRepositoryProvider);
-  final profile = await repository.getUserProfile(authUser.uid);
+  final cacheBox = await _openProfileCacheBox();
+  if (isDisposed || !ref.mounted) return null;
 
-  // Update last login if profile exists
+  final cacheKey = _profileCacheKey(authUser.uid);
+  final cachedJson = cacheBox?.get(cacheKey);
+  UserProfile? cachedProfile;
+  if (cachedJson != null) {
+    try {
+      cachedProfile = UserProfile.fromJson(
+        jsonDecode(cachedJson) as Map<String, dynamic>,
+      );
+    } catch (e) {
+      logger.w('[AuthProvider] Failed to deserialize cached profile: $e');
+    }
+  }
+
+  final repository = ref.read(authRepositoryProvider);
+
+  if (cachedProfile != null) {
+    // Return cached immediately, refresh in the background.
+    unawaited(() async {
+      try {
+        if (isDisposed || !ref.mounted) return;
+        final freshProfile = await repository.getUserProfile(authUser.uid);
+        if (isDisposed || !ref.mounted) return;
+
+        if (freshProfile != null) {
+          final freshJson = jsonEncode(freshProfile.toJson());
+          if (freshJson != cachedJson) {
+            await cacheBox?.put(cacheKey, freshJson);
+            if (isDisposed || !ref.mounted) return;
+            ref.invalidateSelf();
+          }
+        } else {
+          // Profile no longer exists — clear cache and rebuild.
+          await cacheBox?.delete(cacheKey);
+          if (isDisposed || !ref.mounted) return;
+          ref.invalidateSelf();
+        }
+      } catch (e) {
+        logger.e('[AuthProvider] Error refreshing profile from API: $e');
+      }
+    }());
+
+    logger.d('[AuthProvider] Returning cached profile for: ${authUser.uid}');
+    return cachedProfile;
+  }
+
+  // No cache — blocking fetch on first load.
+  logger.d('[AuthProvider] No cache, fetching profile for: ${authUser.uid}');
+  UserProfile? profile;
+  try {
+    profile = await repository.getUserProfile(authUser.uid);
+  } catch (e) {
+    // During first sign-in (including magic-link), backend profile APIs may
+    // transiently fail or lag. Treat as "no profile yet" so onboarding can
+    // proceed instead of entering a loading/error refresh loop.
+    logger.w(
+      '[AuthProvider] Profile fetch failed for ${authUser.uid}; '
+      'continuing as incomplete profile: $e',
+    );
+    return null;
+  }
   if (profile != null) {
     logger.d('[AuthProvider] Profile found: ${profile.username}');
-    repository.updateLastLogin(authUser.uid);
+    try {
+      await cacheBox?.put(cacheKey, jsonEncode(profile.toJson()));
+    } catch (e) {
+      logger.w('[AuthProvider] Failed to write profile cache: $e');
+    }
   } else {
     logger.d('[AuthProvider] No profile found for user: ${authUser.uid}');
   }
-
   return profile;
 }
 
@@ -89,8 +178,7 @@ bool isAuthenticated(Ref ref) {
 /// Provider for checking if profile is complete
 /// Profile is complete if:
 /// - Username is set (non-empty)
-/// - isVolunteer is set (always required)
-/// - zipCode is set if user is a volunteer
+/// - Profile object exists
 @riverpod
 Future<bool> isProfileComplete(Ref ref) async {
   final profileAsync = ref.watch(userProfileProvider);
@@ -121,4 +209,12 @@ Future<bool> isProfileComplete(Ref ref) async {
     },
   );
 }
+
+final magicLinkAuthServiceProvider = Provider<MagicLinkAuthService>((ref) {
+  final service = MagicLinkAuthService(
+    authRepository: ref.watch(authRepositoryProvider),
+  );
+  ref.onDispose(service.dispose);
+  return service;
+});
 

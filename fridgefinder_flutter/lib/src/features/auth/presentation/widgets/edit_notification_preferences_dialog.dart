@@ -1,23 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:design_system/design_system.dart';
-import '../../domain/models/subscription_preferences.dart';
-import '../../../../core/providers/subscriptions_provider.dart';
-import '../../../../core/providers/auth_provider.dart';
-import '../../../../core/utils/app_logger.dart';
+import '../../domain/models/fridge_notification_preferences.dart';
+import '../../../../core/providers/notification_providers.dart';
+import '../../../../core/providers/followed_fridges_provider.dart';
 
-enum NotificationPreferencesMode { subscribe, edit }
+enum NotificationPreferencesMode { follow, edit }
 
-/// Consolidated dialog for notification preferences (both subscribe and edit)
+/// Consolidated dialog for notification preferences (both follow and edit)
 /// Uses toggle-based UI with icons and switches for better UX
 class NotificationPreferencesDialog extends ConsumerStatefulWidget {
   final NotificationPreferencesMode mode;
   final String fridgeId;
   final String? fridgeName;
-  final bool? isVolunteer;
   final NotificationPreferences initialPreferences;
 
   const NotificationPreferencesDialog({
@@ -25,30 +22,19 @@ class NotificationPreferencesDialog extends ConsumerStatefulWidget {
     required this.mode,
     required this.fridgeId,
     this.fridgeName,
-    this.isVolunteer,
     required this.initialPreferences,
   });
 
-  /// Factory constructor for subscribe mode
-  factory NotificationPreferencesDialog.subscribe({
+  /// Factory constructor for follow mode
+  factory NotificationPreferencesDialog.follow({
     required String fridgeId,
-    required bool isVolunteer,
     NotificationPreferences? existingPreferences,
   }) {
-    final preferences = existingPreferences ??
-        NotificationPreferences(
-          updatedWithFood: !isVolunteer, // Non-volunteers get food updates
-          runningLow: isVolunteer,
-          empty: isVolunteer,
-          needsCleaning: isVolunteer,
-          needsServicing: isVolunteer,
-          routineValidation: isVolunteer,
-        );
+    final preferences = existingPreferences ?? const NotificationPreferences();
 
     return NotificationPreferencesDialog(
-      mode: NotificationPreferencesMode.subscribe,
+      mode: NotificationPreferencesMode.follow,
       fridgeId: fridgeId,
-      isVolunteer: isVolunteer,
       initialPreferences: preferences,
     );
   }
@@ -67,23 +53,6 @@ class NotificationPreferencesDialog extends ConsumerStatefulWidget {
     );
   }
 
-  /// Backwards compatibility constructor for EditNotificationPreferencesDialog
-  /// @deprecated Use NotificationPreferencesDialog.edit() instead
-  factory NotificationPreferencesDialog.editLegacy({
-    Key? key,
-    required String fridgeId,
-    required String fridgeName,
-    required NotificationPreferences initialPreferences,
-  }) {
-    return NotificationPreferencesDialog(
-      key: key,
-      mode: NotificationPreferencesMode.edit,
-      fridgeId: fridgeId,
-      fridgeName: fridgeName,
-      initialPreferences: initialPreferences,
-    );
-  }
-
   @override
   ConsumerState<NotificationPreferencesDialog> createState() =>
       _NotificationPreferencesDialogState();
@@ -93,6 +62,10 @@ class _NotificationPreferencesDialogState
     extends ConsumerState<NotificationPreferencesDialog> {
   late NotificationPreferences _preferences;
   bool _isLoading = false;
+
+  void _closeDialog() {
+    Navigator.of(context).pop(false);
+  }
 
   @override
   void initState() {
@@ -106,7 +79,7 @@ class _NotificationPreferencesDialogState
     if (widget.mode == NotificationPreferencesMode.edit) {
       await _handleEditMode();
     } else {
-      await _handleSubscribeMode();
+      await _handleFollowMode();
     }
   }
 
@@ -137,11 +110,11 @@ class _NotificationPreferencesDialogState
 
     setState(() => _isLoading = true);
     try {
-      final manager = ref.read(subscriptionManagerProvider.notifier);
+      final manager = ref.read(followManagerProvider.notifier);
       await manager.unfollowFridge(widget.fridgeId);
       if (mounted) {
         setState(() => _isLoading = false);
-        Navigator.of(this.context).pop();
+        Navigator.of(this.context).pop(true);
         ScaffoldMessenger.of(this.context).showSnackBar(
           const SnackBar(content: Text('Unfollowed fridge')),
         );
@@ -158,7 +131,10 @@ class _NotificationPreferencesDialogState
 
   Future<void> _handleEditMode() async {
     try {
-      await ref.read(subscriptionManagerProvider.notifier).updateNotificationPreferences(
+      await _ensureNotificationsEnabledPrompt();
+      if (!mounted) return;
+
+      await ref.read(followManagerProvider.notifier).updateNotificationPreferences(
             widget.fridgeId,
             _preferences,
           );
@@ -187,25 +163,18 @@ class _NotificationPreferencesDialogState
     }
   }
 
-  Future<void> _handleSubscribeMode() async {
+  Future<void> _handleFollowMode() async {
     try {
-      // Check if this is the first subscription
-      final subscriptions = await ref.read(subscribedFridgesProvider.future);
-      final isFirstSubscription = subscriptions.isEmpty;
+      await _ensureNotificationsEnabledPrompt();
+      if (!mounted) return;
 
-      // Request permissions on first subscription
-      if (isFirstSubscription) {
-        await _handleFirstSubscriptionPermissions();
-        if (!mounted) return;
-      }
-
-      // Subscribe to fridge
-      final manager = ref.read(subscriptionManagerProvider.notifier);
+      // Follow to fridge
+      final manager = ref.read(followManagerProvider.notifier);
       await manager.followFridge(widget.fridgeId, _preferences);
 
       if (mounted) {
         setState(() => _isLoading = false);
-        Navigator.of(context).pop();
+        Navigator.of(context).pop(true);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Now following fridge')),
         );
@@ -223,180 +192,46 @@ class _NotificationPreferencesDialogState
     }
   }
 
-  Future<void> _handleFirstSubscriptionPermissions() async {
-    // Request notification permission
-    final notificationStatus = await FirebaseMessaging.instance.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
-    logger.i('Notification permission: ${notificationStatus.authorizationStatus}');
+  Future<void> _ensureNotificationsEnabledPrompt() async {
+    final fcmService = ref.read(fcmServiceProvider);
 
-    // Only ask about geofencing if user is a volunteer
-    final userProfile = ref.read(userProfileProvider).value;
-    final isVolunteer = userProfile?.isVolunteer ?? widget.isVolunteer ?? false;
-
-    if (!isVolunteer || !mounted) return;
-
-    final enableGeofencing = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: M3EShapes.dialog,
-        title: Text('Enable Geofencing?', style: M3ETypography.headlineSmall),
-        content: Text(
-          'Get notifications when near fridges needing attention (within 2-block radius). '
-          'This requires location access to always be enabled in the background.',
-          style: M3ETypography.bodyMedium,
-        ),
-        actions: [
-          TextButtonM3E(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('No Thanks'),
-          ),
-          FilledButtonM3E(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Enable'),
-          ),
-        ],
-      ),
-    );
-
-    if (enableGeofencing != true || !mounted) return;
-
-    await _handleGeofencingPermissions();
-  }
-
-  Future<void> _handleGeofencingPermissions() async {
-    // Use Geolocator for better iOS handling
-    LocationPermission permission = await Geolocator.checkPermission();
-    logger.i('Current Geolocator permission: $permission');
-
-    // If we already have "always", great!
-    if (permission == LocationPermission.always) {
-      logger.i('Already have "Always" permission');
-      await _enableGeofencingInProfile();
+    final initiallyEnabled = await fcmService.getDeviceNotificationsEnabled();
+    if (initiallyEnabled) {
       return;
     }
 
-    // Request permission - this handles iOS two-step flow better
-    logger.i('Requesting location permission (will show iOS prompts)...');
-    permission = await Geolocator.requestPermission();
-    logger.i('After request, permission: $permission');
+    final enabledAfterPrompt = await fcmService.setDeviceNotificationsEnabled(true);
 
     if (!mounted) return;
 
-    // On iOS, if user granted "While Using", we need to guide them to enable "Always"
-    if (permission == LocationPermission.whileInUse) {
-      logger.i('User granted "While Using" - need to upgrade to "Always"');
-
-      // Try requesting "Always" - might work on some iOS versions
-      final alwaysStatus = await Permission.locationAlways.request();
-      logger.i('Attempted Always upgrade: $alwaysStatus');
-
-      if (!mounted) return;
-
-      // Check if upgrade succeeded
-      if (alwaysStatus.isGranted || alwaysStatus.isLimited) {
-        logger.i('Successfully upgraded to Always!');
-        permission = LocationPermission.always;
-        await _enableGeofencingInProfile();
-      } else {
-        // iOS didn't show the upgrade prompt - guide to Settings
-        logger.w('iOS will not show upgrade prompt - user must use Settings');
-        await _showAlwaysLocationDialog();
-      }
+    if (enabledAfterPrompt) {
       return;
     }
 
-    // Check if permission was denied
-    if (permission == LocationPermission.denied ||
-        permission == LocationPermission.deniedForever) {
-      logger.w('Location permission denied: $permission');
-      if (mounted) {
-        if (permission == LocationPermission.deniedForever) {
-          await _showLocationDeniedDialog();
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Location permission is required for geofencing.'),
-            ),
-          );
-        }
-      }
-      return;
-    }
+    await _showNotificationsDisabledDialog();
 
-    // At this point we should have "always" permission
-    if (permission == LocationPermission.always) {
-      await _enableGeofencingInProfile();
-    }
+    // Geofencing opt-in is temporarily disabled for first-time follow.
+    // Users can still enable geofencing later from Profile settings.
   }
 
-  Future<void> _enableGeofencingInProfile() async {
-    final userProfile = ref.read(userProfileProvider).value;
-    if (userProfile != null) {
-      final repository = ref.read(authRepositoryProvider);
-      final updatedProfile = userProfile.copyWith(
-        settings: userProfile.settings.copyWith(
-          geofencingEnabled: true,
-        ),
-      );
-      await repository.updateUserProfile(updatedProfile);
-
-      if (mounted) {
-        ref.invalidate(userProfileProvider);
-        logger.i('Geofencing enabled in user profile');
-      }
-    }
-  }
-
-  Future<void> _showAlwaysLocationDialog() async {
+  Future<void> _showNotificationsDisabledDialog() async {
     final shouldOpenSettings = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (ctx) => AlertDialog(
         shape: M3EShapes.dialog,
-        title: Text('Enable "Always Allow" Location', style: M3ETypography.headlineSmall),
+        title: Text('Enable Notifications', style: M3ETypography.headlineSmall),
         content: Text(
-          'For geofencing to work, you need to enable "Always" location access.\n\n'
-          'Please tap "Open Settings" and change location to "Always".',
+          'Notifications are currently disabled for FridgeFinder. '
+          'Enable them in Settings to receive fridge alerts.',
           style: M3ETypography.bodyMedium,
         ),
         actions: [
           TextButtonM3E(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Not Now'),
           ),
           FilledButtonM3E(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Open Settings'),
-          ),
-        ],
-      ),
-    );
-
-    if (shouldOpenSettings == true) {
-      await openAppSettings();
-    }
-  }
-
-  Future<void> _showLocationDeniedDialog() async {
-    final shouldOpenSettings = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: M3EShapes.dialog,
-        title: Text('Enable Location Access', style: M3ETypography.headlineSmall),
-        content: Text(
-          'Geofencing requires location access to notify you when you\'re near fridges needing help.\n\n'
-          'Please tap "Open Settings" and enable location access for FridgeFinder.',
-          style: M3ETypography.bodyMedium,
-        ),
-        actions: [
-          TextButtonM3E(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          FilledButtonM3E(
-            onPressed: () => Navigator.of(context).pop(true),
+            onPressed: () => Navigator.of(ctx).pop(true),
             child: const Text('Open Settings'),
           ),
         ],
@@ -410,133 +245,239 @@ class _NotificationPreferencesDialogState
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final brightness = Theme.of(context).brightness;
+    final statusBarIconBrightness =
+      brightness == Brightness.dark ? Brightness.light : Brightness.dark;
+    final statusBarBrightness =
+      brightness == Brightness.dark ? Brightness.dark : Brightness.light;
+
     // Determine dialog title based on mode
     final dialogTitle = widget.mode == NotificationPreferencesMode.edit
         ? 'Notification Preferences'
         : 'Follow Fridge';
 
-    return AlertDialog(
-      shape: M3EShapes.dialog,
-      title: widget.fridgeName != null
-          ? Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  dialogTitle,
-                  style: M3ETypography.headlineSmall,
-                ),
-                M3ESpacing.verticalXXS,
-                Text(
-                  widget.fridgeName!,
-                  style: M3ETypography.bodyMedium.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        statusBarColor: colorScheme.surface,
+        statusBarIconBrightness: statusBarIconBrightness,
+        statusBarBrightness: statusBarBrightness,
+      ),
+      child: Scaffold(
+        backgroundColor: colorScheme.surface,
+        body: SafeArea(
+          child: Column(
+            children: [
+              Align(
+                alignment: Alignment.topRight,
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    top: M3ESpacing.sm,
+                    right: M3ESpacing.sm,
+                  ),
+                  child: IconButton(
+                    onPressed: _isLoading ? null : _closeDialog,
+                    tooltip: 'Close notification preferences',
+                    style: ButtonStyle(
+                      backgroundColor: WidgetStateProperty.resolveWith((states) {
+                        if (states.contains(WidgetState.pressed) ||
+                            states.contains(WidgetState.hovered) ||
+                            states.contains(WidgetState.focused)) {
+                          return const Color.fromRGBO(0, 0, 0, 0.15);
+                        }
+
+                        return const Color.fromRGBO(0, 0, 0, 0.08);
+                      }),
+                      foregroundColor: WidgetStatePropertyAll(
+                        colorScheme.onSurfaceVariant,
                       ),
+                      fixedSize: const WidgetStatePropertyAll(Size(36, 36)),
+                      shape: const WidgetStatePropertyAll(CircleBorder()),
+                    ),
+                    icon: const Icon(Icons.close, size: 20),
+                  ),
                 ),
-              ],
-            )
-          : Text(dialogTitle, style: M3ETypography.headlineSmall),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Select which updates you want to receive:',
-              style: M3ETypography.bodySmall,
-            ),
-            M3ESpacing.verticalMD,
-            _buildPreferenceSwitch(
-              title: 'Updated with Food',
-              subtitle: 'When the fridge is restocked',
-              value: _preferences.updatedWithFood,
-              onChanged: (value) {
-                setState(() {
-                  _preferences = _preferences.copyWith(updatedWithFood: value);
-                });
-              },
-              icon: Icons.shopping_basket,
-            ),
-            _buildPreferenceSwitch(
-              title: 'Running Low',
-              subtitle: 'When food supplies are running low',
-              value: _preferences.runningLow,
-              onChanged: (value) {
-                setState(() {
-                  _preferences = _preferences.copyWith(runningLow: value);
-                });
-              },
-              icon: Icons.trending_down,
-            ),
-            _buildPreferenceSwitch(
-              title: 'Empty',
-              subtitle: 'When the fridge is empty',
-              value: _preferences.empty,
-              onChanged: (value) {
-                setState(() {
-                  _preferences = _preferences.copyWith(empty: value);
-                });
-              },
-              icon: Icons.inbox,
-            ),
-            _buildPreferenceSwitch(
-              title: 'Needs Cleaning',
-              subtitle: 'When the fridge needs cleaning',
-              value: _preferences.needsCleaning,
-              onChanged: (value) {
-                setState(() {
-                  _preferences = _preferences.copyWith(needsCleaning: value);
-                });
-              },
-              icon: Icons.cleaning_services,
-            ),
-            _buildPreferenceSwitch(
-              title: 'Needs Servicing',
-              subtitle: 'When the fridge needs maintenance',
-              value: _preferences.needsServicing,
-              onChanged: (value) {
-                setState(() {
-                  _preferences = _preferences.copyWith(needsServicing: value);
-                });
-              },
-              icon: Icons.build,
-            ),
-            _buildPreferenceSwitch(
-              title: 'Routine Validation',
-              subtitle: 'When a status check is needed',
-              value: _preferences.routineValidation,
-              onChanged: (value) {
-                setState(() {
-                  _preferences = _preferences.copyWith(routineValidation: value);
-                });
-              },
-              icon: Icons.fact_check,
-            ),
-          ],
+              ),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.fromLTRB(
+                    M3ESpacing.md,
+                    M3ESpacing.xs,
+                    M3ESpacing.md,
+                    M3ESpacing.md,
+                  ),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 520),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            dialogTitle,
+                            style: M3ETypography.headlineSmall,
+                          ),
+                          if (widget.fridgeName != null) ...[
+                            M3ESpacing.verticalXXS,
+                            Text(
+                              widget.fridgeName!,
+                              style: M3ETypography.bodyMedium.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
+                            ),
+                          ],
+                          M3ESpacing.verticalMD,
+                          Text(
+                            'Select which updates you want to receive by channel:',
+                            style: M3ETypography.bodySmall,
+                          ),
+                          M3ESpacing.verticalMD,
+                          _buildChannelSection(
+                            title: 'Push Notifications',
+                            channel: _preferences.contactTypePreferences.device,
+                            onChanged: (channel) {
+                              setState(() {
+                                _preferences = _preferences.copyWith(
+                                  contactTypePreferences:
+                                      _preferences.contactTypePreferences.copyWith(
+                                    device: channel,
+                                  ),
+                                );
+                              });
+                            },
+                          ),
+                          M3ESpacing.verticalSM,
+                          _buildChannelSection(
+                            title: 'Email Notifications',
+                            channel: _preferences.contactTypePreferences.email,
+                            onChanged: (channel) {
+                              setState(() {
+                                _preferences = _preferences.copyWith(
+                                  contactTypePreferences:
+                                      _preferences.contactTypePreferences.copyWith(
+                                    email: channel,
+                                  ),
+                                );
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: colorScheme.surface,
+                  border: Border(
+                    top: BorderSide(
+                      color: colorScheme.outlineVariant,
+                    ),
+                  ),
+                ),
+                child: SafeArea(
+                  top: false,
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      M3ESpacing.md,
+                      M3ESpacing.sm,
+                      M3ESpacing.md,
+                      M3ESpacing.sm,
+                    ),
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 520),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            if (widget.mode == NotificationPreferencesMode.edit) ...[
+                              TextButton(
+                                onPressed:
+                                    _isLoading ? null : () => _handleUnfollow(context),
+                                style: TextButton.styleFrom(
+                                  foregroundColor:
+                                      const Color(0xFFFF7043), // M3E alert/destructive
+                                ),
+                                child: const Text('Unfollow'),
+                              ),
+                              M3ESpacing.horizontalXS,
+                            ],
+                            TextButtonM3E(
+                              onPressed: _isLoading ? null : _closeDialog,
+                              child: const Text('Cancel'),
+                            ),
+                            M3ESpacing.horizontalXS,
+                            FilledButtonM3E(
+                              onPressed: _isLoading ? null : _handleSave,
+                              child: _isLoading
+                                  ? SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicatorM3E.small(),
+                                    )
+                                  : Text(
+                                      widget.mode == NotificationPreferencesMode.edit
+                                          ? 'Save'
+                                          : 'Follow',
+                                    ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
-      actions: [
-        if (widget.mode == NotificationPreferencesMode.edit)
-          TextButton(
-            onPressed: _isLoading ? null : () => _handleUnfollow(context),
-            style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFFFF7043), // M3E alert/destructive
-            ),
-            child: const Text('Unfollow'),
-          ),
-        TextButtonM3E(
-          onPressed: _isLoading ? null : () => Navigator.of(context).pop(false),
-          child: const Text('Cancel'),
+    );
+  }
+
+  Widget _buildChannelSection({
+    required String title,
+    required FridgeNotificationFlags channel,
+    required ValueChanged<FridgeNotificationFlags> onChanged,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: M3ETypography.bodyMedium.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
         ),
-        FilledButtonM3E(
-          onPressed: _isLoading ? null : _handleSave,
-          child: _isLoading
-              ? SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicatorM3E.small(),
-                )
-              : Text(widget.mode == NotificationPreferencesMode.edit ? 'Save' : 'Follow'),
+        M3ESpacing.verticalXS,
+        _buildPreferenceSwitch(
+          title: 'Needs Repairs',
+          subtitle: 'Alert me when repairs are needed',
+          value: channel.outOfOrder,
+          onChanged: (value) => onChanged(channel.copyWith(outOfOrder: value)),
+          icon: Icons.build,
+        ),
+        _buildPreferenceSwitch(
+          title: 'Needs Cleaning',
+          subtitle: 'Alert me when cleaning is needed',
+          value: channel.dirty,
+          onChanged: (value) => onChanged(channel.copyWith(dirty: value)),
+          icon: Icons.cleaning_services,
+        ),
+        _buildPreferenceSwitch(
+          title: 'Out of Food',
+          subtitle: 'Alert me when food runs out',
+          value: channel.noFood,
+          onChanged: (value) => onChanged(channel.copyWith(noFood: value)),
+          icon: Icons.inbox,
+        ),
+        _buildPreferenceSwitch(
+          title: 'New Food Added',
+          subtitle: 'Alert me when food is restocked',
+          value: channel.hasFood,
+          onChanged: (value) => onChanged(channel.copyWith(hasFood: value)),
+          icon: Icons.shopping_basket,
         ),
       ],
     );
@@ -588,16 +529,4 @@ class _NotificationPreferencesDialogState
   }
 }
 
-/// Backwards compatibility class that redirects to NotificationPreferencesDialog.edit()
-/// @deprecated Use NotificationPreferencesDialog.edit() instead
-class EditNotificationPreferencesDialog extends NotificationPreferencesDialog {
-  const EditNotificationPreferencesDialog({
-    super.key,
-    required super.fridgeId,
-    required String fridgeName,
-    required super.initialPreferences,
-  }) : super(
-          mode: NotificationPreferencesMode.edit,
-          fridgeName: fridgeName,
-        );
-}
+

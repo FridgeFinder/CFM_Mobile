@@ -61,7 +61,7 @@ class FilterPillButton extends ConsumerWidget {
 
     switch (condition) {
       case FilterCondition.full:
-        // Green - matches full status and subscribed markers
+        // Green - matches full status and followed markers
         return const Color(0xFF5FD65F); // Tertiary color
 
       case FilterCondition.manyItems:

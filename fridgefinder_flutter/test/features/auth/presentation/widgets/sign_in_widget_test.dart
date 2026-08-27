@@ -15,57 +15,43 @@ void main() {
   });
 
   group('SignInWidget Tests', () {
-    testWidgets('displays phone, Gmail, and Apple sign-in options', (
+    testWidgets('displays email, phone, Google, and Apple sign-in options', (
       WidgetTester tester,
     ) async {
       await tester.pumpWidget(
-        ProviderScope(
-          child: MaterialApp(
-            home: Scaffold(
-              body: SignInWidget(),
-            ),
-          ),
-        ),
+        ProviderScope(child: const MaterialApp(home: SignInWidget())),
       );
 
-      expect(find.text('Sign In'), findsOneWidget);
-      expect(find.text('Sign In with Phone'), findsOneWidget);
-      expect(find.text('Sign In with Gmail'), findsOneWidget);
+      expect(find.text('Welcome!'), findsOneWidget);
+      expect(find.text('Email'), findsOneWidget);
+      expect(find.text('Phone'), findsOneWidget);
+      expect(find.text('Sign In with Google'), findsOneWidget);
       expect(find.text('Sign In with Apple'), findsOneWidget);
+      expect(find.byIcon(Icons.close), findsOneWidget);
       expect(find.byType(TextField), findsOneWidget);
     });
 
-    testWidgets('shows verification code input after phone number sent', (
+    testWidgets('shows phone mode when phone toggle is selected', (
       WidgetTester tester,
     ) async {
       await tester.pumpWidget(
-        ProviderScope(
-          child: MaterialApp(
-            home: Scaffold(
-              body: SignInWidget(),
-            ),
-          ),
-        ),
+        ProviderScope(child: const MaterialApp(home: SignInWidget())),
       );
 
-      // Initially should show phone input
-      expect(find.text('Sign In with Phone'), findsOneWidget);
+      await tester.tap(find.text('Phone'));
+      await tester.pump();
 
-      // Note: Actual phone verification requires Firebase setup
-      // This test verifies UI structure only
+      expect(find.text('+1'), findsNothing);
+      expect(find.byType(DropdownMenu<String>), findsNothing);
+      expect(find.text('Phone Number'), findsOneWidget);
+      expect(find.text('Sign In with Google'), findsOneWidget);
     });
 
     testWidgets('Apple Sign-In button uses OutlinedButton', (
       WidgetTester tester,
     ) async {
       await tester.pumpWidget(
-        ProviderScope(
-          child: MaterialApp(
-            home: Scaffold(
-              body: SignInWidget(),
-            ),
-          ),
-        ),
+        ProviderScope(child: const MaterialApp(home: SignInWidget())),
       );
 
       final appleButton = find.text('Sign In with Apple');
@@ -79,20 +65,14 @@ void main() {
       expect(outlinedButtonAncestor, findsOneWidget);
     });
 
-    testWidgets('Apple button appears after Gmail button', (
+    testWidgets('Apple button appears after Google button', (
       WidgetTester tester,
     ) async {
       await tester.pumpWidget(
-        ProviderScope(
-          child: MaterialApp(
-            home: Scaffold(
-              body: SingleChildScrollView(child: SignInWidget()),
-            ),
-          ),
-        ),
+        ProviderScope(child: const MaterialApp(home: SignInWidget())),
       );
 
-      final gmailButton = find.text('Sign In with Gmail');
+      final gmailButton = find.text('Sign In with Google');
       final appleButton = find.text('Sign In with Apple');
 
       expect(gmailButton, findsOneWidget);
@@ -108,13 +88,7 @@ void main() {
       WidgetTester tester,
     ) async {
       await tester.pumpWidget(
-        ProviderScope(
-          child: MaterialApp(
-            home: Scaffold(
-              body: SignInWidget(),
-            ),
-          ),
-        ),
+        ProviderScope(child: const MaterialApp(home: SignInWidget())),
       );
 
       // Initially Apple button is visible
@@ -133,12 +107,10 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           child: MaterialApp(
-            home: Scaffold(
-              body: SignInWidget(
-                onSignInSuccess: () {
-                  callbackCalled = true;
-                },
-              ),
+            home: SignInWidget(
+              onSignInSuccess: () {
+                callbackCalled = true;
+              },
             ),
           ),
         ),
@@ -147,6 +119,30 @@ void main() {
       expect(callbackCalled, isFalse);
       // Callback would be called after successful sign-in
     });
+
+    testWidgets('shows validation feedback above the sign-in form', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        ProviderScope(child: const MaterialApp(home: SignInWidget())),
+      );
+
+      await tester.tap(find.text('Continue'));
+      await tester.pump();
+
+      expect(find.text('Please enter your email address'), findsOneWidget);
+    });
+
+    testWidgets('shows privacy policy footer', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        ProviderScope(child: const MaterialApp(home: SignInWidget())),
+      );
+
+      expect(
+        find.textContaining('By continuing, you agree to our'),
+        findsOneWidget,
+      );
+      expect(find.text('Privacy Policy'), findsOneWidget);
+    });
   });
 }
-

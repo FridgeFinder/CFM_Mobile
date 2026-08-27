@@ -36,7 +36,7 @@ final class MapFilterProvider
   MapFilter create() => MapFilter();
 }
 
-String _$mapFilterHash() => r'e0f1b7ca27497469fc26648c32583ba65b03da30';
+String _$mapFilterHash() => r'31b72828710f2028136d1cff073f520dde4b9e34';
 
 /// Notifier for managing map filter state with persistence using Hive
 
