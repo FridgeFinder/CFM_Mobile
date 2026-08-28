@@ -46,7 +46,7 @@ platform :android do
   desc "Upload existing AAB to Google Play closed testing"
   lane :playstore_beta do
     app_env = validated_app_env("prod")
-    sh("cd .. && APP_ENV=#{app_env} ./scripts/require_prod_env.sh")
+    sh("cd ../.. && APP_ENV=#{app_env} ./scripts/require_prod_env.sh")
 
     # Upload to Google Play Console - Internal Testing Track
     upload_to_play_store(
@@ -62,7 +62,7 @@ platform :android do
   desc "Build and upload to Google Play Console"
   lane :release do
     app_env = validated_app_env("prod")
-    sh("cd .. && APP_ENV=#{app_env} ./scripts/require_prod_env.sh")
+    sh("cd ../.. && APP_ENV=#{app_env} ./scripts/require_prod_env.sh")
 
     # Ensure we're on the correct branch/tag
     # ensure_git_status_clean
