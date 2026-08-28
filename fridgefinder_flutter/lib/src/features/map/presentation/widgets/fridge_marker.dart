@@ -145,7 +145,7 @@ class _FridgeMarkerState extends State<FridgeMarker>
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Health bar - video game style.
+          // Health bar - video game style
           if (showHealthBar)
             Container(
               width: FridgeMarker.markerSize,
