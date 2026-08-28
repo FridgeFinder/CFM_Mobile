@@ -145,8 +145,7 @@ class _FridgeMarkerState extends State<FridgeMarker>
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Health bar - video game style. Fridges without a report keep the
-          // same slot empty so their pin stays aligned and sized like the rest.
+          // Health bar - video game style.
           if (showHealthBar)
             Container(
               width: FridgeMarker.markerSize,
