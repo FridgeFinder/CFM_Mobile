@@ -74,27 +74,24 @@ jobs:
           cd fridgefinder_flutter/android
           bundle exec fastlane beta
           
-      - name: Build iOS
+      - name: Build and distribute iOS to TestFlight
         env:
+          APP_ENV: dev
           APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
           APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
           APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
         run: |
-          cd fridgefinder_flutter
-          flutter build ipa --release
-          
-      - name: Distribute iOS to Firebase
-        env:
-          FIREBASE_CLI_TOKEN: ${{ secrets.FIREBASE_CLI_TOKEN }}
-          FIREBASE_APP_ID_IOS: ${{ secrets.FIREBASE_APP_ID_IOS }}
-          FIREBASE_DISTRIBUTION_GROUPS: 'dev-testers'
-        run: |
           cd fridgefinder_flutter/ios
-          bundle exec fastlane beta
+          echo "${{ secrets.APP_STORE_CONNECT_API_KEY }}" | base64 -d > AuthKey.p8
+          export APP_STORE_CONNECT_API_KEY_PATH=$(pwd)/AuthKey.p8
+          bundle exec fastlane dev_testflight
+          rm -f AuthKey.p8
           
       - name: Cleanup
         if: always()
         run: |
           cd fridgefinder_flutter/android
           rm -f keystore.jks key.properties
+          cd ../ios
+          rm -f AuthKey.p8
 
