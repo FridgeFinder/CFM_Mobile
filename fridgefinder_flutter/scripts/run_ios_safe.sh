@@ -8,7 +8,7 @@ SRC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SAFE_ROOT="${HOME}/Developer"
 SAFE_DIR="${SAFE_ROOT}/fridgefinder_flutter_ios_safe"
 DEVICE_NAME="${1:-iPhone 17}"
-APP_ENV_VALUE="${APP_ENV:-dev}"
+APP_ENV_VALUE="${APP_ENV:-prod}"
 
 if [[ "${APP_ENV_VALUE}" != "dev" && "${APP_ENV_VALUE}" != "prod" ]]; then
   echo "APP_ENV must be 'dev' or 'prod' (got: ${APP_ENV_VALUE})" >&2

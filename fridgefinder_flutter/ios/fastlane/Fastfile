@@ -1,6 +1,8 @@
 # Fastfile for iOS
 
 require 'base64'
+require 'shellwords'
+require 'tmpdir'
 
 default_platform(:ios)
 
@@ -32,6 +34,41 @@ platform :ios do
     end.join(",")
 
     "DART_DEFINES=#{encoded_defines}"
+  end
+
+  def expected_firebase_project(app_env)
+    case app_env
+    when "dev"
+      { project_id: "fridgefinder-app-dev", sender_id: "284914819627" }
+    when "prod"
+      { project_id: "fridgefinder-app", sender_id: "576156648133" }
+    else
+      UI.user_error!("Unknown APP_ENV: #{app_env}")
+    end
+  end
+
+  def verify_ipa_firebase_project!(ipa_path, app_env)
+    expected = expected_firebase_project(app_env)
+    UI.user_error!("IPA not found: #{ipa_path}") unless File.exist?(ipa_path)
+
+    Dir.mktmpdir("fridgefinder-ipa-") do |dir|
+      sh("unzip -q #{ipa_path.shellescape} 'Payload/*.app/GoogleService-Info.plist' -d #{dir.shellescape}")
+      plist_path = Dir[File.join(dir, "Payload", "*.app", "GoogleService-Info.plist")].first
+      UI.user_error!("IPA is missing GoogleService-Info.plist: #{ipa_path}") unless plist_path
+
+      project_id = sh("/usr/libexec/PlistBuddy -c 'Print :PROJECT_ID' #{plist_path.shellescape}", log: false).strip
+      sender_id = sh("/usr/libexec/PlistBuddy -c 'Print :GCM_SENDER_ID' #{plist_path.shellescape}", log: false).strip
+
+      unless project_id == expected[:project_id] && sender_id == expected[:sender_id]
+        UI.user_error!(
+          "IPA Firebase config mismatch for APP_ENV=#{app_env}: " \
+          "PROJECT_ID=#{project_id}, GCM_SENDER_ID=#{sender_id}; " \
+          "expected PROJECT_ID=#{expected[:project_id]}, GCM_SENDER_ID=#{expected[:sender_id]}"
+        )
+      end
+
+      UI.message("Verified IPA Firebase config: #{project_id} / #{sender_id}")
+    end
   end
 
   desc "Generate screenshots for App Store"
@@ -69,6 +106,7 @@ platform :ios do
   lane :testflight do
     app_env = validated_app_env("prod")
     sh("cd .. && APP_ENV=#{app_env} ./scripts/require_prod_env.sh")
+    verify_ipa_firebase_project!("../build/ios/ipa/FridgeFinder.ipa", app_env)
 
     # Set up App Store Connect API Key
     api_key = app_store_api_key!
@@ -111,6 +149,7 @@ platform :ios do
       },
       xcargs: dart_define_xcargs("APP_ENV" => app_env)
     )
+    verify_ipa_firebase_project!("../build/ios/dev-ipa/FridgeFinder-dev.ipa", app_env)
 
     api_key = app_store_api_key!
 
@@ -128,6 +167,7 @@ platform :ios do
   lane :upload_release do
     app_env = validated_app_env("prod")
     sh("cd .. && APP_ENV=#{app_env} ./scripts/require_prod_env.sh")
+    verify_ipa_firebase_project!("../build/ios/ipa/FridgeFinder.ipa", app_env)
 
     # Set up App Store Connect API Key
     api_key = app_store_api_key!
@@ -163,6 +203,7 @@ platform :ios do
 
     # Build the app using Flutter
     sh("cd .. && flutter build ipa --release --dart-define=APP_ENV=#{app_env}")
+    verify_ipa_firebase_project!("../build/ios/ipa/FridgeFinder.ipa", app_env)
 
     # Set up App Store Connect API Key
     api_key = app_store_api_key!

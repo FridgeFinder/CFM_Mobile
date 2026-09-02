@@ -1,11 +1,10 @@
+import 'package:flutter/foundation.dart' show kDebugMode, visibleForTesting;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 
 part 'environment_provider.g.dart';
 
 const String _appEnvOverride = String.fromEnvironment('APP_ENV');
-const String _settingsBoxName = 'app_settings';
-const String _environmentKey = 'api_environment';
 
 ApiEnvironment? _parseEnvironmentOverride(String raw) {
   if (raw.isEmpty) {
@@ -63,29 +62,39 @@ enum ApiEnvironment {
 
 /// Reads the startup environment before Riverpod initializes.
 /// Priority:
-/// 1) APP_ENV dart-define override (dev|prod)
-/// 2) persisted environment from app settings (dev|prod)
+/// 1) APP_ENV=dev dart-define override
+/// 2) APP_ENV=dev from .env in debug builds
 /// 3) default to prod
 ///
-/// This avoids silently booting the app into dev because of an old persisted
-/// value from a previous run.
-Future<ApiEnvironment> loadPersistedEnvironment() async {
-  final override = _parseEnvironmentOverride(_appEnvOverride);
-  if (override != null) {
-    return override;
+/// This avoids silently booting the app into dev because of old local state or
+/// an invalid/missing environment value. Release builds intentionally ignore
+/// .env for environment selection because .env is bundled as an asset.
+Future<ApiEnvironment> loadStartupEnvironment() async {
+  return resolveStartupEnvironment(
+    dotenvAppEnv: dotenv.isInitialized ? dotenv.maybeGet('APP_ENV') : null,
+  );
+}
+
+@visibleForTesting
+ApiEnvironment resolveStartupEnvironment({
+  String dartDefineAppEnv = _appEnvOverride,
+  String? dotenvAppEnv,
+  bool includeDotenv = kDebugMode,
+}) {
+  final dartDefineOverride = _parseEnvironmentOverride(dartDefineAppEnv);
+  if (dartDefineOverride != null) {
+    return dartDefineOverride;
   }
 
-  try {
-    final settingsBox = await Hive.openBox<String>(_settingsBoxName);
-    final persistedRaw = settingsBox.get(_environmentKey);
-    final persisted = persistedRaw == null
-        ? null
-        : _parseEnvironmentOverride(persistedRaw);
-    if (persisted != null) {
-      return persisted;
+  if (dartDefineAppEnv.trim().isNotEmpty) {
+    return ApiEnvironment.prod;
+  }
+
+  if (includeDotenv) {
+    final dotenvOverride = _parseEnvironmentOverride(dotenvAppEnv ?? '');
+    if (dotenvOverride == ApiEnvironment.dev) {
+      return ApiEnvironment.dev;
     }
-  } catch (_) {
-    // Fall through to dev default if persistence cannot be read.
   }
 
   return ApiEnvironment.prod;
@@ -97,7 +106,7 @@ class Environment extends _$Environment {
   static ApiEnvironment _bootstrapEnvironment = ApiEnvironment.prod;
 
   /// Set the bootstrap environment before Riverpod initializes.
-  /// Called from main.dart after loadPersistedEnvironment().
+  /// Called from main.dart after loadStartupEnvironment().
   static void setBootstrapEnvironment(ApiEnvironment env) {
     _bootstrapEnvironment = env;
   }
@@ -108,16 +117,6 @@ class Environment extends _$Environment {
   @override
   ApiEnvironment build() {
     return _bootstrapEnvironment;
-  }
-
-  Future<void> setEnvironment(ApiEnvironment environment) async {
-    state = environment;
-    try {
-      final settingsBox = await Hive.openBox<String>(_settingsBoxName);
-      await settingsBox.put(_environmentKey, environment.name);
-    } catch (e) {
-      // If Hive fails (e.g., in tests or if not initialized), just update state
-    }
   }
 }
 

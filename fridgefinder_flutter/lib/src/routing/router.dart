@@ -56,7 +56,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Handle Firebase Auth deep links - redirect to home
       final uri = state.uri;
       if (uri.toString().contains('firebaseauth') ||
-          uri.toString().contains('fridgefinder-app.firebaseapp.com')) {
+          uri.toString().contains('fridgefinder-app.firebaseapp.com') ||
+          uri.toString().contains('fridgefinder-app-dev.firebaseapp.com')) {
         // This is a Firebase Auth callback - ignore it and go to home
         // The auth state will be handled by Firebase Auth automatically
         return '/';
@@ -115,9 +116,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         }
       });
       return Scaffold(
-        body: LoadingIndicatorM3E(
-          message: getRandomLoadingMessage(),
-        ),
+        body: LoadingIndicatorM3E(message: getRandomLoadingMessage()),
       );
     },
     routes: [
@@ -143,8 +142,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/my-fridges',
-            pageBuilder: (context, state) =>
-                _buildPageWithTransition('/my-fridges', const MyFridgesScreen()),
+            pageBuilder: (context, state) => _buildPageWithTransition(
+              '/my-fridges',
+              const MyFridgesScreen(),
+            ),
           ),
           GoRoute(
             path: '/profile',

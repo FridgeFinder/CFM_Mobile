@@ -41,7 +41,7 @@ dart run build_runner build
 flutter run
 ```
 
-That's it! The app will launch with dev environment settings by default.
+That's it! The app will launch with prod environment settings by default.
 
 If you are on macOS and iOS build/signing fails when running from Desktop or cloud-synced folders, use the safe iOS workflow in [Reliable iOS Launch (macOS)](#reliable-ios-launch-macos).
 
@@ -126,21 +126,32 @@ Run this after modifying any:
 
 ### 4. Configure Environment (Optional)
 
-The app uses a **dual environment configuration**:
+The app supports two runtime environments:
 
-- **Fridge Data API:** DEV environment by default (`api-dev.communityfridgefinder.com`)
-- **Auth/Messaging services:** Dev/Prod switchable (matches selected app environment)
+- `prod` - default for local runs, release/profile builds, and production lanes
+- `dev` - selected only when `APP_ENV=dev` is injected at launch/build time
 
-To switch environment (API + Firebase):
+Environment selection must come from command-line or Fastlane injection. Do not
+use `.env` for `APP_ENV`; `.env` is reserved for API keys and other non-Firebase
+project settings.
 
-1. Open the app
-2. Go to **Profile** → **Settings**
-3. Toggle **Firebase Environment (API + Database + Auth)** between Dev/Prod
-4. Confirm restart when prompted
+```bash
+# Dev
+APP_ENV=dev ./scripts/run_ios_safe.sh "iPhone 17"
+APP_ENV=dev ./scripts/run_android_safe.sh android
 
-This persists to local storage via Hive.
+# Prod
+APP_ENV=prod ./scripts/run_ios_safe.sh "iPhone 17"
+APP_ENV=prod ./scripts/run_android_safe.sh android
+```
 
-**Note:** Auth and push-messaging services follow the selected environment after restart. The app's data source of truth is backend APIs.
+If `APP_ENV` is omitted, helper scripts inject `APP_ENV=prod`. Direct Flutter
+runs should pass `--dart-define=APP_ENV=dev` only when intentionally targeting
+dev.
+
+**Note:** API URLs, Firebase Auth, Firebase Messaging, and native Firebase config
+must all use the same environment. The iOS build phase derives the native
+Firebase plist from Flutter's `APP_ENV` Dart define.
 
 ### 4.1 Map Tile API Keys (Optional, Recommended)
 
@@ -155,23 +166,27 @@ Notes:
 
 - If both keys are missing, the app now falls back to OpenStreetMap raster tiles.
 - This fallback works for local development, but adding at least one key improves map quality and reliability.
+- Do not set `APP_ENV` in `.env`; use command-line injection instead.
 
 ### 5. Run the App
 
 ```bash
-# Run on default device/emulator
+# Run on default device/emulator in prod
 flutter run
 
-# Run on specific device
-flutter run -d <device-id>
+# Run dev explicitly
+flutter run -d <device-id> --dart-define=APP_ENV=dev
+
+# Run prod explicitly
+flutter run -d <device-id> --dart-define=APP_ENV=prod
 
 # Run in release mode (optimized)
-flutter run --release
+flutter run --release --dart-define=APP_ENV=prod
 
 # Enable verbose logging
 flutter run -v
 
-# macOS/iOS recommended launch path (handles simulator + safe build path)
+# macOS/iOS recommended launch path (defaults to prod)
 ./scripts/run_ios_safe.sh "iPhone 17"
 ```
 
@@ -190,6 +205,7 @@ What this does:
 
 - Boots the simulator explicitly.
 - Runs the app from a safe local build path via `scripts/run_ios_safe.sh`.
+- Defaults to prod; prefix with `APP_ENV=dev` to target dev.
 - Avoids common iOS code-signing failures caused by building directly under Desktop/cloud-synced paths.
 
 ---
@@ -567,8 +583,7 @@ User preferences and fridge details.
 
 - **Theme Mode:** Light / Dark / System (Material Design 3)
 - **Location Toggle:** Enable/disable GPS access
-- **API Environment:** Switch between dev/prod servers
-- **Persistence:** All settings saved with Hive
+- **Persistence:** User-facing settings saved with Hive
 
 **Fridge Details (Bottom Sheet):**
 
@@ -581,7 +596,7 @@ User preferences and fridge details.
 **State Management:**
 
 - `themeModeProvider` - Theme preference
-- `environmentProvider` - API environment
+- `environmentProvider` - Startup environment injected by `APP_ENV`
 - `locationAccessProvider` - Location toggle
 
 ### 🔐 Authentication & User Management
@@ -1132,6 +1147,7 @@ xcrun simctl boot "iPhone 17" || true
   - `PROTOMAPS_API_KEY`
   - `MAPTILER_API_KEY`
 - If keys are missing, OpenStreetMap fallback is expected behavior in dev.
+- `APP_ENV` should not be configured in `.env`; use `APP_ENV=dev ./scripts/run_ios_safe.sh ...` or `--dart-define=APP_ENV=dev` instead.
 
 ### Debug Mode Tips
 
@@ -1476,9 +1492,9 @@ Built with ❤️ by the Community Fridge Finder team and contributors.
     3. Routine (if >2 days since update)
 
 - ✅ **Dual Environment Configuration:**
-  - **Fridge Data API:** DEV by default (`api-dev.communityfridgefinder.com`)
-  - **Firebase Services:** Dev/Prod selectable (current behavior)
-  - Comprehensive documentation: `ENVIRONMENT_CONFIGURATION.md`
+  - **Runtime default:** Prod unless `APP_ENV=dev` is injected
+  - **Firebase Services:** selected at app startup from the injected environment
+  - `.env` is reserved for API keys, not Firebase project selection
   - Clear separation in codebase with comments
   - No emulator mode active in production builds
 
