@@ -7,13 +7,26 @@ This app supports two runtime environments:
 - `dev`
 - `prod`
 
-Runtime environment is selected with Dart define:
+Runtime environment is selected with command-line injection. Use `.env` for API
+keys only; do not put `APP_ENV` in `.env`.
+
+Dev:
 
 ```bash
---dart-define=APP_ENV=dev
+APP_ENV=dev ./scripts/run_ios_safe.sh "iPhone 17"
+APP_ENV=dev ./scripts/run_android_safe.sh android
 ```
 
-If `APP_ENV` is not provided, app bootstrap defaults to `prod`.
+Prod:
+
+```bash
+APP_ENV=prod ./scripts/run_ios_safe.sh "iPhone 17"
+APP_ENV=prod ./scripts/run_android_safe.sh android
+```
+
+If `APP_ENV` is omitted, helper scripts inject `APP_ENV=prod`. Direct Flutter
+runs should pass `--dart-define=APP_ENV=dev` only when intentionally targeting
+dev; otherwise the app defaults to prod.
 
 ## Platform Firebase Configuration
 
@@ -27,7 +40,9 @@ configuration files.
 - Dev URL scheme plist: `ios/Runner/Info.dev.plist`
 - Prod URL scheme plist: `ios/Runner/Info.prod.plist`
 
-Xcode build configuration selects the correct files automatically.
+Xcode selects the correct files from Flutter's injected `APP_ENV` Dart define.
+This keeps Dart API URLs and native Firebase Auth/Messaging on the same project
+for local debug, TestFlight, and release builds.
 
 ### Android
 
@@ -48,12 +63,16 @@ APP_ENV=dev ./scripts/run_ios_safe.sh "iPhone 17"
 APP_ENV=prod ./scripts/run_ios_safe.sh "iPhone 17"
 ```
 
+Omitting `APP_ENV` defaults to prod.
+
 ### Android
 
 ```bash
 APP_ENV=dev ./scripts/run_android_safe.sh android
 APP_ENV=prod ./scripts/run_android_safe.sh android
 ```
+
+Omitting `APP_ENV` defaults to prod.
 
 You can replace `android` with a specific Android device ID from `flutter devices`.
 

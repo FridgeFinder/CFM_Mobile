@@ -31,7 +31,7 @@
 			<string>Editor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>com.googleusercontent.apps.284914819627-liq1j0mvtnql3j423gat9bs1nd6g39t2</string>
+				<string>com.googleusercontent.apps.576156648133-iok9kg4ln8u6okgr477n9ut6et9o0sdf</string>
 			</array>
 		</dict>
 	</array>
@@ -43,7 +43,7 @@
 		<string>applemaps</string>
 		<string>maps</string>
 		<string>googlegmail</string>
-		<string>comgoogleusercontent.apps.284914819627-liq1j0mvtnql3j423gat9bs1nd6g39t2</string>
+		<string>comgoogleusercontent.apps.576156648133-iok9kg4ln8u6okgr477n9ut6et9o0sdf</string>
 	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
@@ -65,6 +65,7 @@
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>fetch</string>
+		<string>remote-notification</string>
 		<string>remote-notification</string>
 		<string>location</string>
 	</array>

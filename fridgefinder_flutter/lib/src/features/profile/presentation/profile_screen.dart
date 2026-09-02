@@ -1,13 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:go_router/go_router.dart';
 import 'package:design_system/design_system.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/providers/theme_provider.dart';
-import '../../../core/providers/environment_provider.dart';
 import '../../../core/providers/location_provider.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/notification_providers.dart';
@@ -67,7 +65,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final themeMode = ref.watch(appThemeModeProvider);
-    final environment = ref.watch(environmentProvider);
     final locationAccessEnabled = ref.watch(locationAccessProvider);
 
     return Scaffold(
@@ -371,7 +368,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     ],
                   ),
                 ),
-                // Firebase Environment Settings Section - Only show in debug mode
+                // Debug-only account reset utility.
                 if (kDebugMode) ...[
                   M3ESpacing.verticalMD,
                   CardM3E(
@@ -406,49 +403,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           },
                           icon: Icons.refresh,
                           child: const Text('Reset Auth State (Sign Out)'),
-                        ),
-                      ],
-                    ),
-                  ),
-                  M3ESpacing.verticalMD,
-                  CardM3E(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Current: ${environment.name.toUpperCase()}',
-                          style: M3ETypography.bodySmall.copyWith(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                        M3ESpacing.verticalMD,
-                        Text(
-                          'Firebase Environment (API + Database + Auth)',
-                          style: M3ETypography.bodyMedium,
-                        ),
-                        M3ESpacing.verticalMD,
-                        // Environment Options
-                        _buildEnvironmentOption(
-                          context: context,
-                          ref: ref,
-                          title: 'Production',
-                          subtitle: 'Production project (fridgefinder-app)',
-                          environment: ApiEnvironment.prod,
-                          isSelected: environment == ApiEnvironment.prod,
-                          icon: Icons.cloud,
-                        ),
-                        M3ESpacing.verticalSM,
-                        _buildEnvironmentOption(
-                          context: context,
-                          ref: ref,
-                          title: 'Development',
-                          subtitle:
-                              'Development project (fridgefinder-app-dev)',
-                          environment: ApiEnvironment.dev,
-                          isSelected: environment == ApiEnvironment.dev,
-                          icon: Icons.construction,
                         ),
                       ],
                     ),
@@ -556,101 +510,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEnvironmentOption({
-    required BuildContext context,
-    required WidgetRef ref,
-    required String title,
-    required String subtitle,
-    required ApiEnvironment environment,
-    required bool isSelected,
-    required IconData icon,
-  }) {
-    return InkWell(
-      onTap: isSelected
-          ? null
-          : () {
-              showDialog(
-                context: context,
-                builder: (dialogContext) => AlertDialog(
-                  title: const Text('Restart Required'),
-                  content: const Text(
-                    'Switching Firebase environment requires an app restart. '
-                    'All Firebase services (Auth, Database, Messaging) will switch.',
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.of(dialogContext).pop(),
-                      child: const Text('Cancel'),
-                    ),
-                    TextButton(
-                      onPressed: () async {
-                        await ref
-                            .read(environmentProvider.notifier)
-                            .setEnvironment(environment);
-                        if (dialogContext.mounted) {
-                          Navigator.of(dialogContext).pop();
-                        }
-                        SystemNavigator.pop();
-                      },
-                      child: const Text('Restart'),
-                    ),
-                  ],
-                ),
-              );
-            },
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isSelected
-                ? Theme.of(context).colorScheme.primary
-                : Colors.transparent,
-            width: 2,
-          ),
-          color: isSelected
-              ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)
-              : Colors.transparent,
-        ),
-        child: Row(
-          children: [
-            Icon(
-              icon,
-              color: isSelected
-                  ? Theme.of(context).colorScheme.primary
-                  : Theme.of(context).colorScheme.onSurfaceVariant,
-              size: 28,
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: M3ETypography.titleMedium.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: isSelected
-                          ? Theme.of(context).colorScheme.primary
-                          : null,
-                    ),
-                  ),
-                  Text(subtitle, style: M3ETypography.bodySmall),
-                ],
-              ),
-            ),
-            if (isSelected)
-              Icon(
-                Icons.check_circle,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-          ],
         ),
       ),
     );

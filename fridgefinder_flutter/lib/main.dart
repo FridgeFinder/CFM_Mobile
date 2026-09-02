@@ -45,11 +45,11 @@ void main() async {
     );
   }
 
-  // Initialize Hive BEFORE Firebase so we can read persisted environment
+  // Initialize Hive before Firebase-backed services start.
   await Hive.initFlutter();
 
-  // Load persisted environment (dev/prod) and configure services
-  final env = await loadPersistedEnvironment();
+  // Load startup environment (dev/prod) and configure services.
+  final env = await loadStartupEnvironment();
   Environment.setBootstrapEnvironment(env);
   logger.i('Environment: ${env.name}');
 

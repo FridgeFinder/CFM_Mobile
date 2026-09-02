@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Run Android with an explicit environment to avoid accidental prod/dev mixups.
+# Run Android with a prod default to avoid accidental prod/dev mixups.
 
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DEVICE_NAME="${1:-android}"
-APP_ENV_VALUE="${APP_ENV:-dev}"
+APP_ENV_VALUE="${APP_ENV:-prod}"
 
 if [[ "${APP_ENV_VALUE}" != "dev" && "${APP_ENV_VALUE}" != "prod" ]]; then
   echo "APP_ENV must be 'dev' or 'prod' (got: ${APP_ENV_VALUE})" >&2
