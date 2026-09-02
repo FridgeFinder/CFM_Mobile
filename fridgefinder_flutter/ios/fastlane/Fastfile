@@ -105,7 +105,7 @@ platform :ios do
   desc "Upload existing IPA to TestFlight"
   lane :testflight do
     app_env = validated_app_env("prod")
-    sh("cd .. && APP_ENV=#{app_env} ./scripts/require_prod_env.sh")
+    sh("cd ../.. && APP_ENV=#{app_env} ./scripts/require_prod_env.sh")
     verify_ipa_firebase_project!("../build/ios/ipa/FridgeFinder.ipa", app_env)
 
     # Set up App Store Connect API Key
@@ -166,7 +166,7 @@ platform :ios do
   desc "Upload existing IPA to App Store Connect"
   lane :upload_release do
     app_env = validated_app_env("prod")
-    sh("cd .. && APP_ENV=#{app_env} ./scripts/require_prod_env.sh")
+    sh("cd ../.. && APP_ENV=#{app_env} ./scripts/require_prod_env.sh")
     verify_ipa_firebase_project!("../build/ios/ipa/FridgeFinder.ipa", app_env)
 
     # Set up App Store Connect API Key
@@ -187,7 +187,7 @@ platform :ios do
   desc "Build and upload to App Store Connect"
   lane :release do
     app_env = validated_app_env("prod")
-    sh("cd .. && APP_ENV=#{app_env} ./scripts/require_prod_env.sh")
+    sh("cd ../.. && APP_ENV=#{app_env} ./scripts/require_prod_env.sh")
 
     # Ensure we're on the correct branch/tag
     # ensure_git_status_clean
