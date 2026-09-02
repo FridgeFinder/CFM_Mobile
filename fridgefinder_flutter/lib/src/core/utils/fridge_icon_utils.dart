@@ -87,7 +87,7 @@ class FridgeIconUtils {
       switch (report.condition) {
         case FridgeCondition.notAtLocation:
           return _buildPinIcon(
-            color: foodColor,
+            color: Color(0xFFD3D3D3),
             size: size,
             isSmileFace: false, // X face for not at location
             hasDecoration: false,
@@ -131,7 +131,7 @@ class FridgeIconUtils {
 
     // No report - show dashed pin with white background
     return _buildPinIcon(
-      color: const Color(0xFFFFFFFF), // white for no report
+      color: const Color(0xFFD3D3D3), // pale grey
       size: size,
       isSmileFace: true,
       hasDecoration: false,
@@ -214,7 +214,7 @@ class FridgeIconUtils {
       case FridgeCondition.ghost: // Ghost fridges are filtered from API response
         return Colors.purple; // Kept for exhaustive switch, but ghost fridges are filtered out
       case FridgeCondition.notAtLocation:
-        return Colors.grey;
+        return Color(0xFFD3D3D3);  // grey for notAtLocation
     }
   }
 
@@ -236,7 +236,7 @@ class FridgeIconUtils {
         // Default to gray since we don't know food level in filter context
         return Colors.grey;
       case FilterCondition.notAtLocation:
-        return Colors.grey;
+        return Color(0xFFD3D3D3); // grey for notAtLocation
     }
   }
 
@@ -307,7 +307,7 @@ class FridgeIconUtils {
       case FilterCondition.notAtLocation:
         // Gray pin with X face
         return generatePinSvg(
-          pinColor: Colors.white70, // gray for not at location
+          pinColor: Color(0xFFD3D3D3), // gray for not at location
           isSmileFace: false, // X face instead of smile
           hasDecoration: false,
           decorationSvg: '',
