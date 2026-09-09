@@ -192,9 +192,7 @@ class _SignInWidgetState extends ConsumerState<SignInWidget> {
     final formattedPhone = PhoneNumberHelper.formatPhoneNumber(phoneNumber);
     if (formattedPhone == null ||
         !PhoneNumberHelper.isValidPhoneNumber(phoneNumber)) {
-      _showOverlaySnackBar(
-        'Please enter a valid US or Canada phone number',
-      );
+      _showOverlaySnackBar('Please enter a valid US or Canada phone number');
       return;
     }
 
@@ -368,145 +366,214 @@ class _SignInWidgetState extends ConsumerState<SignInWidget> {
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
-      body: SafeArea(
-        child: Column(
-          children: [
-            Align(
-              alignment: Alignment.topRight,
-              child: Padding(
-                padding: EdgeInsets.only(
-                  top: M3ESpacing.sm,
-                  right: M3ESpacing.sm,
-                ),
-                child: IconButton(
-                  onPressed: _closeSignIn,
-                  tooltip: 'Close sign in',
-                  style: ButtonStyle(
-                    backgroundColor: WidgetStateProperty.resolveWith((states) {
-                      if (states.contains(WidgetState.pressed) ||
-                          states.contains(WidgetState.hovered) ||
-                          states.contains(WidgetState.focused)) {
-                        return const Color.fromRGBO(0, 0, 0, 0.15);
-                      }
-
-                      return const Color.fromRGBO(0, 0, 0, 0.08);
-                    }),
-                    foregroundColor: WidgetStatePropertyAll(
-                      colorScheme.onSurfaceVariant,
-                    ),
-                    fixedSize: const WidgetStatePropertyAll(Size(36, 36)),
-                    shape: const WidgetStatePropertyAll(CircleBorder()),
+      body: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: SafeArea(
+          child: Column(
+            children: [
+              Align(
+                alignment: Alignment.topRight,
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    top: M3ESpacing.sm,
+                    right: M3ESpacing.sm,
                   ),
-                  icon: const Icon(Icons.close, size: 20),
+                  child: IconButton(
+                    onPressed: _closeSignIn,
+                    tooltip: 'Close sign in',
+                    style: ButtonStyle(
+                      backgroundColor: WidgetStateProperty.resolveWith((
+                        states,
+                      ) {
+                        if (states.contains(WidgetState.pressed) ||
+                            states.contains(WidgetState.hovered) ||
+                            states.contains(WidgetState.focused)) {
+                          return const Color.fromRGBO(0, 0, 0, 0.15);
+                        }
+
+                        return const Color.fromRGBO(0, 0, 0, 0.08);
+                      }),
+                      foregroundColor: WidgetStatePropertyAll(
+                        colorScheme.onSurfaceVariant,
+                      ),
+                      fixedSize: const WidgetStatePropertyAll(Size(36, 36)),
+                      shape: const WidgetStatePropertyAll(CircleBorder()),
+                    ),
+                    icon: const Icon(Icons.close, size: 20),
+                  ),
                 ),
               ),
-            ),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.fromLTRB(
-                  M3ESpacing.md,
-                  M3ESpacing.xs,
-                  M3ESpacing.md,
-                  M3ESpacing.lg,
-                ),
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 520),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Text(
-                          'Welcome!',
-                          textAlign: TextAlign.center,
-                          style: M3ETypography.displaySmall.copyWith(
-                            fontWeight: FontWeight.w700,
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.fromLTRB(
+                    M3ESpacing.md,
+                    M3ESpacing.xs,
+                    M3ESpacing.md,
+                    M3ESpacing.lg,
+                  ),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 520),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            'Welcome!',
+                            textAlign: TextAlign.center,
+                            style: M3ETypography.displaySmall.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
-                        ),
-                        SizedBox(height: M3ESpacing.sm),
-                        Text(
-                          'Start getting notified when your local fridges are stocked, need support, or are moved.',
-                          textAlign: TextAlign.center,
-                          style: M3ETypography.bodyLarge,
-                        ),
-                        SizedBox(height: M3ESpacing.xl),
-                        CardM3E(
-                          child: Padding(
-                            padding: M3ESpacing.all(M3ESpacing.lg),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                if (!_isCodeSent) ...[
-                                  Text(
-                                    'Sign in with',
-                                    style: M3ETypography.labelLarge,
-                                  ),
-                                  SizedBox(height: M3ESpacing.sm),
-                                  SegmentedButton<String>(
-                                    segments: const [
-                                      ButtonSegment<String>(
-                                        value: 'phone',
-                                        label: Text('Phone'),
+                          SizedBox(height: M3ESpacing.sm),
+                          Text(
+                            'Start getting notified when your local fridges are stocked, need support, or are moved.',
+                            textAlign: TextAlign.center,
+                            style: M3ETypography.bodyLarge,
+                          ),
+                          SizedBox(height: M3ESpacing.xl),
+                          CardM3E(
+                            child: Padding(
+                              padding: M3ESpacing.all(M3ESpacing.lg),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  if (!_isCodeSent) ...[
+                                    Text(
+                                      'Sign in with',
+                                      style: M3ETypography.labelLarge,
+                                    ),
+                                    SizedBox(height: M3ESpacing.sm),
+                                    SegmentedButton<String>(
+                                      segments: const [
+                                        ButtonSegment<String>(
+                                          value: 'phone',
+                                          label: Text('Phone'),
+                                        ),
+                                        ButtonSegment<String>(
+                                          value: 'email',
+                                          label: Text('Email'),
+                                        ),
+                                      ],
+                                      selected: <String>{_signInType},
+                                      showSelectedIcon: false,
+                                      onSelectionChanged: _isLoading
+                                          ? null
+                                          : (value) {
+                                              if (value.isEmpty) {
+                                                return;
+                                              }
+
+                                              setState(() {
+                                                _signInType = value.first;
+                                                _codeController.clear();
+                                                _verificationId = null;
+                                                _isCodeSent = false;
+                                              });
+                                            },
+                                    ),
+                                    SizedBox(height: M3ESpacing.lg),
+                                    if (!_isPhoneFlow) ...[
+                                      TextFieldM3E(
+                                        controller: _emailController,
+                                        labelText: 'Email Address',
+                                        hintText: 'you@example.com',
+                                        prefixIcon: Icons.email,
+                                        keyboardType:
+                                            TextInputType.emailAddress,
                                       ),
-                                      ButtonSegment<String>(
-                                        value: 'email',
-                                        label: Text('Email'),
+                                      SizedBox(height: M3ESpacing.md),
+                                      FilledButtonM3E(
+                                        onPressed: _isLoading
+                                            ? null
+                                            : _sendMagicLink,
+                                        child: _isLoading
+                                            ? SizedBox(
+                                                width: 20,
+                                                height: 20,
+                                                child:
+                                                    CircularProgressIndicatorM3E.small(),
+                                              )
+                                            : const Text('Continue'),
+                                      ),
+                                    ] else ...[
+                                      TextFieldM3E(
+                                        controller: _phoneController,
+                                        labelText: 'Phone Number',
+                                        prefixIcon: Icons.phone,
+                                        helperText: 'US/Canada numbers only.',
+                                        keyboardType: TextInputType.phone,
+                                      ),
+                                      SizedBox(height: M3ESpacing.md),
+                                      FilledButtonM3E(
+                                        icon: Icons.phone,
+                                        onPressed: _isLoading
+                                            ? null
+                                            : _signInWithPhone,
+                                        child: _isLoading
+                                            ? SizedBox(
+                                                width: 20,
+                                                height: 20,
+                                                child:
+                                                    CircularProgressIndicatorM3E.small(),
+                                              )
+                                            : const Text('Continue'),
                                       ),
                                     ],
-                                    selected: <String>{_signInType},
-                                    showSelectedIcon: false,
-                                    onSelectionChanged: _isLoading
-                                        ? null
-                                        : (value) {
-                                            if (value.isEmpty) {
-                                              return;
-                                            }
-
-                                            setState(() {
-                                              _signInType = value.first;
-                                              _codeController.clear();
-                                              _verificationId = null;
-                                              _isCodeSent = false;
-                                            });
-                                          },
-                                  ),
-                                  SizedBox(height: M3ESpacing.lg),
-                                  if (!_isPhoneFlow) ...[
-                                    TextFieldM3E(
-                                      controller: _emailController,
-                                      labelText: 'Email Address',
-                                      hintText: 'you@example.com',
-                                      prefixIcon: Icons.email,
-                                      keyboardType: TextInputType.emailAddress,
+                                    SizedBox(height: M3ESpacing.lg),
+                                    Row(
+                                      children: [
+                                        const Expanded(child: Divider()),
+                                        Padding(
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: M3ESpacing.sm,
+                                          ),
+                                          child: Text(
+                                            'OR',
+                                            style: M3ETypography.labelSmall,
+                                          ),
+                                        ),
+                                        const Expanded(child: Divider()),
+                                      ],
                                     ),
-                                    SizedBox(height: M3ESpacing.md),
-                                    FilledButtonM3E(
+                                    SizedBox(height: M3ESpacing.lg),
+                                    OutlinedButtonM3E(
+                                      icon: Icons.g_mobiledata,
                                       onPressed: _isLoading
                                           ? null
-                                          : _sendMagicLink,
-                                      child: _isLoading
-                                          ? SizedBox(
-                                              width: 20,
-                                              height: 20,
-                                              child:
-                                                  CircularProgressIndicatorM3E.small(),
-                                            )
-                                          : const Text('Continue'),
+                                          : _signInWithGoogle,
+                                      child: const Text('Sign In with Google'),
+                                    ),
+                                    M3ESpacing.verticalXS,
+                                    OutlinedButtonM3E(
+                                      icon: Icons.apple,
+                                      onPressed: _isLoading
+                                          ? null
+                                          : _signInWithApple,
+                                      child: const Text('Sign In with Apple'),
                                     ),
                                   ] else ...[
-                                    TextFieldM3E(
-                                      controller: _phoneController,
-                                      labelText: 'Phone Number',
-                                      prefixIcon: Icons.phone,
-                                      helperText:
-                                          'US/Canada numbers only.',
-                                      keyboardType: TextInputType.phone,
+                                    Text(
+                                      'Enter verification code',
+                                      style: M3ETypography.titleMedium,
                                     ),
-                                    SizedBox(height: M3ESpacing.md),
+                                    M3ESpacing.verticalXS,
+                                    TextFieldM3E(
+                                      controller: _codeController,
+                                      labelText: 'Verification Code',
+                                      hintText: '123456',
+                                      prefixIcon: Icons.lock,
+                                      keyboardType: TextInputType.number,
+                                      maxLines: 1,
+                                      autofillHints: const [
+                                        AutofillHints.oneTimeCode,
+                                      ],
+                                    ),
+                                    M3ESpacing.verticalMD,
                                     FilledButtonM3E(
-                                      icon: Icons.phone,
                                       onPressed: _isLoading
                                           ? null
-                                          : _signInWithPhone,
+                                          : _verifyCode,
                                       child: _isLoading
                                           ? SizedBox(
                                               width: 20,
@@ -514,173 +581,112 @@ class _SignInWidgetState extends ConsumerState<SignInWidget> {
                                               child:
                                                   CircularProgressIndicatorM3E.small(),
                                             )
-                                          : const Text('Continue'),
+                                          : const Text('Verify Code'),
+                                    ),
+                                    M3ESpacing.verticalXS,
+                                    TextButtonM3E(
+                                      onPressed: () {
+                                        setState(() {
+                                          _isCodeSent = false;
+                                          _verificationId = null;
+                                          _codeController.clear();
+                                        });
+                                      },
+                                      child: const Text('Change phone number'),
                                     ),
                                   ],
-                                  SizedBox(height: M3ESpacing.lg),
-                                  Row(
-                                    children: [
-                                      const Expanded(child: Divider()),
-                                      Padding(
-                                        padding: EdgeInsets.symmetric(
-                                          horizontal: M3ESpacing.sm,
-                                        ),
-                                        child: Text(
-                                          'OR',
-                                          style: M3ETypography.labelSmall,
-                                        ),
-                                      ),
-                                      const Expanded(child: Divider()),
-                                    ],
-                                  ),
-                                  SizedBox(height: M3ESpacing.lg),
-                                  OutlinedButtonM3E(
-                                    icon: Icons.g_mobiledata,
-                                    onPressed: _isLoading
-                                        ? null
-                                        : _signInWithGoogle,
-                                    child: const Text('Sign In with Google'),
-                                  ),
-                                  M3ESpacing.verticalXS,
-                                  OutlinedButtonM3E(
-                                    icon: Icons.apple,
-                                    onPressed: _isLoading
-                                        ? null
-                                        : _signInWithApple,
-                                    child: const Text('Sign In with Apple'),
-                                  ),
-                                ] else ...[
-                                  Text(
-                                    'Enter verification code',
-                                    style: M3ETypography.titleMedium,
-                                  ),
-                                  M3ESpacing.verticalXS,
-                                  TextFieldM3E(
-                                    controller: _codeController,
-                                    labelText: 'Verification Code',
-                                    hintText: '123456',
-                                    prefixIcon: Icons.lock,
-                                    keyboardType: TextInputType.number,
-                                    maxLines: 1,
-                                    autofillHints: const [
-                                      AutofillHints.oneTimeCode,
-                                    ],
-                                  ),
-                                  M3ESpacing.verticalMD,
-                                  FilledButtonM3E(
-                                    onPressed: _isLoading ? null : _verifyCode,
-                                    child: _isLoading
-                                        ? SizedBox(
-                                            width: 20,
-                                            height: 20,
-                                            child:
-                                                CircularProgressIndicatorM3E.small(),
-                                          )
-                                        : const Text('Verify Code'),
-                                  ),
-                                  M3ESpacing.verticalXS,
-                                  TextButtonM3E(
-                                    onPressed: () {
-                                      setState(() {
-                                        _isCodeSent = false;
-                                        _verificationId = null;
-                                        _codeController.clear();
-                                      });
-                                    },
-                                    child: const Text('Change phone number'),
-                                  ),
                                 ],
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: M3ESpacing.md),
+                          Container(
+                            padding: M3ESpacing.all(M3ESpacing.sm),
+                            decoration: BoxDecoration(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.surfaceContainerHighest,
+                              borderRadius: BorderRadius.circular(
+                                M3EShapes.small,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.info_outline,
+                                  size: 16,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                                ),
+                                M3ESpacing.horizontalXS,
+                                Expanded(
+                                  child: Text.rich(
+                                    TextSpan(
+                                      style: M3ETypography.bodySmall.copyWith(
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.onSurfaceVariant,
+                                      ),
+                                      children: [
+                                        const TextSpan(
+                                          text:
+                                              'By continuing, you agree to our ',
+                                        ),
+                                        WidgetSpan(
+                                          alignment:
+                                              PlaceholderAlignment.baseline,
+                                          baseline: TextBaseline.alphabetic,
+                                          child: GestureDetector(
+                                            onTap: () async {
+                                              final uri = Uri.parse(
+                                                AppConstants.privacyPolicyUrl,
+                                              );
+                                              if (!await launchUrl(
+                                                uri,
+                                                mode: LaunchMode
+                                                    .externalApplication,
+                                              )) {
+                                                if (!mounted) return;
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text(
+                                                      'Could not open privacy policy',
+                                                    ),
+                                                  ),
+                                                );
+                                              }
+                                            },
+                                            child: Text(
+                                              'Privacy Policy',
+                                              style: M3ETypography.bodySmall
+                                                  .copyWith(
+                                                    color: Theme.of(
+                                                      context,
+                                                    ).colorScheme.primary,
+                                                    decoration: TextDecoration
+                                                        .underline,
+                                                  ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
                               ],
                             ),
                           ),
-                        ),
-                        SizedBox(height: M3ESpacing.md),
-                        Container(
-                          padding: M3ESpacing.all(M3ESpacing.sm),
-                          decoration: BoxDecoration(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(
-                              M3EShapes.small,
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.info_outline,
-                                size: 16,
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurfaceVariant,
-                              ),
-                              M3ESpacing.horizontalXS,
-                              Expanded(
-                                child: Text.rich(
-                                  TextSpan(
-                                    style: M3ETypography.bodySmall.copyWith(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.onSurfaceVariant,
-                                    ),
-                                    children: [
-                                      const TextSpan(
-                                        text:
-                                            'By continuing, you agree to our ',
-                                      ),
-                                      WidgetSpan(
-                                        alignment:
-                                            PlaceholderAlignment.baseline,
-                                        baseline: TextBaseline.alphabetic,
-                                        child: GestureDetector(
-                                          onTap: () async {
-                                            final uri = Uri.parse(
-                                              AppConstants.privacyPolicyUrl,
-                                            );
-                                            if (!await launchUrl(
-                                              uri,
-                                              mode: LaunchMode
-                                                  .externalApplication,
-                                            )) {
-                                              if (!mounted) return;
-                                              ScaffoldMessenger.of(
-                                                context,
-                                              ).showSnackBar(
-                                                const SnackBar(
-                                                  content: Text(
-                                                    'Could not open privacy policy',
-                                                  ),
-                                                ),
-                                              );
-                                            }
-                                          },
-                                          child: Text(
-                                            'Privacy Policy',
-                                            style: M3ETypography.bodySmall
-                                                .copyWith(
-                                                  color: Theme.of(
-                                                    context,
-                                                  ).colorScheme.primary,
-                                                  decoration:
-                                                      TextDecoration.underline,
-                                                ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

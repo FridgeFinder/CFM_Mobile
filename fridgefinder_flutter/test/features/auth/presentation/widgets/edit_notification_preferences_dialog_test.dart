@@ -33,7 +33,7 @@ void main() {
       expect(find.text('Test Fridge'), findsOneWidget);
       expect(find.text('Save'), findsOneWidget);
       expect(find.text('Cancel'), findsOneWidget);
-      expect(find.text('Unfollow'), findsOneWidget);
+      expect(find.text('Unfollow Fridge'), findsOneWidget);
     });
 
     testWidgets('renders subscribe mode title', (tester) async {
@@ -51,7 +51,7 @@ void main() {
       expect(find.text('Follow Fridge'), findsOneWidget);
       expect(find.text('Follow'), findsOneWidget);
       expect(find.text('Cancel'), findsOneWidget);
-      expect(find.text('Unfollow'), findsNothing);
+      expect(find.text('Unfollow Fridge'), findsNothing);
     });
   });
 }

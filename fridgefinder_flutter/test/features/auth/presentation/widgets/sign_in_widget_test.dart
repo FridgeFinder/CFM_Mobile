@@ -47,6 +47,24 @@ void main() {
       expect(find.text('Sign In with Google'), findsOneWidget);
     });
 
+    testWidgets('dismisses focused phone field when tapping outside the form', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        ProviderScope(child: const MaterialApp(home: SignInWidget())),
+      );
+
+      await tester.tap(find.byType(TextField));
+      await tester.pump();
+
+      expect(tester.testTextInput.isVisible, isTrue);
+
+      await tester.tap(find.text('Welcome!'));
+      await tester.pump();
+
+      expect(tester.testTextInput.isVisible, isFalse);
+    });
+
     testWidgets('Apple Sign-In button uses OutlinedButton', (
       WidgetTester tester,
     ) async {
@@ -130,7 +148,7 @@ void main() {
       await tester.tap(find.text('Continue'));
       await tester.pump();
 
-      expect(find.text('Please enter your email address'), findsOneWidget);
+      expect(find.text('Please enter your phone number'), findsOneWidget);
     });
 
     testWidgets('shows privacy policy footer', (WidgetTester tester) async {
