@@ -304,7 +304,7 @@ class _NotificationPreferencesDialogState
                     M3ESpacing.md,
                     M3ESpacing.xs,
                     M3ESpacing.md,
-                    M3ESpacing.md,
+                    M3ESpacing.lg,
                   ),
                   child: Center(
                     child: ConstrainedBox(
@@ -314,7 +314,9 @@ class _NotificationPreferencesDialogState
                         children: [
                           Text(
                             dialogTitle,
-                            style: M3ETypography.headlineSmall,
+                            style: M3ETypography.headlineSmall.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                           if (widget.fridgeName != null) ...[
                             M3ESpacing.verticalXXS,
@@ -326,104 +328,67 @@ class _NotificationPreferencesDialogState
                             ),
                           ],
                           M3ESpacing.verticalMD,
-                          Text(
-                            'Select which updates you want to receive by channel:',
-                            style: M3ETypography.bodySmall,
-                          ),
+                          // Text(
+                          //   'Select which updates you want to receive by channel:',
+                          //   style: M3ETypography.bodySmall,
+                          // ),
                           M3ESpacing.verticalMD,
-                          _buildChannelSection(
-                            title: 'Push Notifications',
-                            channel: _preferences.contactTypePreferences.device,
-                            onChanged: (channel) {
-                              setState(() {
-                                _preferences = _preferences.copyWith(
-                                  contactTypePreferences:
-                                      _preferences.contactTypePreferences.copyWith(
-                                    device: channel,
+                          _buildColumnHeaders(),
+                          ..._notificationRows.map(_buildNotificationRow),
+                          M3ESpacing.verticalMD,
+                          Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton(
+                                  onPressed: _isLoading ? null : _closeDialog,
+                                  style: OutlinedButton.styleFrom(
+                                    minimumSize: const Size(0, 40),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 10,
+                                    ),
+                                    backgroundColor: colorScheme.surfaceContainerHighest,
+                                    foregroundColor: colorScheme.onSurfaceVariant,
+                                    side: BorderSide(color: colorScheme.outlineVariant),
+                                    shape: const StadiumBorder(),
                                   ),
-                                );
-                              });
-                            },
+                                  child: const Text('Cancel'),
+                                ),
+                              ),
+                              M3ESpacing.horizontalXS,
+                              Expanded(
+                                child: FilledButtonM3E(
+                                  onPressed: _isLoading ? null : _handleSave,
+                                  child: _isLoading
+                                      ? SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicatorM3E.small(),
+                                        )
+                                      : Text(
+                                          widget.mode == NotificationPreferencesMode.edit
+                                              ? 'Save'
+                                              : 'Follow',
+                                        ),
+                                ),
+                              ),
+                            ],
                           ),
-                          M3ESpacing.verticalSM,
-                          _buildChannelSection(
-                            title: 'Email Notifications',
-                            channel: _preferences.contactTypePreferences.email,
-                            onChanged: (channel) {
-                              setState(() {
-                                _preferences = _preferences.copyWith(
-                                  contactTypePreferences:
-                                      _preferences.contactTypePreferences.copyWith(
-                                    email: channel,
-                                  ),
-                                );
-                              });
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: colorScheme.surface,
-                  border: Border(
-                    top: BorderSide(
-                      color: colorScheme.outlineVariant,
-                    ),
-                  ),
-                ),
-                child: SafeArea(
-                  top: false,
-                  child: Padding(
-                    padding: EdgeInsets.fromLTRB(
-                      M3ESpacing.md,
-                      M3ESpacing.sm,
-                      M3ESpacing.md,
-                      M3ESpacing.sm,
-                    ),
-                    child: Center(
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 520),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            if (widget.mode == NotificationPreferencesMode.edit) ...[
-                              TextButton(
+                          if (widget.mode == NotificationPreferencesMode.edit) ...[
+                            M3ESpacing.verticalXS,
+                            Center(
+                              child: TextButton(
                                 onPressed:
                                     _isLoading ? null : () => _handleUnfollow(context),
                                 style: TextButton.styleFrom(
                                   foregroundColor:
                                       const Color(0xFFFF7043), // M3E alert/destructive
                                 ),
-                                child: const Text('Unfollow'),
+                                child: const Text('Unfollow Fridge'),
                               ),
-                              M3ESpacing.horizontalXS,
-                            ],
-                            TextButtonM3E(
-                              onPressed: _isLoading ? null : _closeDialog,
-                              child: const Text('Cancel'),
-                            ),
-                            M3ESpacing.horizontalXS,
-                            FilledButtonM3E(
-                              onPressed: _isLoading ? null : _handleSave,
-                              child: _isLoading
-                                  ? SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicatorM3E.small(),
-                                    )
-                                  : Text(
-                                      widget.mode == NotificationPreferencesMode.edit
-                                          ? 'Save'
-                                          : 'Follow',
-                                    ),
                             ),
                           ],
-                        ),
+                        ],
                       ),
                     ),
                   ),
@@ -436,82 +401,46 @@ class _NotificationPreferencesDialogState
     );
   }
 
-  Widget _buildChannelSection({
-    required String title,
-    required FridgeNotificationFlags channel,
-    required ValueChanged<FridgeNotificationFlags> onChanged,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: M3ETypography.bodyMedium.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-        ),
-        M3ESpacing.verticalXS,
-        _buildPreferenceSwitch(
-          title: 'Needs Repairs',
-          subtitle: 'Alert me when repairs are needed',
-          value: channel.outOfOrder,
-          onChanged: (value) => onChanged(channel.copyWith(outOfOrder: value)),
-          icon: Icons.build,
-        ),
-        _buildPreferenceSwitch(
-          title: 'Needs Cleaning',
-          subtitle: 'Alert me when cleaning is needed',
-          value: channel.dirty,
-          onChanged: (value) => onChanged(channel.copyWith(dirty: value)),
-          icon: Icons.cleaning_services,
-        ),
-        _buildPreferenceSwitch(
-          title: 'Out of Food',
-          subtitle: 'Alert me when food runs out',
-          value: channel.noFood,
-          onChanged: (value) => onChanged(channel.copyWith(noFood: value)),
-          icon: Icons.inbox,
-        ),
-        _buildPreferenceSwitch(
-          title: 'New Food Added',
-          subtitle: 'Alert me when food is restocked',
-          value: channel.hasFood,
-          onChanged: (value) => onChanged(channel.copyWith(hasFood: value)),
-          icon: Icons.shopping_basket,
-        ),
-      ],
+  /// Column headers above the Push / Email switch columns.
+  Widget _buildColumnHeaders() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final headerStyle = M3ETypography.bodySmall.copyWith(
+      fontWeight: FontWeight.w600,
+      color: colorScheme.onSurfaceVariant,
+    );
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: M3ESpacing.xxs),
+      child: Row(
+        children: [
+          const Expanded(child: SizedBox.shrink()),
+          SizedBox(width: 56, child: Center(child: Text('Push', style: headerStyle))),
+          SizedBox(width: 56, child: Center(child: Text('Email', style: headerStyle))),
+        ],
+      ),
     );
   }
 
-  Widget _buildPreferenceSwitch({
-    required String title,
-    required String subtitle,
-    required bool value,
-    required ValueChanged<bool> onChanged,
-    required IconData icon,
-  }) {
+  Widget _buildNotificationRow(_NotificationRowConfig row) {
+    final device = _preferences.contactTypePreferences.device;
+    final email = _preferences.contactTypePreferences.email;
+
     return Padding(
       padding: EdgeInsets.only(bottom: M3ESpacing.sm),
       child: Row(
         children: [
-          Icon(
-            icon,
-            size: 24,
-            color: Theme.of(context).colorScheme.primary,
-          ),
-          M3ESpacing.horizontalSM,
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  title,
+                  row.title,
                   style: M3ETypography.bodyMedium.copyWith(
                         fontWeight: FontWeight.w500,
                       ),
                 ),
                 Text(
-                  subtitle,
+                  row.subtitle,
                   style: M3ETypography.bodySmall.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
@@ -519,14 +448,136 @@ class _NotificationPreferencesDialogState
               ],
             ),
           ),
-          SwitchM3E(
-            value: value,
-            onChanged: onChanged,
+          SizedBox(
+            width: 56,
+            child: Center(
+              child: _buildToggleButton(
+                icon: Icons.phone_android,
+                active: row.getValue(device),
+                tooltip: 'Toggle push notifications for ${row.title}',
+                onTap: () {
+                  setState(() {
+                    _preferences = _preferences.copyWith(
+                      contactTypePreferences: _preferences.contactTypePreferences.copyWith(
+                        device: row.setValue(device, !row.getValue(device)),
+                      ),
+                    );
+                  });
+                },
+              ),
+            ),
+          ),
+          SizedBox(
+            width: 56,
+            child: Center(
+              child: _buildToggleButton(
+                icon: Icons.mail_outline,
+                active: row.getValue(email),
+                tooltip: 'Toggle email notifications for ${row.title}',
+                onTap: () {
+                  setState(() {
+                    _preferences = _preferences.copyWith(
+                      contactTypePreferences: _preferences.contactTypePreferences.copyWith(
+                        email: row.setValue(email, !row.getValue(email)),
+                      ),
+                    );
+                  });
+                },
+              ),
+            ),
           ),
         ],
       ),
     );
   }
+
+  /// Toggle button styled like the website's push/email icon toggles.
+  Widget _buildToggleButton({
+    required IconData icon,
+    required bool active,
+    required String tooltip,
+    required VoidCallback onTap,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: active ? colorScheme.primary : colorScheme.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(
+            color: active ? colorScheme.primary : colorScheme.outlineVariant,
+          ),
+        ),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: SizedBox(
+            width: 40,
+            height: 40,
+            child: Icon(
+              icon,
+              size: 20,
+              color: active ? colorScheme.onPrimary : colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
+
+/// Row definition pairing a notification type with its flag getter/setter.
+class _NotificationRowConfig {
+  final String title;
+  final String subtitle;
+  final bool Function(FridgeNotificationFlags) getValue;
+  final FridgeNotificationFlags Function(FridgeNotificationFlags, bool) setValue;
+
+  const _NotificationRowConfig({
+    required this.title,
+    required this.subtitle,
+    required this.getValue,
+    required this.setValue,
+  });
+}
+
+const _notificationRows = [
+  _NotificationRowConfig(
+    title: 'Needs Repairs',
+    subtitle: 'Alert me when repairs are needed',
+    getValue: _getOutOfOrder,
+    setValue: _setOutOfOrder,
+  ),
+  _NotificationRowConfig(
+    title: 'Needs Cleaning',
+    subtitle: 'Alert me when cleaning is needed',
+    getValue: _getDirty,
+    setValue: _setDirty,
+  ),
+  _NotificationRowConfig(
+    title: 'Out of Food',
+    subtitle: 'Alert me when food runs out',
+    getValue: _getNoFood,
+    setValue: _setNoFood,
+  ),
+  _NotificationRowConfig(
+    title: 'New Food Added',
+    subtitle: 'Alert me when food is restocked',
+    getValue: _getHasFood,
+    setValue: _setHasFood,
+  ),
+];
+
+bool _getOutOfOrder(FridgeNotificationFlags f) => f.outOfOrder;
+FridgeNotificationFlags _setOutOfOrder(FridgeNotificationFlags f, bool v) =>
+    f.copyWith(outOfOrder: v);
+bool _getDirty(FridgeNotificationFlags f) => f.dirty;
+FridgeNotificationFlags _setDirty(FridgeNotificationFlags f, bool v) => f.copyWith(dirty: v);
+bool _getNoFood(FridgeNotificationFlags f) => f.noFood;
+FridgeNotificationFlags _setNoFood(FridgeNotificationFlags f, bool v) => f.copyWith(noFood: v);
+bool _getHasFood(FridgeNotificationFlags f) => f.hasFood;
+FridgeNotificationFlags _setHasFood(FridgeNotificationFlags f, bool v) => f.copyWith(hasFood: v);
 
 

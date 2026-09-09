@@ -44,7 +44,7 @@ final class EnvironmentProvider
   }
 }
 
-String _$environmentHash() => r'fba7e98a3443cec680bb65f97b5be0cb0cc20fbf';
+String _$environmentHash() => r'3d62efc208e49ee63c44e535a8fd34e74188d328';
 
 /// Notifier to manage API environment selection with persistence
 
