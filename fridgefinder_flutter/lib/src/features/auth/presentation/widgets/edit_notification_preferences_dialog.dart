@@ -328,10 +328,10 @@ class _NotificationPreferencesDialogState
                             ),
                           ],
                           M3ESpacing.verticalMD,
-                          // Text(
-                          //   'Select which updates you want to receive by channel:',
-                          //   style: M3ETypography.bodySmall,
-                          // ),
+                          Text(
+                            'Select which updates you want to receive',
+                            style: M3ETypography.bodySmall,
+                          ),
                           M3ESpacing.verticalMD,
                           _buildColumnHeaders(),
                           ..._notificationRows.map(_buildNotificationRow),
