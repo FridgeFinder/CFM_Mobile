@@ -32,7 +32,7 @@ class _SignInWidgetState extends ConsumerState<SignInWidget> {
   bool _isCodeSent = false;
   String? _verificationId;
   bool _isLoading = false;
-  String _signInType = 'email';
+  String _signInType = 'phone';
 
   bool get _isPhoneFlow => _signInType == 'phone';
 
@@ -444,12 +444,12 @@ class _SignInWidgetState extends ConsumerState<SignInWidget> {
                                   SegmentedButton<String>(
                                     segments: const [
                                       ButtonSegment<String>(
-                                        value: 'email',
-                                        label: Text('Email'),
-                                      ),
-                                      ButtonSegment<String>(
                                         value: 'phone',
                                         label: Text('Phone'),
+                                      ),
+                                      ButtonSegment<String>(
+                                        value: 'email',
+                                        label: Text('Email'),
                                       ),
                                     ],
                                     selected: <String>{_signInType},
