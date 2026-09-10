@@ -151,6 +151,43 @@ void main() {
       expect(find.text('Please enter your phone number'), findsOneWidget);
     });
 
+    testWidgets('dismisses the phone keyboard when Continue is tapped', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        ProviderScope(child: const MaterialApp(home: SignInWidget())),
+      );
+
+      await tester.tap(find.byType(TextField));
+      await tester.pump();
+      expect(tester.testTextInput.isVisible, isTrue);
+
+      await tester.tap(find.text('Continue'));
+      await tester.pump();
+
+      expect(tester.testTextInput.isVisible, isFalse);
+    });
+
+    testWidgets('dismisses the email keyboard when Continue is tapped', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        ProviderScope(child: const MaterialApp(home: SignInWidget())),
+      );
+
+      await tester.tap(find.text('Email'));
+      await tester.pump();
+
+      await tester.tap(find.byType(TextField));
+      await tester.pump();
+      expect(tester.testTextInput.isVisible, isTrue);
+
+      await tester.tap(find.text('Continue'));
+      await tester.pump();
+
+      expect(tester.testTextInput.isVisible, isFalse);
+    });
+
     testWidgets('shows privacy policy footer', (WidgetTester tester) async {
       await tester.pumpWidget(
         ProviderScope(child: const MaterialApp(home: SignInWidget())),

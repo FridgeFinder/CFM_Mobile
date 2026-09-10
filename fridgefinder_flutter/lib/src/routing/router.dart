@@ -27,6 +27,10 @@ CustomTransitionPage<void> _buildPageWithTransition(
   );
 }
 
+/// Key for the Navigator GoRouter creates, so code outside the routed
+/// widget tree (e.g. magic link handling) can pop dialogs pushed onto it.
+final rootNavigatorKey = GlobalKey<NavigatorState>();
+
 /// Notifier that listens to auth state changes and notifies router to rebuild
 class _RouterNotifier extends ChangeNotifier {
   _RouterNotifier(this._ref) {
@@ -50,6 +54,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   final notifier = _RouterNotifier(ref);
 
   return GoRouter(
+    navigatorKey: rootNavigatorKey,
     initialLocation: '/',
     refreshListenable: notifier,
     redirect: (context, state) {
