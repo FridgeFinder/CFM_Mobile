@@ -1,4 +1,3 @@
-import 'package:design_system/design_system.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -47,9 +46,8 @@ class _TestFirebaseAuth implements firebase_auth.FirebaseAuth {
 
 class _TestAuthRepository extends AuthRepository {
   _TestAuthRepository({
-    this.signOutShouldThrow = false,
     this.deleteShouldThrow = false,
-  }) : super(
+  }) : signOutShouldThrow = false, super(
           auth: _TestFirebaseAuth(_TestUser(uid: 'user-123')),
           dio: Dio(),
         );
@@ -85,9 +83,8 @@ class _TestFirebaseMessaging implements FirebaseMessaging {
 }
 
 class _TestFcmService extends FCMService {
-  _TestFcmService({required AuthRepository authRepository})
+  _TestFcmService({required super.authRepository})
       : super(
-          authRepository: authRepository,
           messaging: _TestFirebaseMessaging(),
         );
 

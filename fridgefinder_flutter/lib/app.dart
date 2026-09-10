@@ -117,6 +117,9 @@ class _MagicLinkAuthBootstrapState
     switch (event.type) {
       case MagicLinkAuthEventType.signedIn:
         _showMessage('You are now signed in.');
+        // Close any sign-in dialog left open (e.g. via a magic link) using
+        // GoRouter's own navigator, since this widget sits outside of it.
+        rootNavigatorKey.currentState?.popUntil((route) => route.isFirst);
         break;
       case MagicLinkAuthEventType.missingEmail:
         await _promptForEmailConfirmation();

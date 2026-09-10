@@ -142,6 +142,7 @@ class _SignInWidgetState extends ConsumerState<SignInWidget> {
   }
 
   Future<void> _sendMagicLink() async {
+    FocusScope.of(context).unfocus();
     final email = _emailController.text.trim();
     if (email.isEmpty) {
       _showOverlaySnackBar('Please enter your email address');
@@ -182,6 +183,7 @@ class _SignInWidgetState extends ConsumerState<SignInWidget> {
   }
 
   Future<void> _signInWithPhone() async {
+    FocusScope.of(context).unfocus();
     final phoneNumber = _phoneController.text.trim();
     if (phoneNumber.isEmpty) {
       _showOverlaySnackBar('Please enter your phone number');
@@ -225,6 +227,7 @@ class _SignInWidgetState extends ConsumerState<SignInWidget> {
   }
 
   Future<void> _verifyCode() async {
+    FocusScope.of(context).unfocus();
     final code = _codeController.text.trim();
     if (code.isEmpty || _verificationId == null) {
       _showOverlaySnackBar('Please enter the verification code');
