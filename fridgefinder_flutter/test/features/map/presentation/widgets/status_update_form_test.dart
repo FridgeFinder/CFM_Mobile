@@ -5,15 +5,38 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fridgefinder_app/src/features/profile/presentation/widgets/status_update_form.dart';
 import 'package:fridgefinder_app/src/features/map/domain/models/fridge_domain.dart';
 import 'package:design_system/design_system.dart';
+import 'package:fridgefinder_app/src/features/map/data/repositories/fridge_repository.dart';
 import '../../../../fixtures/fridge_fixtures.dart';
+import '../../../../test_helpers.dart';
+
+/// Records the food level of every submitted report.
+class _RecordingFridgeRepository extends MockFridgeRepository {
+  final List<double> submittedFoodLevels = [];
+
+  @override
+  Future<void> submitFridgeReport(
+    String fridgeId,
+    FridgeCondition condition,
+    double foodPercentage,
+    String? notes,
+    List<int>? photoBytes,
+  ) async {
+    submittedFoodLevels.add(foodPercentage);
+  }
+}
 
 /// Helper to pump a StatusUpdateForm inside a minimal app shell.
 Widget _buildTestApp({
   required FridgeDomain fridge,
   ValueChanged<bool>? onDirtyChanged,
   ScaffoldMessengerState? parentMessenger,
+  FridgeRepository? repository,
 }) {
   return ProviderScope(
+    overrides: [
+      if (repository != null)
+        fridgeRepositoryProvider.overrideWithValue(repository),
+    ],
     child: MaterialApp(
       home: Scaffold(
         body: StatusUpdateForm(
@@ -190,6 +213,123 @@ void main() {
         isNotNull,
         reason: 'Next should be enabled after slider touch',
       );
+    });
+
+    /// Taps the slider track at its far-left ("Empty") end.
+    Future<void> tapEmptyEnd(WidgetTester tester) async {
+      final rect = tester.getRect(find.byType(Slider));
+      await tester.tapAt(rect.centerLeft + const Offset(4, 0));
+      await tester.pumpAndSettle();
+    }
+
+    bool nextEnabled(WidgetTester tester) =>
+        tester
+            .widget<FilledButtonM3E>(
+              find.widgetWithText(FilledButtonM3E, 'Next'),
+            )
+            .onPressed !=
+        null;
+
+    testWidgets('tapping the Empty end enables Next with the slider at 0', (
+      tester,
+    ) async {
+      await navigateToFoodStep(tester);
+
+      await tapEmptyEnd(tester);
+
+      expect(tester.widget<Slider>(find.byType(Slider)).value, 0.0);
+      expect(
+        nextEnabled(tester),
+        isTrue,
+        reason: 'Choosing Empty is a valid answer without moving the slider',
+      );
+    });
+
+    testWidgets('dragging up and back down to Empty keeps Next enabled', (
+      tester,
+    ) async {
+      await navigateToFoodStep(tester);
+
+      await tester.drag(find.byType(Slider), const Offset(200, 0));
+      await tester.pumpAndSettle();
+      await tester.drag(find.byType(Slider), const Offset(-600, 0));
+      await tester.pumpAndSettle();
+
+      expect(tester.widget<Slider>(find.byType(Slider)).value, 0.0);
+      expect(nextEnabled(tester), isTrue);
+    });
+
+    testWidgets('choosing Empty marks the form dirty', (tester) async {
+      bool? lastDirty;
+      await tester.pumpWidget(
+        _buildTestApp(
+          fridge: FridgeFixtures.verifiedFridgeWithFood,
+          onDirtyChanged: (v) => lastDirty = v,
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Good'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Next'));
+      await tester.pumpAndSettle();
+
+      lastDirty = null;
+      await tapEmptyEnd(tester);
+
+      expect(lastDirty, isTrue);
+    });
+
+    testWidgets('submitting after choosing Empty reports food level 0', (
+      tester,
+    ) async {
+      final repository = _RecordingFridgeRepository();
+      await tester.pumpWidget(
+        _buildTestApp(
+          fridge: FridgeFixtures.verifiedFridgeWithFood,
+          repository: repository,
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Good'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Next'));
+      await tester.pumpAndSettle();
+
+      await tapEmptyEnd(tester);
+      await tester.tap(find.text('Next'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Submit Update'));
+      await tester.tap(find.text('Submit Update'));
+      await tester.pumpAndSettle();
+
+      expect(repository.submittedFoodLevels, [0.0]);
+    });
+
+    testWidgets('submitting after dragging up reports the chosen level', (
+      tester,
+    ) async {
+      final repository = _RecordingFridgeRepository();
+      await tester.pumpWidget(
+        _buildTestApp(
+          fridge: FridgeFixtures.verifiedFridgeWithFood,
+          repository: repository,
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Good'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Next'));
+      await tester.pumpAndSettle();
+
+      await tester.drag(find.byType(Slider), const Offset(2000, 0));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Next'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Submit Update'));
+      await tester.tap(find.text('Submit Update'));
+      await tester.pumpAndSettle();
+
+      expect(repository.submittedFoodLevels, [1.0]);
     });
   });
 

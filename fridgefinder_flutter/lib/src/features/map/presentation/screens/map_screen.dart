@@ -189,8 +189,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
             );
             _mapController.move(
               fridgeLocation,
-              15.0,
-            ); // Zoom to max tile level
+              MapTileConfig.fridgeFocusZoom,
+            );
 
             // Show fridge profile sheet after a short delay to ensure map has moved
             await Future.delayed(const Duration(milliseconds: 1000));
@@ -227,7 +227,10 @@ class _MapScreenState extends ConsumerState<MapScreen>
               logger.i(
                 '🔔🔔🔔 NOTIFICATION NAV: Moving map to fetched fridge location... 🔔🔔🔔',
               );
-              _mapController.move(fridgeLocation, 15.0);
+              _mapController.move(
+                fridgeLocation,
+                MapTileConfig.fridgeFocusZoom,
+              );
 
               await Future.delayed(const Duration(milliseconds: 1000));
               if (!mounted) return;
@@ -267,7 +270,10 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   fridge.location.geoLat,
                   fridge.location.geoLng,
                 );
-                _mapController.move(fridgeLocation, 15.0);
+                _mapController.move(
+                fridgeLocation,
+                MapTileConfig.fridgeFocusZoom,
+              );
                 await Future.delayed(const Duration(milliseconds: 1000));
                 if (!mounted) return;
                 _showFridgeProfile(fridge);
@@ -301,7 +307,10 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 fridgeAsync.location.geoLat,
                 fridgeAsync.location.geoLng,
               );
-              _mapController.move(fridgeLocation, 15.0);
+              _mapController.move(
+                fridgeLocation,
+                MapTileConfig.fridgeFocusZoom,
+              );
               await Future.delayed(const Duration(milliseconds: 1000));
               if (!mounted) return;
               _showFridgeProfile(fridgeAsync);
@@ -518,7 +527,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
               '🗺️ Building FlutterMap widget with ${filteredFridges.length} markers',
             );
             _log(
-              '🎯 Map options: center=(${initialCenter.latitude}, ${initialCenter.longitude}), zoom=13.0',
+              '🎯 Map options: center=(${initialCenter.latitude}, ${initialCenter.longitude}), zoom=${MapTileConfig.initialCameraZoom}',
             );
 
             WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -533,9 +542,9 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   mapController: _mapController,
                   options: MapOptions(
                     initialCenter: initialCenter,
-                    initialZoom: 13.0,
-                    maxZoom: 15.0, // Protomaps free-tier tiles max at zoom 15
-                    minZoom: 3.0,
+                    initialZoom: MapTileConfig.initialCameraZoom,
+                    maxZoom: MapTileConfig.maxCameraZoom,
+                    minZoom: MapTileConfig.minCameraZoom,
                     interactionOptions: const InteractionOptions(
                       flags: ~InteractiveFlag.rotate  // Prevent the user from rotating the map
                     ),
@@ -585,6 +594,9 @@ class _MapScreenState extends ConsumerState<MapScreen>
                               tileProviders: style.providers,
                               theme: style.theme,
                               sprites: style.sprites,
+                              // Without this the layer stops drawing at its
+                              // own default limit, before the camera does.
+                              maximumZoom: MapTileConfig.maxCameraZoom,
                             );
                           },
                           loading: () {
@@ -879,7 +891,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                             if (context.mounted) {
                               _mapController.move(
                                 updatedLocation.position,
-                                15.0,
+                                MapTileConfig.userLocationZoom,
                             );
                             }
                             return;
@@ -905,7 +917,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                       if (userLocationAsync.value != null) {
                         _mapController.move(
                           userLocationAsync.value!.position,
-                          15.0,
+                          MapTileConfig.userLocationZoom,
                         );
                       } else {
                         if (context.mounted) {
