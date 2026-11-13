@@ -29,7 +29,9 @@ class FridgeLatestStatus extends StatelessWidget {
             Padding(
               padding: EdgeInsets.only(bottom: M3ESpacing.xs),
               child: Text(
-                DateFormat('M/d/yy h:mm a').format(report.reportDate!),
+                DateFormat(
+                  'M/d/yy h:mm a',
+                ).format(report.reportDate!.toLocal()),
                 style: M3ETypography.bodySmall.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),

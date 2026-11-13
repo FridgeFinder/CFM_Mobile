@@ -50,7 +50,7 @@ Future<Style> vectorTileStyle(Ref ref) async {
   final providers = TileProviders({
     'protomaps': NetworkVectorTileProvider(
       urlTemplate: tileUrl,
-      maximumZoom: 15,
+      maximumZoom: MapTileConfig.protomapsMaxDataZoom,
     ),
   });
 

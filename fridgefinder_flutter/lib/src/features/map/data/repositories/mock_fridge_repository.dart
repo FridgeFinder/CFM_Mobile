@@ -205,7 +205,7 @@ class MockFridgeRepository implements IFridgeRepository {
     }
 
     // Create new report
-    final now = DateTime.now();
+    final now = DateTime.now().toUtc();
     final newReport = FridgeReportDomain(
       fridgeId: fridgeId,
       condition: condition,
