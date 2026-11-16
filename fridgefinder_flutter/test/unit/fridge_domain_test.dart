@@ -4,6 +4,8 @@ import 'package:fridgefinder_app/src/features/map/domain/models/fridge_domain.da
 import '../fixtures/fridge_fixtures.dart';
 
 void main() {
+  _reportDateTests();
+
   group('FridgeDomain statusText', () {
     test('dirty condition returns "Needs Cleaning"', () {
       final fridge = FridgeFixtures.fridgeDirty;
@@ -66,6 +68,64 @@ void main() {
     test('few items returns "Few Items"', () {
       final fridge = FridgeFixtures.fridgeDirty;
       expect(fridge.foodLevelText, 'Few Items');
+    });
+  });
+}
+
+void _reportDateTests() {
+  group('FridgeReportDomain reportDate', () {
+    final expectedInstant = DateTime.utc(2025, 7, 10, 16, 56, 57);
+
+    test('ISO timestamp with Z is returned as UTC', () {
+      const report = FridgeReportDomain(
+        condition: FridgeCondition.good,
+        timestamp: '2025-07-10T16:56:57Z',
+      );
+      expect(report.reportDate, isNotNull);
+      expect(report.reportDate!.isUtc, isTrue);
+      expect(report.reportDate, expectedInstant);
+    });
+
+    test('ISO timestamp with an offset is normalised to UTC', () {
+      const report = FridgeReportDomain(
+        condition: FridgeCondition.good,
+        timestamp: '2025-07-10T12:56:57-04:00',
+      );
+      expect(report.reportDate!.isUtc, isTrue);
+      expect(report.reportDate, expectedInstant);
+    });
+
+    test('epoch fallback is returned as UTC, same instant as ISO path', () {
+      const report = FridgeReportDomain(
+        condition: FridgeCondition.good,
+        epochTimestamp: '1752166617',
+      );
+      expect(report.reportDate!.isUtc, isTrue);
+      expect(report.reportDate, expectedInstant);
+    });
+
+    test('unparseable ISO timestamp falls back to epoch in UTC', () {
+      const report = FridgeReportDomain(
+        condition: FridgeCondition.good,
+        timestamp: 'not-a-date',
+        epochTimestamp: '1752166617',
+      );
+      expect(report.reportDate!.isUtc, isTrue);
+      expect(report.reportDate, expectedInstant);
+    });
+
+    test('unparseable timestamps return null', () {
+      const report = FridgeReportDomain(
+        condition: FridgeCondition.good,
+        timestamp: 'not-a-date',
+        epochTimestamp: 'nope',
+      );
+      expect(report.reportDate, isNull);
+    });
+
+    test('missing timestamps return null', () {
+      const report = FridgeReportDomain(condition: FridgeCondition.good);
+      expect(report.reportDate, isNull);
     });
   });
 }

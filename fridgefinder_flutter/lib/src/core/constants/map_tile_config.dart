@@ -20,6 +20,26 @@ class ResolvedTileConfig {
 /// Map tile configuration with Protomaps vector tiles as primary,
 /// MapTiler raster as secondary, and OpenStreetMap as final fallback.
 class MapTileConfig {
+  /// Furthest the camera can zoom out.
+  static const double minCameraZoom = 3.0;
+
+  /// Furthest the camera can zoom in (street level).
+  static const double maxCameraZoom = 18.0;
+
+  /// Zoom the map opens at.
+  static const double initialCameraZoom = 13.0;
+
+  /// Zoom used when centring the map on a single fridge.
+  static const double fridgeFocusZoom = 16.0;
+
+  /// Zoom used when centring the map on the user's location.
+  static const double userLocationZoom = 15.0;
+
+  /// Deepest zoom Protomaps serves tile data for. This limits which tiles are
+  /// requested, not how far the camera can zoom: past it the vector layer
+  /// keeps rendering the zoom-15 data at a larger scale.
+  static const int protomapsMaxDataZoom = 15;
+
   static bool _didWarnMissingProtomapsKey = false;
   static bool _didWarnMissingMapTilerKey = false;
 

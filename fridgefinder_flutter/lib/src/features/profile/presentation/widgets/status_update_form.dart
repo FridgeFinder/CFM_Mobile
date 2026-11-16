@@ -29,15 +29,15 @@ class _StatusUpdateFormState extends ConsumerState<StatusUpdateForm> {
   bool _isSubmitting = false;
   int _currentStep = 0;
   FridgeCondition? _selectedCondition;
-  double _foodPercentage = 0.0;
-  bool _hasTouchedSlider = false;
+  // Null until the user answers; 0.0 is a real answer ("Empty").
+  double? _foodLevel;
   final _notesController = TextEditingController();
   final _imagePicker = ImagePicker();
   XFile? _selectedImage;
 
   bool get _isDirty =>
       _selectedCondition != null ||
-      _hasTouchedSlider ||
+      _foodLevel != null ||
       _selectedImage != null ||
       _notesController.text.isNotEmpty;
 
@@ -87,6 +87,11 @@ class _StatusUpdateFormState extends ConsumerState<StatusUpdateForm> {
     }
   }
 
+  void _setFoodLevel(double value) {
+    setState(() => _foodLevel = value);
+    _notifyDirty();
+  }
+
   void _removeImage() {
     setState(() => _selectedImage = null);
     _notifyDirty();
@@ -97,7 +102,7 @@ class _StatusUpdateFormState extends ConsumerState<StatusUpdateForm> {
       case 0:
         return _selectedCondition != null;
       case 1:
-        return _hasTouchedSlider;
+        return _foodLevel != null;
       default:
         return true;
     }
@@ -117,14 +122,15 @@ class _StatusUpdateFormState extends ConsumerState<StatusUpdateForm> {
         photoBytes = await _selectedImage!.readAsBytes();
       }
 
-      // Condition is required — guaranteed non-null by step gating
+      // Condition and food level are required — guaranteed non-null by step
+      // gating
       final conditionToSubmit = _selectedCondition!;
 
       // Submit report with optional photo bytes (will be base64 encoded)
       await repository.submitFridgeReport(
         widget.fridge.id,
         conditionToSubmit,
-        _foodPercentage,
+        _foodLevel!,
         _notesController.text.trim().isEmpty
             ? null
             : _notesController.text.trim(),
@@ -274,20 +280,17 @@ class _StatusUpdateFormState extends ConsumerState<StatusUpdateForm> {
           // Fixed height container to prevent layout shifts when tooltip appears
           SizedBox(
             child: SliderM3E(
-              value: _foodPercentage,
-              onChanged: (value) {
-                setState(() {
-                  _foodPercentage = value;
-                  _hasTouchedSlider = true;
-                });
-                _notifyDirty();
-              },
+              value: _foodLevel ?? 0.0,
+              onChanged: _setFoodLevel,
+              // Slider only reports changes, so resting on the starting
+              // position ("Empty") is recorded when the interaction ends.
+              onChangeEnd: _setFoodLevel,
               min: 0,
               max: 1,
               divisions: 3,
               showValueLabel: false, // Remove the number above the slider
-              activeColor: _getFoodLevelColor(_foodPercentage),
-              thumbColor: _getFoodLevelColor(_foodPercentage),
+              activeColor: _getFoodLevelColor(_foodLevel ?? 0.0),
+              thumbColor: _getFoodLevelColor(_foodLevel ?? 0.0),
             ),
           ),
           SizedBox(height: M3ESpacing.xxs),

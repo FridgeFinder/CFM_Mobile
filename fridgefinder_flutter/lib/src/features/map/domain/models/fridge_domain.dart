@@ -165,11 +165,13 @@ abstract class FridgeReportDomain with _$FridgeReportDomain {
   factory FridgeReportDomain.fromJson(Map<String, dynamic> json) =>
       _$FridgeReportDomainFromJson(json);
 
-  /// Convenience getter for report date
+  /// The instant the report was made, always in UTC.
+  ///
+  /// Presentation code converts to the device zone when formatting.
   DateTime? get reportDate {
     if (timestamp != null) {
       try {
-        return DateTime.parse(timestamp!);
+        return DateTime.parse(timestamp!).toUtc();
       } catch (e) {
         // Fall through to epoch timestamp
       }
@@ -178,7 +180,7 @@ abstract class FridgeReportDomain with _$FridgeReportDomain {
     if (epochTimestamp != null) {
       try {
         final epoch = int.parse(epochTimestamp!);
-        return DateTime.fromMillisecondsSinceEpoch(epoch * 1000);
+        return DateTime.fromMillisecondsSinceEpoch(epoch * 1000, isUtc: true);
       } catch (e) {
         return null;
       }
